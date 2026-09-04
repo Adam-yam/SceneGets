@@ -1,8 +1,8 @@
 package com.adamyam.scenegets.widget.chart
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.font.FontWeight
+import androidx.glance.layout.Alignment
+import androidx.glance.text.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier

@@ -1,7 +1,7 @@
 package com.adamyam.scenegets.widget.common
 
 import androidx.compose.ui.graphics.Color
-import androidx.glance.color.ColorProvider
+import androidx.glance.unit.ColorProvider
 
 /** SCENE-FLIX 웹의 다크 테마(#0a0a0a 배경)와 톤을 맞춘 위젯 팔레트 */
 object WidgetColors {
