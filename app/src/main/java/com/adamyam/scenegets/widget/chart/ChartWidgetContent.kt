@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
@@ -36,6 +37,10 @@ import com.adamyam.scenegets.models.ChartSong
 import com.adamyam.scenegets.widget.common.PlatformOrder
 import com.adamyam.scenegets.widget.common.WidgetColors
 import com.adamyam.scenegets.widget.common.freshnessLabel
+
+// ChartWidget에 등록된 두 크기(250dp/380dp) 사이의 경계값.
+// 이 값 이상으로 넓어지면 옆으로 늘어난 것으로 보고 레이아웃을 바꾼다.
+private val WIDE_LAYOUT_MIN_WIDTH = 320.dp
 
 @Composable
 fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<String, Bitmap> = emptyMap()) {
@@ -97,6 +102,10 @@ private fun ChartHeader(state: WidgetState<ChartResponse>) {
 
 @Composable
 private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
+    // 위젯을 옆으로 늘렸을 때(ChartWidget의 SizeMode.Responsive 참고)만
+    // 플랫폼 순위를 제목 아래가 아니라 옆으로 따로 빼서 보여준다.
+    val isWideLayout = LocalSize.current.width >= WIDE_LAYOUT_MIN_WIDTH
+
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
@@ -117,21 +126,38 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
                 maxLines = 1,
                 style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
             )
-            Spacer(modifier = GlanceModifier.height(3.dp))
+            if (!isWideLayout) {
+                Spacer(modifier = GlanceModifier.height(3.dp))
+                PlatformRanks(song.ranks, chunkSize = 4, fillWidth = true)
+            }
+        }
+        if (isWideLayout) {
+            Spacer(modifier = GlanceModifier.width(8.dp))
+            PlatformRanks(song.ranks, chunkSize = 2, fillWidth = false)
+        }
+    }
+    Spacer(modifier = GlanceModifier.height(6.dp))
+}
 
-            // 실제 순위가 있는 플랫폼만 4개씩 줄바꿈해서 전부 표시 (숨김/탭 없음)
-            val entries = PlatformOrder.sort(song.ranks)
-            entries.chunked(4).forEach { rowEntries ->
-                Row(modifier = GlanceModifier.fillMaxWidth().padding(bottom = 2.dp)) {
-                    rowEntries.forEach { (platform, rank) ->
-                        PlatformChip(platform, rank)
-                        Spacer(modifier = GlanceModifier.width(4.dp))
-                    }
+@Composable
+private fun PlatformRanks(ranks: Map<String, ChartRank>, chunkSize: Int, fillWidth: Boolean) {
+    // 실제 순위가 있는 플랫폼만 chunkSize개씩 줄바꿈해서 전부 표시 (숨김/탭 없음)
+    val entries = PlatformOrder.sort(ranks)
+    Column {
+        entries.chunked(chunkSize).forEach { rowEntries ->
+            val rowModifier = if (fillWidth) {
+                GlanceModifier.fillMaxWidth().padding(bottom = 2.dp)
+            } else {
+                GlanceModifier.padding(bottom = 2.dp)
+            }
+            Row(modifier = rowModifier) {
+                rowEntries.forEach { (platform, rank) ->
+                    PlatformChip(platform, rank)
+                    Spacer(modifier = GlanceModifier.width(4.dp))
                 }
             }
         }
     }
-    Spacer(modifier = GlanceModifier.height(6.dp))
 }
 
 @Composable

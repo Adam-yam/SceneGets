@@ -21,6 +21,12 @@ import java.util.concurrent.TimeUnit
  */
 object ImageCache {
 
+    // 위젯 안에 들어가는 작은 썸네일이라 원본 해상도가 필요 없음.
+    // 원본 그대로 디코딩하면(특히 뉴스 썸네일처럼 큰 이미지가 여러 개 있을 때)
+    // RemoteViews 전송 용량 제한에 걸려 위젯 전체가 "콘텐츠를 표시할 수 없음"으로
+    // 깨지기 때문에, 실제 표시 크기에 맞춰 다운샘플링해서 디코딩한다.
+    private const val TARGET_SIZE_PX = 150
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
@@ -42,8 +48,30 @@ object ImageCache {
             if (bytes == null) return@withContext null
             runCatching { file.writeBytes(bytes) }
         }
-        runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+        decodeSampled(file)
     }
+
+    private fun decodeSampled(file: File): Bitmap? = runCatching {
+        // 1) 실제 픽셀을 메모리에 올리지 않고 원본 크기만 먼저 확인
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
+
+        // 2) 목표 크기보다 커지지 않는 선에서 2의 배수로 축소 비율 계산
+        var sampleSize = 1
+        while (bounds.outWidth / (sampleSize * 2) >= TARGET_SIZE_PX &&
+            bounds.outHeight / (sampleSize * 2) >= TARGET_SIZE_PX
+        ) {
+            sampleSize *= 2
+        }
+
+        // 3) 축소된 크기로 디코딩 + 알파가 필요 없는 썸네일이라 RGB_565로 메모리 절반 절약
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize
+            inPreferredConfig = Bitmap.Config.RGB_565
+        }
+        BitmapFactory.decodeFile(file.absolutePath, options)
+    }.getOrNull()
 
     private fun download(url: String): ByteArray? = runCatching {
         val request = Request.Builder().url(url).get().build()
