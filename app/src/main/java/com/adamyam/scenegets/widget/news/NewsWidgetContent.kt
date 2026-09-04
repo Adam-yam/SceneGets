@@ -17,6 +17,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.background
+import androidx.compose.ui.layout.ContentScale
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -36,7 +37,7 @@ import com.adamyam.scenegets.widget.common.WidgetColors
 import com.adamyam.scenegets.widget.common.freshnessLabel
 
 @Composable
-fun NewsWidgetContent(state: WidgetState<NewsResponse>) {
+fun NewsWidgetContent(state: WidgetState<NewsResponse>, images: Map<String, android.graphics.Bitmap?> = emptyMap()) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -55,7 +56,7 @@ fun NewsWidgetContent(state: WidgetState<NewsResponse>) {
                     CenterMessage("표시할 뉴스가 없어요")
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                        items(articles) { article -> ArticleRow(article) }
+                        items(articles) { article -> ArticleRow(article, images[article.url]) }
                     }
                 }
             }
@@ -90,7 +91,7 @@ private fun NewsHeader(state: WidgetState<NewsResponse>) {
 }
 
 @Composable
-private fun ArticleRow(article: NewsArticle) {
+private fun ArticleRow(article: NewsArticle, thumbnail: android.graphics.Bitmap?) {
     Column(
         modifier = GlanceModifier
             .fillMaxWidth()
@@ -100,11 +101,26 @@ private fun ArticleRow(article: NewsArticle) {
             // 뉴스는 항목을 누르면 해당 기사로 바로 이동
             .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(article.url))))
     ) {
-        Text(
-            text = article.title,
-            maxLines = 2,
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        )
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (thumbnail != null) {
+                Image(
+                    provider = ImageProvider(thumbnail),
+                    contentDescription = "뉴스 썸네일",
+                    contentScale = ContentScale.Crop,
+                    modifier = GlanceModifier.size(64.dp).cornerRadius(6.dp)
+                )
+                Spacer(modifier = GlanceModifier.width(8.dp))
+            }
+            Text(
+                text = article.title,
+                maxLines = 3,
+                modifier = GlanceModifier.defaultWeight(),
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            )
+        }
         Spacer(modifier = GlanceModifier.height(3.dp))
         Row(modifier = GlanceModifier.fillMaxWidth()) {
             Text(

@@ -1,6 +1,7 @@
 package com.adamyam.scenegets.widget.chart
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.layout.ContentScale
 import androidx.glance.layout.Alignment
 import androidx.glance.text.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,7 +36,7 @@ import com.adamyam.scenegets.widget.common.WidgetColors
 import com.adamyam.scenegets.widget.common.freshnessLabel
 
 @Composable
-fun ChartWidgetContent(state: WidgetState<ChartResponse>) {
+fun ChartWidgetContent(state: WidgetState<ChartResponse>, images: Map<String, android.graphics.Bitmap?> = emptyMap()) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -54,7 +55,7 @@ fun ChartWidgetContent(state: WidgetState<ChartResponse>) {
                     CenterMessage("표시할 차트 데이터가 없어요")
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                        items(songs) { song -> SongRow(song) }
+                        items(songs) { song -> SongRow(song, images[songKey(song)]) }
                     }
                 }
             }
@@ -93,7 +94,7 @@ private fun ChartHeader(state: WidgetState<ChartResponse>) {
 }
 
 @Composable
-private fun SongRow(song: ChartSong) {
+private fun SongRow(song: ChartSong, albumImage: android.graphics.Bitmap?) {
     Column(
         modifier = GlanceModifier
             .fillMaxWidth()
@@ -101,16 +102,32 @@ private fun SongRow(song: ChartSong) {
             .cornerRadius(8.dp)
             .padding(6.dp)
     ) {
-        Text(
-            text = song.songName,
-            maxLines = 1,
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        )
-        Text(
-            text = song.artistName,
-            maxLines = 1,
-            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
-        )
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (albumImage != null) {
+                Image(
+                    provider = ImageProvider(albumImage),
+                    contentDescription = "앨범 표지",
+                    contentScale = ContentScale.Crop,
+                    modifier = GlanceModifier.size(56.dp).cornerRadius(6.dp)
+                )
+                Spacer(modifier = GlanceModifier.width(8.dp))
+            }
+            Column(modifier = GlanceModifier.defaultWeight()) {
+                Text(
+                    text = song.songName,
+                    maxLines = 2,
+                    style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = song.artistName,
+                    maxLines = 1,
+                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
+                )
+            }
+        }
         Spacer(modifier = GlanceModifier.height(3.dp))
 
         // 실제 순위가 있는 플랫폼만 4개씩 줄바꿈해서 전부 표시 (숨김/탭 없음)
@@ -167,3 +184,6 @@ private fun CenterMessage(message: String) {
         style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.sp)
     )
 }
+
+
+private fun songKey(song: ChartSong): String = "${song.songName}\u0000${song.artistName}"
