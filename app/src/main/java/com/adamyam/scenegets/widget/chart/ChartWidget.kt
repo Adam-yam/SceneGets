@@ -1,8 +1,6 @@
 package com.adamyam.scenegets.widget.chart
 
 import android.content.Context
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
@@ -12,14 +10,13 @@ import com.adamyam.scenegets.data.ImageCache
 import com.adamyam.scenegets.data.WidgetState
 
 class ChartWidget : GlanceAppWidget() {
-    // 위젯을 옆으로 늘렸을 때 레이아웃이 반응할 수 있도록 두 가지 크기를 등록해둔다.
-    // 실제 위젯 크기는 이 중 더 가까운 쪽으로 매핑되어 ChartWidgetContent의 LocalSize에 전달된다.
-    override val sizeMode: SizeMode = SizeMode.Responsive(
-        setOf(
-            DpSize(250.dp, 110.dp), // 기본 크기
-            DpSize(380.dp, 110.dp)  // 옆으로 늘린 크기
-        )
-    )
+    // 이전에는 SizeMode.Responsive로 딱 두 크기(250dp/380dp)만 등록해뒀는데,
+    // 실제 위젯이 그보다 더 넓어져도 항상 가장 가까운(최대) 380dp 기준으로만
+    // 계산되어서 위젯을 아무리 늘려도 칩 개수가 늘어나지 않는 문제가 있었다.
+    // SizeMode.Exact로 바꾸면 LocalSize.current가 실제 위젯 폭을 그대로 전달하므로,
+    // 위젯을 넓힐수록 ChartWidgetContent의 sideChipsPerRow 계산이 계속 더 큰
+    // 값을 내놓고, 그만큼 한 줄에 표시되는 순위 칩 개수도 계속 늘어난다.
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // 네트워크 호출 없이 캐시부터 즉시 보여주고, 실제 갱신은 WorkManager/RefreshAction이 담당

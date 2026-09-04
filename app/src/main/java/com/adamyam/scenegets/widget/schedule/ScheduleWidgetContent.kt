@@ -26,7 +26,6 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import com.adamyam.scenegets.R
 import com.adamyam.scenegets.data.WidgetState
 import com.adamyam.scenegets.models.ScheduleEvent
@@ -106,28 +105,34 @@ private fun groupEventsByDate(events: List<ScheduleEvent>): List<DateEventGroup>
             DateEventGroup(date, dayEvents.sortedWith(compareBy({ it.time.isBlank() }, { it.time })))
         }
 
-// 날짜 블록의 고정 폭. EventDetailLine의 시간 칩과 함께 카드 레이아웃의
-// 좌/우 "고정 앵커" 역할을 하므로 상수로 빼서 두 곳에서 일관되게 쓴다.
-private val DATE_BLOCK_WIDTH = 56.dp
+// 날짜 헤더에 쓰는 요일 전체 이름 (블록 대신 텍스트 헤더로 표시할 때 사용)
+private fun weekdayFullLabel(dayOfWeek: DayOfWeek): String = when (dayOfWeek) {
+    DayOfWeek.MONDAY -> "월요일"
+    DayOfWeek.TUESDAY -> "화요일"
+    DayOfWeek.WEDNESDAY -> "수요일"
+    DayOfWeek.THURSDAY -> "목요일"
+    DayOfWeek.FRIDAY -> "금요일"
+    DayOfWeek.SATURDAY -> "토요일"
+    DayOfWeek.SUNDAY -> "일요일"
+}
 
 @Composable
 private fun EventGroupCard(group: DateEventGroup) {
     // 탭 액션 없음 - 정보 표시 전용
-    // 카드를 세 영역으로 명확히 분리했다: 왼쪽 = 날짜(요일+큰 숫자+월),
-    // 가운데 = 내용(타입 배지 + 제목, 굵고 크게), 오른쪽 = 시간(색이 들어간
-    // 칩으로 강조). 세 정보가 서로 다른 위치/스타일을 가져서 한눈에 훑어도
-    // "언제 / 무엇을 / 몇 시에"가 각각 바로 들어오도록 했다.
-    // 왼쪽 날짜 블록은 카드 배경과 다른 톤을 줘서 시각적으로도 분리되게 한다.
-    Row(
-        modifier = GlanceModifier
-            .fillMaxWidth()
-            .background(WidgetColors.cardBackground)
-            .cornerRadius(14.dp)
-            .padding(vertical = 10.dp, horizontal = 10.dp)
-    ) {
-        DateBlock(group.date)
-        Spacer(modifier = GlanceModifier.width(12.dp))
-        Column(modifier = GlanceModifier.defaultWeight()) {
+    // 이전에는 왼쪽에 날짜를 박스(블록)로 분리해서 보여줬는데, 카드 안에 또 다른
+    // 박스가 겹치는 느낌이라 답답해 보였다. 대신 날짜는 카드 "바깥" 위쪽에
+    // 배경 없는 얇은 텍스트 헤더로만 표시하고(월/일 + 요일, 주말은 색으로 강조),
+    // 카드 내부는 내용(타입+제목)과 시간에만 집중하도록 정리했다.
+    Column(modifier = GlanceModifier.fillMaxWidth()) {
+        DateHeader(group.date)
+        Spacer(modifier = GlanceModifier.height(6.dp))
+        Column(
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .background(WidgetColors.cardBackground)
+                .cornerRadius(14.dp)
+                .padding(vertical = 10.dp, horizontal = 12.dp)
+        ) {
             group.events.forEachIndexed { index, event ->
                 if (index > 0) {
                     Spacer(modifier = GlanceModifier.height(10.dp))
@@ -143,59 +148,38 @@ private fun EventGroupCard(group: DateEventGroup) {
             }
         }
     }
-    Spacer(modifier = GlanceModifier.height(8.dp))
-}
-
-private data class DateParts(val day: String, val month: String, val weekday: WeekdayInfo?)
-
-/** "yyyy-MM-dd" 문자열을 날짜 블록에 쓸 일/월/요일로 쪼갠다. 파싱 실패 시 원본 문자열을 그대로 보여준다. */
-private fun dateParts(dateStr: String): DateParts {
-    val weekday = weekdayInfo(dateStr)
-    val date = try {
-        LocalDate.parse(dateStr)
-    } catch (e: DateTimeParseException) {
-        null
-    }
-    return if (date != null) {
-        DateParts(
-            day = date.dayOfMonth.toString().padStart(2, '0'),
-            month = "${date.monthValue}월",
-            weekday = weekday
-        )
-    } else {
-        DateParts(day = dateStr.replace("-", "."), month = "", weekday = null)
-    }
+    Spacer(modifier = GlanceModifier.height(10.dp))
 }
 
 @Composable
-private fun DateBlock(date: String) {
-    val parts = dateParts(date)
-    // 카드 배경(cardBackground)보다 한 톤 밝은 chipBackground로 영역을 분리하고,
-    // 날짜 숫자를 24sp까지 키워서 "언제"가 카드 안에서 가장 먼저 눈에 들어오게 한다.
-    Column(
-        modifier = GlanceModifier
-            .width(DATE_BLOCK_WIDTH)
-            .background(WidgetColors.chipBackground)
-            .cornerRadius(12.dp)
-            .padding(vertical = 10.dp, horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (parts.weekday != null) {
+private fun DateHeader(date: String) {
+    // 배경 박스 없이 순수 텍스트로만 "몇 월 며칠 + 요일"을 보여준다.
+    // 토요일/일요일은 요일 텍스트 색을 강조색으로 바꿔서 구분한다.
+    val parsed = try {
+        LocalDate.parse(date)
+    } catch (e: DateTimeParseException) {
+        null
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (parsed != null) {
             Text(
-                text = parts.weekday.label,
-                style = TextStyle(color = parts.weekday.color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                text = "${parsed.monthValue}월 ${parsed.dayOfMonth}일",
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             )
-            Spacer(modifier = GlanceModifier.height(3.dp))
-        }
-        Text(
-            text = parts.day,
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        )
-        if (parts.month.isNotBlank()) {
-            Spacer(modifier = GlanceModifier.height(1.dp))
+            Spacer(modifier = GlanceModifier.width(6.dp))
+            val weekdayColor = when (parsed.dayOfWeek) {
+                DayOfWeek.SATURDAY -> WidgetColors.down
+                DayOfWeek.SUNDAY -> WidgetColors.up
+                else -> WidgetColors.textSecondary
+            }
             Text(
-                text = parts.month,
-                style = TextStyle(color = WidgetColors.textFaint, fontSize = 9.sp)
+                text = weekdayFullLabel(parsed.dayOfWeek),
+                style = TextStyle(color = weekdayColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            )
+        } else {
+            Text(
+                text = date,
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             )
         }
     }
@@ -204,9 +188,8 @@ private fun DateBlock(date: String) {
 @Composable
 private fun EventDetailLine(event: ScheduleEvent) {
     // 내용(타입 배지 + 제목)은 왼쪽에서 세로로 쌓아 크고 굵게, 시간은 오른쪽에
-    // 독립된 색상 칩으로 분리했다. 제목과 시간이 같은 줄에서 같은 스타일로
-    // 경쟁하지 않고, 서로 다른 위치·색으로 "내용"과 "시간"이 각각 바로
-    // 눈에 띄도록 한다.
+    // 독립된 색상 칩으로 분리했다. 시간이 없는 일정은 칩 자체를 그리지 않아서
+    // "미정" 같은 불필요한 텍스트 없이 내용 컬럼이 자연스럽게 폭을 채운다.
     Row(verticalAlignment = Alignment.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
         Column(modifier = GlanceModifier.defaultWeight()) {
             TypeBadge(event.type)
@@ -217,61 +200,30 @@ private fun EventDetailLine(event: ScheduleEvent) {
                 style = TextStyle(color = WidgetColors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             )
         }
-        Spacer(modifier = GlanceModifier.width(8.dp))
-        TimeChip(event.time)
+        if (event.time.isNotBlank()) {
+            Spacer(modifier = GlanceModifier.width(8.dp))
+            TimeChip(event.time)
+        }
     }
 }
 
 @Composable
 private fun TimeChip(time: String) {
-    // 시간이 정해지지 않은 일정도 있으므로, 그 경우엔 흐린 톤의 "미정" 칩을 보여줘서
-    // 오른쪽 칩 자리가 비어 카드 균형이 깨지지 않게 하면서도 색으로 구분한다.
-    val hasTime = time.isNotBlank()
     Box(
         modifier = GlanceModifier
-            .background(if (hasTime) WidgetColors.accentChipBackground else WidgetColors.chipBackground)
+            .background(WidgetColors.accentChipBackground)
             .cornerRadius(8.dp)
             .padding(horizontal = 9.dp, vertical = 6.dp)
     ) {
         Text(
-            text = if (hasTime) time else "미정",
+            text = time,
             style = TextStyle(
-                color = if (hasTime) WidgetColors.accent else WidgetColors.textFaint,
+                color = WidgetColors.accent,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold
             )
         )
     }
-}
-
-private data class WeekdayInfo(val label: String, val color: ColorProvider)
-
-/**
- * "yyyy-MM-dd" 문자열에서 요일을 계산한다.
- * 토요일은 파란색(WidgetColors.down), 일요일은 빨간색(WidgetColors.up)으로 강조하고,
- * 평일은 기본 보조 색상을 사용한다. 날짜 형식이 예상과 다르면 요일 표시를 생략한다.
- */
-private fun weekdayInfo(dateStr: String): WeekdayInfo? {
-    val date = try {
-        LocalDate.parse(dateStr)
-    } catch (e: DateTimeParseException) {
-        return null
-    }
-    val label = when (date.dayOfWeek) {
-        DayOfWeek.MONDAY -> "월"
-        DayOfWeek.TUESDAY -> "화"
-        DayOfWeek.WEDNESDAY -> "수"
-        DayOfWeek.THURSDAY -> "목"
-        DayOfWeek.FRIDAY -> "금"
-        DayOfWeek.SATURDAY -> "토"
-        DayOfWeek.SUNDAY -> "일"
-    }
-    val color = when (date.dayOfWeek) {
-        DayOfWeek.SATURDAY -> WidgetColors.down
-        DayOfWeek.SUNDAY -> WidgetColors.up
-        else -> WidgetColors.textSecondary
-    }
-    return WeekdayInfo(label, color)
 }
 
 @Composable
