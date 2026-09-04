@@ -39,7 +39,6 @@ import com.adamyam.scenegets.widget.common.PlatformOrder
 import com.adamyam.scenegets.widget.common.WidgetColors
 import com.adamyam.scenegets.widget.common.freshnessLabel
 import com.adamyam.scenegets.widget.common.stripHiddenTags
-import kotlin.math.ceil
 
 // ChartWidget에 등록된 두 크기(250dp/380dp) 사이의 경계값.
 // 이 값 이상으로 넓어지면 옆으로 늘어난 것으로 보고 레이아웃을 바꾼다.
@@ -156,15 +155,14 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
         }
         if (isWideLayout) {
             Spacer(modifier = GlanceModifier.width(8.dp))
-            // 순위 영역이 제목 컬럼 바로 옆(좌측)에서 시작하고, 남은 폭 전체를
-            // 차지하도록(defaultWeight) 해서 위젯을 옆으로 넓힐수록 칩들이 그
-            // 늘어난 만큼 함께 커지며 채운다 (빈 공간으로 남지 않음).
+            // 순위 영역이 제목 컬럼 바로 옆(좌측)에서 시작한다. 칩 자체의 크기는
+            // PLATFORM_CHIP_WIDTH로 고정해서 위젯을 넓혀도 블럭 크기는 그대로
+            // 유지하고, 대신 한 줄에 들어갈 수 있는 칩 개수(chunkSize)를 위젯
+            // 폭에 맞춰 다시 계산해서 배치(정렬)만 바뀌도록 한다.
             PlatformRanks(
                 ranks = song.ranks,
                 chunkSize = sideChipsPerRow(widgetWidth),
-                fillWidth = true,
-                flexibleChipWidth = true,
-                modifier = GlanceModifier.defaultWeight()
+                fillWidth = false
             )
         }
     }
@@ -190,20 +188,15 @@ private fun PlatformRanks(
     ranks: Map<String, ChartRank>,
     chunkSize: Int,
     fillWidth: Boolean,
-    flexibleChipWidth: Boolean = false,
     modifier: GlanceModifier = GlanceModifier
 ) {
     // 실제 순위가 있는 플랫폼만 표시한다 (숨김/탭 없음).
-    // flexibleChipWidth가 true면(와이드 레이아웃) 칩 폭을 고정하지 않고 한 줄 안에서
-    // 균등하게 늘어나게 해서, 위젯을 넓힐수록 칩도 함께 커지며 남는 공간을 채운다.
-    // 마지막 줄만 개수가 적어 칩이 비정상적으로 커지는 걸 막기 위해 줄 인원을
-    // 최대한 균형있게 나눈다(balancedRowSizes).
+    // 칩 하나의 크기는 항상 PLATFORM_CHIP_WIDTH로 고정한다. 위젯을 옆으로
+    // 늘리면(와이드 레이아웃) chunkSize(= sideChipsPerRow)가 커져서 한 줄에
+    // 더 많은 칩이 들어가고 줄 수가 줄어드는 방식으로만 "재정렬"되고,
+    // 칩 자체의 크기는 항상 그대로 유지된다.
     val entries = PlatformOrder.sort(ranks)
-    val rows = if (flexibleChipWidth) {
-        splitByRowSizes(entries, balancedRowSizes(entries.size, chunkSize))
-    } else {
-        entries.chunked(chunkSize)
-    }
+    val rows = entries.chunked(chunkSize.coerceAtLeast(1))
     Column(modifier = if (fillWidth) modifier.fillMaxWidth() else modifier) {
         rows.forEach { rowEntries ->
             val rowModifier = if (fillWidth) {
@@ -214,39 +207,10 @@ private fun PlatformRanks(
             Row(modifier = rowModifier) {
                 rowEntries.forEachIndexed { index, (platform, rank) ->
                     if (index > 0) Spacer(modifier = GlanceModifier.width(PLATFORM_CHIP_SPACING))
-                    val chipModifier = if (flexibleChipWidth) {
-                        GlanceModifier.defaultWeight()
-                    } else {
-                        GlanceModifier.width(PLATFORM_CHIP_WIDTH)
-                    }
-                    PlatformChip(platform, rank, chipModifier)
+                    PlatformChip(platform, rank, GlanceModifier.width(PLATFORM_CHIP_WIDTH))
                 }
             }
         }
-    }
-}
-
-/**
- * total개 항목을 한 줄에 최대 maxPerRow개까지 담되, 줄 수를 정한 뒤 각 줄의 인원을
- * 최대한 고르게 분배한다. 예) total=7, maxPerRow=4 → 4,3이 아니라 rows=2로 정해지므로
- * 4,3 그대로; total=7, maxPerRow=3 → 단순 chunked면 3,3,1(마지막 줄 1개가 과도하게
- * 늘어남)이 되지만, 이 함수는 rows=3, 3,2,2로 고르게 나눠 준다.
- */
-private fun balancedRowSizes(total: Int, maxPerRow: Int): List<Int> {
-    if (total <= 0) return emptyList()
-    val safeMaxPerRow = maxPerRow.coerceAtLeast(1)
-    val rowCount = ceil(total.toDouble() / safeMaxPerRow).toInt().coerceAtLeast(1)
-    val base = total / rowCount
-    val remainder = total % rowCount
-    return (0 until rowCount).map { index -> if (index < remainder) base + 1 else base }
-}
-
-private fun <T> splitByRowSizes(list: List<T>, sizes: List<Int>): List<List<T>> {
-    var startIndex = 0
-    return sizes.map { size ->
-        val chunk = list.subList(startIndex, startIndex + size)
-        startIndex += size
-        chunk
     }
 }
 
@@ -283,9 +247,8 @@ private fun PlatformChip(platform: String, rank: ChartRank, modifier: GlanceModi
     }
 
     // 플랫폼명(위) / 순위+증감(아래) 2줄 구성.
-    // 좁은 레이아웃/기본 상태에서는 고정 폭으로 표처럼 세로 정렬되고,
-    // 와이드 레이아웃에서는 modifier로 넘어오는 defaultWeight()가 적용되어
-    // 한 줄 안에서 균등하게 늘어난다.
+    // 좁은 레이아웃/와이드 레이아웃 모두 항상 고정 폭(PLATFORM_CHIP_WIDTH)을 써서
+    // 위젯 크기와 무관하게 칩 하나의 크기는 표처럼 일정하게 유지된다.
     Column(
         modifier = modifier
             .background(WidgetColors.chipBackground)

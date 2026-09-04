@@ -106,37 +106,38 @@ private fun groupEventsByDate(events: List<ScheduleEvent>): List<DateEventGroup>
             DateEventGroup(date, dayEvents.sortedWith(compareBy({ it.time.isBlank() }, { it.time })))
         }
 
+// 날짜 블록의 고정 폭. EventDetailLine의 시간 칩과 함께 카드 레이아웃의
+// 좌/우 "고정 앵커" 역할을 하므로 상수로 빼서 두 곳에서 일관되게 쓴다.
+private val DATE_BLOCK_WIDTH = 56.dp
+
 @Composable
 private fun EventGroupCard(group: DateEventGroup) {
     // 탭 액션 없음 - 정보 표시 전용
-    // 왼쪽에 날짜(요일 색상 + 큰 숫자 + 월)를 카드처럼 분리해서 한눈에 "언제"인지
-    // 바로 들어오게 하고, 오른쪽에는 제목을 크고 굵게 강조해서(이전엔 시간이 더
-    // 강조되고 제목이 작은 보조색이라 정작 내용이 묻혔음) 실제 일정 내용이 먼저
-    // 눈에 띄도록 정리했다. 같은 날짜에 여러 일정이 있으면 얇은 구분선으로 나눈다.
+    // 카드를 세 영역으로 명확히 분리했다: 왼쪽 = 날짜(요일+큰 숫자+월),
+    // 가운데 = 내용(타입 배지 + 제목, 굵고 크게), 오른쪽 = 시간(색이 들어간
+    // 칩으로 강조). 세 정보가 서로 다른 위치/스타일을 가져서 한눈에 훑어도
+    // "언제 / 무엇을 / 몇 시에"가 각각 바로 들어오도록 했다.
+    // 왼쪽 날짜 블록은 카드 배경과 다른 톤을 줘서 시각적으로도 분리되게 한다.
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
             .background(WidgetColors.cardBackground)
-            .cornerRadius(12.dp)
-            .padding(8.dp)
+            .cornerRadius(14.dp)
+            .padding(vertical = 10.dp, horizontal = 10.dp)
     ) {
         DateBlock(group.date)
-        Spacer(modifier = GlanceModifier.width(10.dp))
-        Column(
-            modifier = GlanceModifier
-                .defaultWeight()
-                .padding(vertical = 2.dp)
-        ) {
+        Spacer(modifier = GlanceModifier.width(12.dp))
+        Column(modifier = GlanceModifier.defaultWeight()) {
             group.events.forEachIndexed { index, event ->
                 if (index > 0) {
-                    Spacer(modifier = GlanceModifier.height(8.dp))
+                    Spacer(modifier = GlanceModifier.height(10.dp))
                     Box(
                         modifier = GlanceModifier
                             .fillMaxWidth()
                             .height(1.dp)
                             .background(WidgetColors.divider)
                     ) {}
-                    Spacer(modifier = GlanceModifier.height(8.dp))
+                    Spacer(modifier = GlanceModifier.height(10.dp))
                 }
                 EventDetailLine(event)
             }
@@ -169,26 +170,29 @@ private fun dateParts(dateStr: String): DateParts {
 @Composable
 private fun DateBlock(date: String) {
     val parts = dateParts(date)
+    // 카드 배경(cardBackground)보다 한 톤 밝은 chipBackground로 영역을 분리하고,
+    // 날짜 숫자를 24sp까지 키워서 "언제"가 카드 안에서 가장 먼저 눈에 들어오게 한다.
     Column(
         modifier = GlanceModifier
-            .width(52.dp)
+            .width(DATE_BLOCK_WIDTH)
             .background(WidgetColors.chipBackground)
-            .cornerRadius(10.dp)
-            .padding(vertical = 8.dp, horizontal = 4.dp),
+            .cornerRadius(12.dp)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (parts.weekday != null) {
             Text(
                 text = parts.weekday.label,
-                style = TextStyle(color = parts.weekday.color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                style = TextStyle(color = parts.weekday.color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             )
-            Spacer(modifier = GlanceModifier.height(2.dp))
+            Spacer(modifier = GlanceModifier.height(3.dp))
         }
         Text(
             text = parts.day,
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         )
         if (parts.month.isNotBlank()) {
+            Spacer(modifier = GlanceModifier.height(1.dp))
             Text(
                 text = parts.month,
                 style = TextStyle(color = WidgetColors.textFaint, fontSize = 9.sp)
@@ -199,23 +203,44 @@ private fun DateBlock(date: String) {
 
 @Composable
 private fun EventDetailLine(event: ScheduleEvent) {
+    // 내용(타입 배지 + 제목)은 왼쪽에서 세로로 쌓아 크고 굵게, 시간은 오른쪽에
+    // 독립된 색상 칩으로 분리했다. 제목과 시간이 같은 줄에서 같은 스타일로
+    // 경쟁하지 않고, 서로 다른 위치·색으로 "내용"과 "시간"이 각각 바로
+    // 눈에 띄도록 한다.
     Row(verticalAlignment = Alignment.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
-        TypeBadge(event.type)
-        Spacer(modifier = GlanceModifier.width(8.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
+            TypeBadge(event.type)
+            Spacer(modifier = GlanceModifier.height(5.dp))
             Text(
                 text = event.title,
-                maxLines = 1,
-                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                maxLines = 2,
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             )
-            if (event.time.isNotBlank()) {
-                Spacer(modifier = GlanceModifier.height(2.dp))
-                Text(
-                    text = event.time,
-                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
-                )
-            }
         }
+        Spacer(modifier = GlanceModifier.width(8.dp))
+        TimeChip(event.time)
+    }
+}
+
+@Composable
+private fun TimeChip(time: String) {
+    // 시간이 정해지지 않은 일정도 있으므로, 그 경우엔 흐린 톤의 "미정" 칩을 보여줘서
+    // 오른쪽 칩 자리가 비어 카드 균형이 깨지지 않게 하면서도 색으로 구분한다.
+    val hasTime = time.isNotBlank()
+    Box(
+        modifier = GlanceModifier
+            .background(if (hasTime) WidgetColors.accentChipBackground else WidgetColors.chipBackground)
+            .cornerRadius(8.dp)
+            .padding(horizontal = 9.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = if (hasTime) time else "미정",
+            style = TextStyle(
+                color = if (hasTime) WidgetColors.accent else WidgetColors.textFaint,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+        )
     }
 }
 
