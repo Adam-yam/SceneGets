@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.glance.layout.Alignment
 import androidx.glance.text.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
@@ -104,7 +105,8 @@ private fun ChartHeader(state: WidgetState<ChartResponse>) {
 private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
     // 위젯을 옆으로 늘렸을 때(ChartWidget의 SizeMode.Responsive 참고)만
     // 플랫폼 순위를 제목 아래가 아니라 옆으로 따로 빼서 보여준다.
-    val isWideLayout = LocalSize.current.width >= WIDE_LAYOUT_MIN_WIDTH
+    val widgetWidth = LocalSize.current.width
+    val isWideLayout = widgetWidth >= WIDE_LAYOUT_MIN_WIDTH
 
     Row(
         modifier = GlanceModifier
@@ -133,10 +135,25 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
         }
         if (isWideLayout) {
             Spacer(modifier = GlanceModifier.width(8.dp))
-            PlatformRanksInline(song.ranks)
+            // 옆으로 뺀 순위 영역에 실제로 들어갈 수 있는 만큼만 한 줄에 채우고,
+            // 넘치는 나머지는 화면 밖으로 잘리는 대신 다음 줄로 자연스럽게 넘어가게 한다.
+            PlatformRanks(song.ranks, chunkSize = sideChipsPerRow(widgetWidth), fillWidth = false)
         }
     }
     Spacer(modifier = GlanceModifier.height(6.dp))
+}
+
+/**
+ * 옆 순위 영역에 실제로 들어갈 수 있는 칩 개수를 위젯 폭 기준으로 대략 추정한다.
+ * (카드 패딩 + 앨범 커버 + 제목/아티스트 컬럼이 최소로 필요로 하는 폭을 뺀 나머지를
+ * 칩 하나의 평균 폭으로 나눈 값. 넉넉하게 잡아서 칩이 잘려나가는 것을 막는다.)
+ */
+private fun sideChipsPerRow(widgetWidth: Dp): Int {
+    val reserved = 12.dp + 40.dp + 8.dp + 70.dp + 8.dp // 카드 패딩, 앨범 커버, 스페이서, 제목 최소폭
+    val available = widgetWidth - reserved
+    val approxChipWidth = 62.dp // 라벨 + 순위 + 증감 화살표를 담은 칩 하나의 대략적인 폭
+    val count = (available / approxChipWidth).toInt()
+    return count.coerceAtLeast(1)
 }
 
 @Composable
@@ -156,19 +173,6 @@ private fun PlatformRanks(ranks: Map<String, ChartRank>, chunkSize: Int, fillWid
                     Spacer(modifier = GlanceModifier.width(4.dp))
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PlatformRanksInline(ranks: Map<String, ChartRank>) {
-    // 위젯을 옆으로 늘렸을 때는 줄바꿈 없이 한 줄로 쭉 늘어놓는다.
-    // (2~4개씩 묶어서 세로로 쌓으면 알약들이 하나의 블록처럼 뭉쳐 보이는 문제가 있었음)
-    val entries = PlatformOrder.sort(ranks)
-    Row {
-        entries.forEach { (platform, rank) ->
-            PlatformChip(platform, rank)
-            Spacer(modifier = GlanceModifier.width(4.dp))
         }
     }
 }
