@@ -1,7 +1,6 @@
 package com.adamyam.scenegets.widget.chart
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.layout.ContentScale
 import androidx.glance.layout.Alignment
 import androidx.glance.text.FontWeight
 import androidx.compose.ui.unit.dp
@@ -110,7 +109,6 @@ private fun SongRow(song: ChartSong, albumImage: android.graphics.Bitmap?) {
                 Image(
                     provider = ImageProvider(albumImage),
                     contentDescription = "앨범 표지",
-                    contentScale = ContentScale.Crop,
                     modifier = GlanceModifier.size(56.dp).cornerRadius(6.dp)
                 )
                 Spacer(modifier = GlanceModifier.width(8.dp))

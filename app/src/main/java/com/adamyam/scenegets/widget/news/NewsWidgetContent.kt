@@ -17,7 +17,6 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.background
-import androidx.compose.ui.layout.ContentScale
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -109,7 +108,6 @@ private fun ArticleRow(article: NewsArticle, thumbnail: android.graphics.Bitmap?
                 Image(
                     provider = ImageProvider(thumbnail),
                     contentDescription = "뉴스 썸네일",
-                    contentScale = ContentScale.Crop,
                     modifier = GlanceModifier.size(64.dp).cornerRadius(6.dp)
                 )
                 Spacer(modifier = GlanceModifier.width(8.dp))
