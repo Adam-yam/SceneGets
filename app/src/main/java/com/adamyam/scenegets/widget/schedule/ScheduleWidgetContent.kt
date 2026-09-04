@@ -14,6 +14,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.background
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -88,28 +89,42 @@ private fun ScheduleHeader(state: WidgetState<List<ScheduleEvent>>) {
 @Composable
 private fun EventRow(event: ScheduleEvent) {
     // 탭 액션 없음 - 정보 표시 전용
+    // 왼쪽 색상 바로 일정 종류를 표시하고, 위에는 종류/시간 같은 메타 정보,
+    // 아래에는 제목을 크게 배치해서 한눈에 스캔하기 쉬운 순서로 정리한다.
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
             .background(WidgetColors.cardBackground)
-            .cornerRadius(8.dp)
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .cornerRadius(10.dp)
     ) {
-        Column(modifier = GlanceModifier.defaultWeight()) {
+        Box(
+            modifier = GlanceModifier
+                .padding(vertical = 10.dp, horizontal = 6.dp)
+                .width(3.dp)
+                .height(32.dp)
+                .cornerRadius(2.dp)
+                .background(typeColor(event.type))
+        ) {}
+        Column(
+            modifier = GlanceModifier
+                .defaultWeight()
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TypeBadge(event.type)
+                Spacer(modifier = GlanceModifier.width(6.dp))
+                Text(
+                    text = formatDateTime(event),
+                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 9.sp)
+                )
+            }
+            Spacer(modifier = GlanceModifier.height(4.dp))
             Text(
                 text = event.title,
                 maxLines = 1,
                 style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             )
-            Spacer(modifier = GlanceModifier.height(2.dp))
-            Text(
-                text = formatDateTime(event),
-                style = TextStyle(color = WidgetColors.textSecondary, fontSize = 9.sp)
-            )
         }
-        Spacer(modifier = GlanceModifier.width(6.dp))
-        TypeBadge(event.type)
     }
     Spacer(modifier = GlanceModifier.height(6.dp))
 }
@@ -119,12 +134,12 @@ private fun TypeBadge(type: String) {
     Row(
         modifier = GlanceModifier
             .background(typeColor(type))
-            .cornerRadius(6.dp)
-            .padding(horizontal = 6.dp, vertical = 3.dp)
+            .cornerRadius(5.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Text(
             text = typeLabel(type),
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 8.sp, fontWeight = FontWeight.Bold)
         )
     }
 }

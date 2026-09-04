@@ -38,10 +38,16 @@ import com.adamyam.scenegets.models.ChartSong
 import com.adamyam.scenegets.widget.common.PlatformOrder
 import com.adamyam.scenegets.widget.common.WidgetColors
 import com.adamyam.scenegets.widget.common.freshnessLabel
+import com.adamyam.scenegets.widget.common.stripHiddenTags
 
 // ChartWidget에 등록된 두 크기(250dp/380dp) 사이의 경계값.
 // 이 값 이상으로 넓어지면 옆으로 늘어난 것으로 보고 레이아웃을 바꾼다.
 private val WIDE_LAYOUT_MIN_WIDTH = 320.dp
+
+// 플랫폼 순위 칩 하나의 고정 폭. 폭을 고정해두면 여러 줄에 걸쳐 칩이 표시될 때
+// 세로로 열이 맞춰져서 "표"처럼 한눈에 훑어보기 쉬워진다.
+private val PLATFORM_CHIP_WIDTH = 56.dp
+private val PLATFORM_CHIP_SPACING = 4.dp
 
 @Composable
 fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<String, Bitmap> = emptyMap()) {
@@ -119,12 +125,12 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
         Spacer(modifier = GlanceModifier.width(8.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
-                text = song.songName,
+                text = stripHiddenTags(song.songName),
                 maxLines = 1,
                 style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             )
             Text(
-                text = song.artistName,
+                text = stripHiddenTags(song.artistName),
                 maxLines = 1,
                 style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
             )
@@ -151,26 +157,27 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
 private fun sideChipsPerRow(widgetWidth: Dp): Int {
     val reserved = 12.dp + 40.dp + 8.dp + 70.dp + 8.dp // 카드 패딩, 앨범 커버, 스페이서, 제목 최소폭
     val available = widgetWidth - reserved
-    val approxChipWidth = 62.dp // 라벨 + 순위 + 증감 화살표를 담은 칩 하나의 대략적인 폭
+    val approxChipWidth = PLATFORM_CHIP_WIDTH + PLATFORM_CHIP_SPACING
     val count = (available / approxChipWidth).toInt()
     return count.coerceAtLeast(1)
 }
 
 @Composable
 private fun PlatformRanks(ranks: Map<String, ChartRank>, chunkSize: Int, fillWidth: Boolean) {
-    // 실제 순위가 있는 플랫폼만 chunkSize개씩 줄바꿈해서 전부 표시 (숨김/탭 없음)
+    // 실제 순위가 있는 플랫폼만 chunkSize개씩 줄바꿈해서 전부 표시 (숨김/탭 없음).
+    // 칩 폭을 고정해서 여러 줄이 생겨도 세로로 열이 맞춰지는 표 형태가 되도록 한다.
     val entries = PlatformOrder.sort(ranks)
     Column {
         entries.chunked(chunkSize).forEach { rowEntries ->
             val rowModifier = if (fillWidth) {
-                GlanceModifier.fillMaxWidth().padding(bottom = 2.dp)
+                GlanceModifier.fillMaxWidth().padding(bottom = PLATFORM_CHIP_SPACING)
             } else {
-                GlanceModifier.padding(bottom = 2.dp)
+                GlanceModifier.padding(bottom = PLATFORM_CHIP_SPACING)
             }
             Row(modifier = rowModifier) {
-                rowEntries.forEach { (platform, rank) ->
+                rowEntries.forEachIndexed { index, (platform, rank) ->
+                    if (index > 0) Spacer(modifier = GlanceModifier.width(PLATFORM_CHIP_SPACING))
                     PlatformChip(platform, rank)
-                    Spacer(modifier = GlanceModifier.width(4.dp))
                 }
             }
         }
@@ -202,33 +209,40 @@ private fun AlbumCover(bitmap: Bitmap?) {
 @Composable
 private fun PlatformChip(platform: String, rank: ChartRank) {
     val diff = rank.previousRank?.let { it - rank.rank }
-    val (arrowText, arrowColor) = when {
+    val (changeText, changeColor) = when {
         rank.previousRank == null -> "NEW" to WidgetColors.flat
         diff != null && diff > 0 -> "▲$diff" to WidgetColors.up
         diff != null && diff < 0 -> "▼${-diff}" to WidgetColors.down
         else -> "-" to WidgetColors.flat
     }
 
-    Row(
+    // 플랫폼명(위) / 순위+증감(아래) 2줄 구성 + 고정 폭으로,
+    // 여러 개를 나열해도 표처럼 정렬되어 한눈에 훑어보기 쉽게 만든다.
+    Column(
         modifier = GlanceModifier
+            .width(PLATFORM_CHIP_WIDTH)
             .background(WidgetColors.chipBackground)
-            .cornerRadius(6.dp)
-            .padding(horizontal = 5.dp, vertical = 2.dp)
+            .cornerRadius(8.dp)
+            .padding(vertical = 4.dp, horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = PlatformOrder.label(platform),
+            maxLines = 1,
             style = TextStyle(color = WidgetColors.textSecondary, fontSize = 8.sp)
         )
-        Spacer(modifier = GlanceModifier.width(3.dp))
-        Text(
-            text = "${rank.rank}",
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = GlanceModifier.width(3.dp))
-        Text(
-            text = arrowText,
-            style = TextStyle(color = arrowColor, fontSize = 8.sp)
-        )
+        Spacer(modifier = GlanceModifier.height(2.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "${rank.rank}",
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            )
+            Spacer(modifier = GlanceModifier.width(3.dp))
+            Text(
+                text = changeText,
+                style = TextStyle(color = changeColor, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+            )
+        }
     }
 }
 
