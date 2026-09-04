@@ -190,7 +190,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 item {
                     SectionIntro(
-                        "TODAY",
+                        eyebrow = "TODAY",
                         if (data.articles.isEmpty()) "새로운 뉴스가 없어요" else "${data.articles.size}개의 새로운 소식",
                         "카드를 누르면 원문으로 이동합니다."
                     )
@@ -245,7 +245,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 item {
                     SectionIntro(
-                        "SCHEDULE",
+                        eyebrow = "SCHEDULE",
                         if (events.isEmpty()) "예정된 일정 없음" else "다가오는 일정",
                         if (events.isEmpty()) "새 일정이 등록되면 여기에 표시됩니다." else "${events.size}개의 일정을 날짜순으로 정리했어요."
                     )
@@ -358,7 +358,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun SettingsScreen() {
         Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-            SectionIntro("SETTINGS", "설정", "설정 화면은 준비 중입니다.")
+            SectionIntro(eyebrow = "SETTINGS", title = "설정", detail = "설정 화면은 준비 중입니다.")
             GlassCard {
                 Column(Modifier.padding(18.dp)) {
                     Text("Coming soon", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
