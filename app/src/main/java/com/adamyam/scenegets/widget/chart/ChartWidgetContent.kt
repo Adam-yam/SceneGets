@@ -39,6 +39,7 @@ import com.adamyam.scenegets.widget.common.PlatformOrder
 import com.adamyam.scenegets.widget.common.WidgetColors
 import com.adamyam.scenegets.widget.common.freshnessLabel
 import com.adamyam.scenegets.widget.common.stripHiddenTags
+import kotlin.math.ceil
 
 // ChartWidget에 등록된 두 크기(250dp/380dp) 사이의 경계값.
 // 이 값 이상으로 넓어지면 옆으로 늘어난 것으로 보고 레이아웃을 바꾼다.
@@ -155,10 +156,16 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
         }
         if (isWideLayout) {
             Spacer(modifier = GlanceModifier.width(8.dp))
-            // 순위 영역이 제목 컬럼 바로 옆(좌측)에 붙어서 시작하고, 실제로
-            // 들어갈 수 있는 만큼만 한 줄에 채운 뒤 넘치는 나머지는 화면 밖으로
-            // 잘리는 대신 다음 줄로 자연스럽게 넘어가게 한다.
-            PlatformRanks(song.ranks, chunkSize = sideChipsPerRow(widgetWidth), fillWidth = false)
+            // 순위 영역이 제목 컬럼 바로 옆(좌측)에서 시작하고, 남은 폭 전체를
+            // 차지하도록(defaultWeight) 해서 위젯을 옆으로 넓힐수록 칩들이 그
+            // 늘어난 만큼 함께 커지며 채운다 (빈 공간으로 남지 않음).
+            PlatformRanks(
+                ranks = song.ranks,
+                chunkSize = sideChipsPerRow(widgetWidth),
+                fillWidth = true,
+                flexibleChipWidth = true,
+                modifier = GlanceModifier.defaultWeight()
+            )
         }
     }
     Spacer(modifier = GlanceModifier.height(6.dp))
@@ -179,12 +186,26 @@ private fun sideChipsPerRow(widgetWidth: Dp): Int {
 }
 
 @Composable
-private fun PlatformRanks(ranks: Map<String, ChartRank>, chunkSize: Int, fillWidth: Boolean) {
-    // 실제 순위가 있는 플랫폼만 chunkSize개씩 줄바꿈해서 전부 표시 (숨김/탭 없음).
-    // 칩 폭을 고정해서 여러 줄이 생겨도 세로로 열이 맞춰지는 표 형태가 되도록 한다.
+private fun PlatformRanks(
+    ranks: Map<String, ChartRank>,
+    chunkSize: Int,
+    fillWidth: Boolean,
+    flexibleChipWidth: Boolean = false,
+    modifier: GlanceModifier = GlanceModifier
+) {
+    // 실제 순위가 있는 플랫폼만 표시한다 (숨김/탭 없음).
+    // flexibleChipWidth가 true면(와이드 레이아웃) 칩 폭을 고정하지 않고 한 줄 안에서
+    // 균등하게 늘어나게 해서, 위젯을 넓힐수록 칩도 함께 커지며 남는 공간을 채운다.
+    // 마지막 줄만 개수가 적어 칩이 비정상적으로 커지는 걸 막기 위해 줄 인원을
+    // 최대한 균형있게 나눈다(balancedRowSizes).
     val entries = PlatformOrder.sort(ranks)
-    Column {
-        entries.chunked(chunkSize).forEach { rowEntries ->
+    val rows = if (flexibleChipWidth) {
+        splitByRowSizes(entries, balancedRowSizes(entries.size, chunkSize))
+    } else {
+        entries.chunked(chunkSize)
+    }
+    Column(modifier = if (fillWidth) modifier.fillMaxWidth() else modifier) {
+        rows.forEach { rowEntries ->
             val rowModifier = if (fillWidth) {
                 GlanceModifier.fillMaxWidth().padding(bottom = PLATFORM_CHIP_SPACING)
             } else {
@@ -193,10 +214,39 @@ private fun PlatformRanks(ranks: Map<String, ChartRank>, chunkSize: Int, fillWid
             Row(modifier = rowModifier) {
                 rowEntries.forEachIndexed { index, (platform, rank) ->
                     if (index > 0) Spacer(modifier = GlanceModifier.width(PLATFORM_CHIP_SPACING))
-                    PlatformChip(platform, rank)
+                    val chipModifier = if (flexibleChipWidth) {
+                        GlanceModifier.defaultWeight()
+                    } else {
+                        GlanceModifier.width(PLATFORM_CHIP_WIDTH)
+                    }
+                    PlatformChip(platform, rank, chipModifier)
                 }
             }
         }
+    }
+}
+
+/**
+ * total개 항목을 한 줄에 최대 maxPerRow개까지 담되, 줄 수를 정한 뒤 각 줄의 인원을
+ * 최대한 고르게 분배한다. 예) total=7, maxPerRow=4 → 4,3이 아니라 rows=2로 정해지므로
+ * 4,3 그대로; total=7, maxPerRow=3 → 단순 chunked면 3,3,1(마지막 줄 1개가 과도하게
+ * 늘어남)이 되지만, 이 함수는 rows=3, 3,2,2로 고르게 나눠 준다.
+ */
+private fun balancedRowSizes(total: Int, maxPerRow: Int): List<Int> {
+    if (total <= 0) return emptyList()
+    val safeMaxPerRow = maxPerRow.coerceAtLeast(1)
+    val rowCount = ceil(total.toDouble() / safeMaxPerRow).toInt().coerceAtLeast(1)
+    val base = total / rowCount
+    val remainder = total % rowCount
+    return (0 until rowCount).map { index -> if (index < remainder) base + 1 else base }
+}
+
+private fun <T> splitByRowSizes(list: List<T>, sizes: List<Int>): List<List<T>> {
+    var startIndex = 0
+    return sizes.map { size ->
+        val chunk = list.subList(startIndex, startIndex + size)
+        startIndex += size
+        chunk
     }
 }
 
@@ -223,7 +273,7 @@ private fun AlbumCover(bitmap: Bitmap?) {
 }
 
 @Composable
-private fun PlatformChip(platform: String, rank: ChartRank) {
+private fun PlatformChip(platform: String, rank: ChartRank, modifier: GlanceModifier = GlanceModifier.width(PLATFORM_CHIP_WIDTH)) {
     val diff = rank.previousRank?.let { it - rank.rank }
     val (changeText, changeColor) = when {
         rank.previousRank == null -> "NEW" to WidgetColors.flat
@@ -232,11 +282,12 @@ private fun PlatformChip(platform: String, rank: ChartRank) {
         else -> "-" to WidgetColors.flat
     }
 
-    // 플랫폼명(위) / 순위+증감(아래) 2줄 구성 + 고정 폭으로,
-    // 여러 개를 나열해도 표처럼 정렬되어 한눈에 훑어보기 쉽게 만든다.
+    // 플랫폼명(위) / 순위+증감(아래) 2줄 구성.
+    // 좁은 레이아웃/기본 상태에서는 고정 폭으로 표처럼 세로 정렬되고,
+    // 와이드 레이아웃에서는 modifier로 넘어오는 defaultWeight()가 적용되어
+    // 한 줄 안에서 균등하게 늘어난다.
     Column(
-        modifier = GlanceModifier
-            .width(PLATFORM_CHIP_WIDTH)
+        modifier = modifier
             .background(WidgetColors.chipBackground)
             .cornerRadius(8.dp)
             .padding(vertical = 4.dp, horizontal = 2.dp),

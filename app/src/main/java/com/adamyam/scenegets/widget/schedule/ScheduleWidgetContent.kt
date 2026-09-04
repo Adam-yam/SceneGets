@@ -109,60 +109,89 @@ private fun groupEventsByDate(events: List<ScheduleEvent>): List<DateEventGroup>
 @Composable
 private fun EventGroupCard(group: DateEventGroup) {
     // 탭 액션 없음 - 정보 표시 전용
-    // 날짜/요일은 카드당 한 번만 크고 굵게 배치하고, 그 아래로 같은 날짜의
-    // 각 일정(시간/종류/제목)을 줄줄이 나열한다. 일정이 여러 개면 얇은 구분선으로 나눈다.
+    // 왼쪽에 날짜(요일 색상 + 큰 숫자 + 월)를 카드처럼 분리해서 한눈에 "언제"인지
+    // 바로 들어오게 하고, 오른쪽에는 제목을 크고 굵게 강조해서(이전엔 시간이 더
+    // 강조되고 제목이 작은 보조색이라 정작 내용이 묻혔음) 실제 일정 내용이 먼저
+    // 눈에 띄도록 정리했다. 같은 날짜에 여러 일정이 있으면 얇은 구분선으로 나눈다.
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
             .background(WidgetColors.cardBackground)
-            .cornerRadius(10.dp)
+            .cornerRadius(12.dp)
+            .padding(8.dp)
     ) {
-        Box(
-            modifier = GlanceModifier
-                .padding(vertical = 10.dp, horizontal = 6.dp)
-                .width(3.dp)
-                .height(32.dp)
-                .cornerRadius(2.dp)
-                .background(typeColor(group.events.first().type))
-        ) {}
+        DateBlock(group.date)
+        Spacer(modifier = GlanceModifier.width(10.dp))
         Column(
             modifier = GlanceModifier
                 .defaultWeight()
-                .padding(horizontal = 10.dp, vertical = 8.dp)
+                .padding(vertical = 2.dp)
         ) {
-            DateHeaderLine(group.date)
-            Spacer(modifier = GlanceModifier.height(4.dp))
             group.events.forEachIndexed { index, event ->
                 if (index > 0) {
-                    Spacer(modifier = GlanceModifier.height(6.dp))
+                    Spacer(modifier = GlanceModifier.height(8.dp))
                     Box(
                         modifier = GlanceModifier
                             .fillMaxWidth()
                             .height(1.dp)
                             .background(WidgetColors.divider)
                     ) {}
-                    Spacer(modifier = GlanceModifier.height(6.dp))
+                    Spacer(modifier = GlanceModifier.height(8.dp))
                 }
                 EventDetailLine(event)
             }
         }
     }
-    Spacer(modifier = GlanceModifier.height(6.dp))
+    Spacer(modifier = GlanceModifier.height(8.dp))
+}
+
+private data class DateParts(val day: String, val month: String, val weekday: WeekdayInfo?)
+
+/** "yyyy-MM-dd" 문자열을 날짜 블록에 쓸 일/월/요일로 쪼갠다. 파싱 실패 시 원본 문자열을 그대로 보여준다. */
+private fun dateParts(dateStr: String): DateParts {
+    val weekday = weekdayInfo(dateStr)
+    val date = try {
+        LocalDate.parse(dateStr)
+    } catch (e: DateTimeParseException) {
+        null
+    }
+    return if (date != null) {
+        DateParts(
+            day = date.dayOfMonth.toString().padStart(2, '0'),
+            month = "${date.monthValue}월",
+            weekday = weekday
+        )
+    } else {
+        DateParts(day = dateStr.replace("-", "."), month = "", weekday = null)
+    }
 }
 
 @Composable
-private fun DateHeaderLine(date: String) {
-    val weekday = weekdayInfo(date)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = date.replace("-", "."),
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        )
-        if (weekday != null) {
-            Spacer(modifier = GlanceModifier.width(2.dp))
+private fun DateBlock(date: String) {
+    val parts = dateParts(date)
+    Column(
+        modifier = GlanceModifier
+            .width(52.dp)
+            .background(WidgetColors.chipBackground)
+            .cornerRadius(10.dp)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (parts.weekday != null) {
             Text(
-                text = "(${weekday.label})",
-                style = TextStyle(color = weekday.color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                text = parts.weekday.label,
+                style = TextStyle(color = parts.weekday.color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            )
+            Spacer(modifier = GlanceModifier.height(2.dp))
+        }
+        Text(
+            text = parts.day,
+            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        )
+        if (parts.month.isNotBlank()) {
+            Text(
+                text = parts.month,
+                style = TextStyle(color = WidgetColors.textFaint, fontSize = 9.sp)
             )
         }
     }
@@ -170,22 +199,23 @@ private fun DateHeaderLine(date: String) {
 
 @Composable
 private fun EventDetailLine(event: ScheduleEvent) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        if (event.time.isNotBlank()) {
-            Text(
-                text = event.time,
-                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            )
-            Spacer(modifier = GlanceModifier.width(6.dp))
-        }
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
         TypeBadge(event.type)
-        Spacer(modifier = GlanceModifier.width(6.dp))
-        Text(
-            text = event.title,
-            maxLines = 1,
-            modifier = GlanceModifier.defaultWeight(),
-            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-        )
+        Spacer(modifier = GlanceModifier.width(8.dp))
+        Column(modifier = GlanceModifier.defaultWeight()) {
+            Text(
+                text = event.title,
+                maxLines = 1,
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            )
+            if (event.time.isNotBlank()) {
+                Spacer(modifier = GlanceModifier.height(2.dp))
+                Text(
+                    text = event.time,
+                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
+                )
+            }
+        }
     }
 }
 
@@ -224,12 +254,12 @@ private fun TypeBadge(type: String) {
     Row(
         modifier = GlanceModifier
             .background(typeColor(type))
-            .cornerRadius(5.dp)
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .cornerRadius(6.dp)
+            .padding(horizontal = 7.dp, vertical = 3.dp)
     ) {
         Text(
             text = typeLabel(type),
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
         )
     }
 }
