@@ -55,8 +55,10 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
                 if (events.isEmpty()) {
                     CenterMessage("예정된 일정이 없어요")
                 } else {
+                    // 같은 날짜는 시간이 달라도 하나의 카드로 합쳐서 보여준다.
+                    val groups = groupEventsByDate(events)
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                        items(events) { event -> EventRow(event) }
+                        items(groups) { group -> EventGroupCard(group) }
                     }
                 }
             }
@@ -90,11 +92,25 @@ private fun ScheduleHeader(state: WidgetState<List<ScheduleEvent>>) {
     }
 }
 
+/** 같은 날짜(yyyy-MM-dd)의 일정을 하나로 묶은 그룹. 시간이 달라도 날짜가 같으면 한 카드에 표시한다. */
+private data class DateEventGroup(val date: String, val events: List<ScheduleEvent>)
+
+/**
+ * 날짜 기준으로 일정을 그룹핑한다. groupBy는 처음 등장한 순서를 유지하므로
+ * 원본 목록의 날짜 순서는 그대로 보존되고, 같은 날짜의 일정만 한 그룹으로 묶인다.
+ * 그룹 내부는 시간 미정 일정을 맨 뒤로 보내고 나머지는 이른 시간순으로 정렬한다.
+ */
+private fun groupEventsByDate(events: List<ScheduleEvent>): List<DateEventGroup> =
+    events.groupBy { it.date }
+        .map { (date, dayEvents) ->
+            DateEventGroup(date, dayEvents.sortedWith(compareBy({ it.time.isBlank() }, { it.time })))
+        }
+
 @Composable
-private fun EventRow(event: ScheduleEvent) {
+private fun EventGroupCard(group: DateEventGroup) {
     // 탭 액션 없음 - 정보 표시 전용
-    // 날짜/시각이 가장 중요한 정보이므로 맨 위에 크고 굵게 배치하고,
-    // 요일도 함께 표시한다 (토요일 파란색 / 일요일 빨간색). 제목/종류는 그 아래 보조 라인으로 정리.
+    // 날짜/요일은 카드당 한 번만 크고 굵게 배치하고, 그 아래로 같은 날짜의
+    // 각 일정(시간/종류/제목)을 줄줄이 나열한다. 일정이 여러 개면 얇은 구분선으로 나눈다.
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
@@ -107,23 +123,27 @@ private fun EventRow(event: ScheduleEvent) {
                 .width(3.dp)
                 .height(32.dp)
                 .cornerRadius(2.dp)
-                .background(typeColor(event.type))
+                .background(typeColor(group.events.first().type))
         ) {}
         Column(
             modifier = GlanceModifier
                 .defaultWeight()
                 .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
-            DateTimeLine(event)
+            DateHeaderLine(group.date)
             Spacer(modifier = GlanceModifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TypeBadge(event.type)
-                Spacer(modifier = GlanceModifier.width(6.dp))
-                Text(
-                    text = event.title,
-                    maxLines = 1,
-                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                )
+            group.events.forEachIndexed { index, event ->
+                if (index > 0) {
+                    Spacer(modifier = GlanceModifier.height(6.dp))
+                    Box(
+                        modifier = GlanceModifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(WidgetColors.divider)
+                    ) {}
+                    Spacer(modifier = GlanceModifier.height(6.dp))
+                }
+                EventDetailLine(event)
             }
         }
     }
@@ -131,11 +151,11 @@ private fun EventRow(event: ScheduleEvent) {
 }
 
 @Composable
-private fun DateTimeLine(event: ScheduleEvent) {
-    val weekday = weekdayInfo(event.date)
+private fun DateHeaderLine(date: String) {
+    val weekday = weekdayInfo(date)
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = event.date.replace("-", "."),
+            text = date.replace("-", "."),
             style = TextStyle(color = WidgetColors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
         )
         if (weekday != null) {
@@ -145,13 +165,27 @@ private fun DateTimeLine(event: ScheduleEvent) {
                 style = TextStyle(color = weekday.color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             )
         }
+    }
+}
+
+@Composable
+private fun EventDetailLine(event: ScheduleEvent) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         if (event.time.isNotBlank()) {
-            Spacer(modifier = GlanceModifier.width(6.dp))
             Text(
                 text = event.time,
-                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             )
+            Spacer(modifier = GlanceModifier.width(6.dp))
         }
+        TypeBadge(event.type)
+        Spacer(modifier = GlanceModifier.width(6.dp))
+        Text(
+            text = event.title,
+            maxLines = 1,
+            modifier = GlanceModifier.defaultWeight(),
+            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        )
     }
 }
 

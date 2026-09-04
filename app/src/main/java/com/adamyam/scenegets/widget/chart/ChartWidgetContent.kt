@@ -49,6 +49,12 @@ private val WIDE_LAYOUT_MIN_WIDTH = 320.dp
 private val PLATFORM_CHIP_WIDTH = 56.dp
 private val PLATFORM_CHIP_SPACING = 4.dp
 
+// 와이드 레이아웃에서 제목/아티스트 컬럼의 고정 폭.
+// 이전에는 defaultWeight()로 남는 공간을 전부 차지해서 제목이 짧을 때
+// 순위 칩이 카드 오른쪽 끝까지 밀려나 보였다. 폭을 고정하면 칩이 제목
+// 바로 옆(좌측)부터 붙어서 시작한다.
+private val TITLE_COLUMN_WIDE_WIDTH = 84.dp
+
 @Composable
 fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<String, Bitmap> = emptyMap()) {
     Column(
@@ -123,7 +129,15 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
     ) {
         AlbumCover(albumImage)
         Spacer(modifier = GlanceModifier.width(8.dp))
-        Column(modifier = GlanceModifier.defaultWeight()) {
+        Column(
+            // 와이드 레이아웃에서는 고정 폭을 줘서 순위 칩이 제목 바로 옆(좌측)부터
+            // 시작하게 하고, 좁은 레이아웃에서는 기존처럼 가로 전체를 채운다.
+            modifier = if (isWideLayout) {
+                GlanceModifier.width(TITLE_COLUMN_WIDE_WIDTH)
+            } else {
+                GlanceModifier.defaultWeight()
+            }
+        ) {
             Text(
                 text = stripHiddenTags(song.songName),
                 maxLines = 1,
@@ -141,8 +155,9 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
         }
         if (isWideLayout) {
             Spacer(modifier = GlanceModifier.width(8.dp))
-            // 옆으로 뺀 순위 영역에 실제로 들어갈 수 있는 만큼만 한 줄에 채우고,
-            // 넘치는 나머지는 화면 밖으로 잘리는 대신 다음 줄로 자연스럽게 넘어가게 한다.
+            // 순위 영역이 제목 컬럼 바로 옆(좌측)에 붙어서 시작하고, 실제로
+            // 들어갈 수 있는 만큼만 한 줄에 채운 뒤 넘치는 나머지는 화면 밖으로
+            // 잘리는 대신 다음 줄로 자연스럽게 넘어가게 한다.
             PlatformRanks(song.ranks, chunkSize = sideChipsPerRow(widgetWidth), fillWidth = false)
         }
     }
@@ -155,7 +170,8 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
  * 칩 하나의 평균 폭으로 나눈 값. 넉넉하게 잡아서 칩이 잘려나가는 것을 막는다.)
  */
 private fun sideChipsPerRow(widgetWidth: Dp): Int {
-    val reserved = 12.dp + 40.dp + 8.dp + 70.dp + 8.dp // 카드 패딩, 앨범 커버, 스페이서, 제목 최소폭
+    // 카드 패딩(6*2) + 앨범 커버 + 스페이서 + 제목 컬럼 고정폭 + 스페이서
+    val reserved = 12.dp + 40.dp + 8.dp + TITLE_COLUMN_WIDE_WIDTH + 8.dp
     val available = widgetWidth - reserved
     val approxChipWidth = PLATFORM_CHIP_WIDTH + PLATFORM_CHIP_SPACING
     val count = (available / approxChipWidth).toInt()
