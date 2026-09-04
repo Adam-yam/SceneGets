@@ -1,5 +1,6 @@
 package com.adamyam.scenegets.widget.chart
 
+import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.glance.layout.Alignment
 import androidx.glance.text.FontWeight
@@ -14,7 +15,9 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.background
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
@@ -35,7 +38,7 @@ import com.adamyam.scenegets.widget.common.WidgetColors
 import com.adamyam.scenegets.widget.common.freshnessLabel
 
 @Composable
-fun ChartWidgetContent(state: WidgetState<ChartResponse>, images: Map<String, android.graphics.Bitmap?> = emptyMap()) {
+fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<String, Bitmap> = emptyMap()) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -54,7 +57,7 @@ fun ChartWidgetContent(state: WidgetState<ChartResponse>, images: Map<String, an
                     CenterMessage("표시할 차트 데이터가 없어요")
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                        items(songs) { song -> SongRow(song, images[songKey(song)]) }
+                        items(songs) { song -> SongRow(song, albumImages[song.albumImageUrl]) }
                     }
                 }
             }
@@ -93,53 +96,64 @@ private fun ChartHeader(state: WidgetState<ChartResponse>) {
 }
 
 @Composable
-private fun SongRow(song: ChartSong, albumImage: android.graphics.Bitmap?) {
-    Column(
+private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
+    Row(
         modifier = GlanceModifier
             .fillMaxWidth()
             .background(WidgetColors.cardBackground)
             .cornerRadius(8.dp)
             .padding(6.dp)
     ) {
-        Row(
-            modifier = GlanceModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (albumImage != null) {
-                Image(
-                    provider = ImageProvider(albumImage),
-                    contentDescription = "앨범 표지",
-                    modifier = GlanceModifier.size(56.dp).cornerRadius(6.dp)
-                )
-                Spacer(modifier = GlanceModifier.width(8.dp))
-            }
-            Column(modifier = GlanceModifier.defaultWeight()) {
-                Text(
-                    text = song.songName,
-                    maxLines = 2,
-                    style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    text = song.artistName,
-                    maxLines = 1,
-                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
-                )
-            }
-        }
-        Spacer(modifier = GlanceModifier.height(3.dp))
+        AlbumCover(albumImage)
+        Spacer(modifier = GlanceModifier.width(8.dp))
+        Column(modifier = GlanceModifier.defaultWeight()) {
+            Text(
+                text = song.songName,
+                maxLines = 1,
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = song.artistName,
+                maxLines = 1,
+                style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
+            )
+            Spacer(modifier = GlanceModifier.height(3.dp))
 
-        // 실제 순위가 있는 플랫폼만 4개씩 줄바꿈해서 전부 표시 (숨김/탭 없음)
-        val entries = PlatformOrder.sort(song.ranks)
-        entries.chunked(4).forEach { rowEntries ->
-            Row(modifier = GlanceModifier.fillMaxWidth().padding(bottom = 2.dp)) {
-                rowEntries.forEach { (platform, rank) ->
-                    PlatformChip(platform, rank)
-                    Spacer(modifier = GlanceModifier.width(4.dp))
+            // 실제 순위가 있는 플랫폼만 4개씩 줄바꿈해서 전부 표시 (숨김/탭 없음)
+            val entries = PlatformOrder.sort(song.ranks)
+            entries.chunked(4).forEach { rowEntries ->
+                Row(modifier = GlanceModifier.fillMaxWidth().padding(bottom = 2.dp)) {
+                    rowEntries.forEach { (platform, rank) ->
+                        PlatformChip(platform, rank)
+                        Spacer(modifier = GlanceModifier.width(4.dp))
+                    }
                 }
             }
         }
     }
     Spacer(modifier = GlanceModifier.height(6.dp))
+}
+
+@Composable
+private fun AlbumCover(bitmap: Bitmap?) {
+    if (bitmap != null) {
+        Image(
+            provider = ImageProvider(bitmap),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = GlanceModifier
+                .size(40.dp)
+                .cornerRadius(6.dp)
+        )
+    } else {
+        // 이미지가 아직 없거나 로드에 실패했을 때의 빈 자리 표시
+        Box(
+            modifier = GlanceModifier
+                .size(40.dp)
+                .cornerRadius(6.dp)
+                .background(WidgetColors.chipBackground)
+        ) {}
+    }
 }
 
 @Composable
@@ -182,6 +196,3 @@ private fun CenterMessage(message: String) {
         style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.sp)
     )
 }
-
-
-private fun songKey(song: ChartSong): String = "${song.songName}\u0000${song.artistName}"
