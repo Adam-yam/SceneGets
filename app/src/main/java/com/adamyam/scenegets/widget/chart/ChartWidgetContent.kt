@@ -133,7 +133,7 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
         }
         if (isWideLayout) {
             Spacer(modifier = GlanceModifier.width(8.dp))
-            PlatformRanks(song.ranks, chunkSize = 2, fillWidth = false)
+            PlatformRanksInline(song.ranks)
         }
     }
     Spacer(modifier = GlanceModifier.height(6.dp))
@@ -156,6 +156,19 @@ private fun PlatformRanks(ranks: Map<String, ChartRank>, chunkSize: Int, fillWid
                     Spacer(modifier = GlanceModifier.width(4.dp))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PlatformRanksInline(ranks: Map<String, ChartRank>) {
+    // 위젯을 옆으로 늘렸을 때는 줄바꿈 없이 한 줄로 쭉 늘어놓는다.
+    // (2~4개씩 묶어서 세로로 쌓으면 알약들이 하나의 블록처럼 뭉쳐 보이는 문제가 있었음)
+    val entries = PlatformOrder.sort(ranks)
+    Row {
+        entries.forEach { (platform, rank) ->
+            PlatformChip(platform, rank)
+            Spacer(modifier = GlanceModifier.width(4.dp))
         }
     }
 }
