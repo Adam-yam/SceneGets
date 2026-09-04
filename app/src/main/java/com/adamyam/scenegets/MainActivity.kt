@@ -263,7 +263,7 @@ class MainActivity : ComponentActivity() {
         Row(Modifier.fillMaxWidth().padding(top = 5.dp), verticalAlignment = Alignment.Bottom) {
             Text(formatDate(date), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.width(7.dp))
-            Text("$count개", color = SecondaryInk, fontSize = 12.sp)
+            Text("${count}개", color = SecondaryInk, fontSize = 12.sp)
         }
     }
 
@@ -410,9 +410,10 @@ class MainActivity : ComponentActivity() {
             modifier = modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(22.dp), clip = false),
             shape = RoundedCornerShape(22.dp),
             color = Glass,
-            border = BorderStroke(1.dp, Hairline),
-            content = content
-        )
+            border = BorderStroke(1.dp, Hairline)
+        ) {
+            Column(content = content)
+        }
     }
 
     @Composable
