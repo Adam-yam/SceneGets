@@ -108,7 +108,7 @@ private fun ArticleRow(article: NewsArticle, thumbnail: android.graphics.Bitmap?
                 Image(
                     provider = ImageProvider(thumbnail),
                     contentDescription = "뉴스 썸네일",
-                    modifier = GlanceModifier.size(64.dp).cornerRadius(6.dp)
+                    modifier = GlanceModifier.size(56.dp).cornerRadius(6.dp)
                 )
                 Spacer(modifier = GlanceModifier.width(8.dp))
             }
