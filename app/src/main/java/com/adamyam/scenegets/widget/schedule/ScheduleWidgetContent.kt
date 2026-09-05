@@ -6,9 +6,6 @@ import androidx.glance.text.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
-import androidx.glance.Image
-import androidx.glance.ImageProvider
-import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
@@ -18,18 +15,19 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
-import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import com.adamyam.scenegets.R
 import com.adamyam.scenegets.data.WidgetState
 import com.adamyam.scenegets.models.ScheduleEvent
+import com.adamyam.scenegets.widget.common.WidgetCard
+import com.adamyam.scenegets.widget.common.WidgetCenterMessage
 import com.adamyam.scenegets.widget.common.WidgetColors
+import com.adamyam.scenegets.widget.common.WidgetDivider
+import com.adamyam.scenegets.widget.common.WidgetHeader
 import com.adamyam.scenegets.widget.common.freshnessLabel
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -37,23 +35,22 @@ import java.time.format.DateTimeParseException
 
 @Composable
 fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
-    Column(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(WidgetColors.pageBackground)
-            .cornerRadius(20.dp)
-            .padding(10.dp)
-    ) {
-        ScheduleHeader(state)
+    WidgetCard {
+        WidgetHeader(
+            title = "스케줄",
+            accentColor = WidgetColors.accent,
+            freshness = freshnessLabel(state),
+            refreshAction = actionRunCallback<RefreshScheduleAction>()
+        )
         Spacer(modifier = GlanceModifier.height(8.dp))
 
         when (state) {
-            is WidgetState.Loading -> CenterMessage("스케줄을 불러오는 중...")
-            is WidgetState.Failed -> CenterMessage("스케줄을 불러오지 못했어요\n${state.message}")
+            is WidgetState.Loading -> WidgetCenterMessage("스케줄을 불러오는 중...")
+            is WidgetState.Failed -> WidgetCenterMessage("스케줄을 불러오지 못했어요\n${state.message}")
             is WidgetState.Loaded -> {
                 val events = state.data
                 if (events.isEmpty()) {
-                    CenterMessage("예정된 일정이 없어요")
+                    WidgetCenterMessage("예정된 일정이 없어요")
                 } else {
                     // 같은 날짜는 시간이 달라도 하나의 그룹으로 합쳐서 보여준다.
                     val groups = groupEventsByDate(events)
@@ -63,32 +60,6 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ScheduleHeader(state: WidgetState<List<ScheduleEvent>>) {
-    Row(
-        modifier = GlanceModifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "스케줄",
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = GlanceModifier.defaultWeight())
-        Text(
-            text = freshnessLabel(state),
-            style = TextStyle(color = WidgetColors.textFaint, fontSize = 10.sp)
-        )
-        Spacer(modifier = GlanceModifier.width(6.dp))
-        Image(
-            provider = ImageProvider(R.drawable.ic_refresh),
-            contentDescription = "새로고침",
-            modifier = GlanceModifier
-                .size(15.dp)
-                .clickable(actionRunCallback<RefreshScheduleAction>())
-        )
     }
 }
 
@@ -147,12 +118,7 @@ private fun EventGroupSection(group: DateEventGroup) {
         }
     }
     Spacer(modifier = GlanceModifier.height(4.dp))
-    Box(
-        modifier = GlanceModifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(WidgetColors.divider)
-    ) {}
+    WidgetDivider()
     Spacer(modifier = GlanceModifier.height(10.dp))
 }
 
@@ -225,12 +191,4 @@ private fun typeColor(type: String) = when (type) {
     "concert" -> WidgetColors.pink
     "notice" -> WidgetColors.textSecondary
     else -> WidgetColors.textSecondary
-}
-
-@Composable
-private fun CenterMessage(message: String) {
-    Text(
-        text = message,
-        style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.sp)
-    )
 }

@@ -11,7 +11,6 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
-import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
@@ -22,7 +21,6 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
@@ -30,13 +28,16 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import com.adamyam.scenegets.R
 import com.adamyam.scenegets.data.WidgetState
 import com.adamyam.scenegets.models.ChartRank
 import com.adamyam.scenegets.models.ChartResponse
 import com.adamyam.scenegets.models.ChartSong
 import com.adamyam.scenegets.widget.common.PlatformOrder
+import com.adamyam.scenegets.widget.common.WidgetCard
+import com.adamyam.scenegets.widget.common.WidgetCenterMessage
 import com.adamyam.scenegets.widget.common.WidgetColors
+import com.adamyam.scenegets.widget.common.WidgetDivider
+import com.adamyam.scenegets.widget.common.WidgetHeader
 import com.adamyam.scenegets.widget.common.freshnessLabel
 import com.adamyam.scenegets.widget.common.stripHiddenTags
 
@@ -57,28 +58,27 @@ private val TITLE_COLUMN_WIDE_WIDTH = 84.dp
 
 @Composable
 fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<String, Bitmap> = emptyMap()) {
-    Column(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(WidgetColors.surface)
-            .cornerRadius(20.dp)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        ChartHeader(state)
+    WidgetCard {
+        WidgetHeader(
+            title = "차트",
+            accentColor = WidgetColors.pink,
+            freshness = freshnessLabel(state),
+            refreshAction = actionRunCallback<RefreshChartAction>()
+        )
         Spacer(modifier = GlanceModifier.height(6.dp))
 
         when (state) {
-            is WidgetState.Loading -> CenterMessage("차트를 불러오는 중...")
-            is WidgetState.Failed -> CenterMessage("차트를 불러오지 못했어요\n${state.message}")
+            is WidgetState.Loading -> WidgetCenterMessage("차트를 불러오는 중...")
+            is WidgetState.Failed -> WidgetCenterMessage("차트를 불러오지 못했어요\n${state.message}")
             is WidgetState.Loaded -> {
                 val songs = state.data.songs
                 if (songs.isEmpty()) {
-                    CenterMessage("표시할 차트 데이터가 없어요")
+                    WidgetCenterMessage("표시할 차트 데이터가 없어요")
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
                         itemsIndexed(songs) { index, song ->
                             Column(modifier = GlanceModifier.fillMaxWidth()) {
-                                if (index > 0) ChartDivider()
+                                if (index > 0) WidgetDivider()
                                 SongRow(song, albumImages[song.albumImageUrl])
                             }
                         }
@@ -87,46 +87,6 @@ fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<Strin
             }
         }
     }
-}
-
-@Composable
-private fun ChartHeader(state: WidgetState<ChartResponse>) {
-    Row(
-        modifier = GlanceModifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "차트",
-            style = TextStyle(
-                color = WidgetColors.textPrimary,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
-            )
-        )
-        Spacer(modifier = GlanceModifier.defaultWeight())
-        Text(
-            text = freshnessLabel(state),
-            style = TextStyle(color = WidgetColors.textFaint, fontSize = 10.sp)
-        )
-        Spacer(modifier = GlanceModifier.width(6.dp))
-        Image(
-            provider = ImageProvider(R.drawable.ic_refresh),
-            contentDescription = "새로고침",
-            modifier = GlanceModifier
-                .size(15.dp)
-                .clickable(actionRunCallback<RefreshChartAction>())
-        )
-    }
-}
-
-@Composable
-private fun ChartDivider() {
-    Box(
-        modifier = GlanceModifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(WidgetColors.divider)
-    ) {}
 }
 
 @Composable
@@ -285,12 +245,4 @@ private fun PlatformChip(platform: String, rank: ChartRank, modifier: GlanceModi
             )
         }
     }
-}
-
-@Composable
-private fun CenterMessage(message: String) {
-    Text(
-        text = message,
-        style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.sp)
-    )
 }
