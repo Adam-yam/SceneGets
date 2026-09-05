@@ -7,6 +7,10 @@ on:
         description: "릴리즈 버전 (예: 1.0.0)"
         required: true
         default: "1.0.0"
+      release_notes:
+        description: "수정 내용 (릴리즈 노트)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -42,9 +46,13 @@ jobs:
         if: always()
         run: rm -f "${{ runner.temp }}/release.keystore"
 
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk "SceneGets-v${{ inputs.version_name }}.apk"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ inputs.version_name }}
           name: SceneGets v${{ inputs.version_name }}
-          files: app/build/outputs/apk/release/app-release.apk
+          body: ${{ inputs.release_notes }}
+          files: SceneGets-v${{ inputs.version_name }}.apk
