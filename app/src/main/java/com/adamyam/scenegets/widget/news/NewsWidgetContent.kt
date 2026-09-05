@@ -60,8 +60,10 @@ fun NewsWidgetContent(state: WidgetState<NewsResponse>, thumbnails: Map<String, 
                     Spacer(modifier = GlanceModifier.height(6.dp))
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
                         itemsIndexed(articles) { index, article ->
-                            if (index > 0) Divider()
-                            ArticleRow(article, thumbnails[article.thumbnail])
+                            Column(modifier = GlanceModifier.fillMaxWidth()) {
+                                if (index > 0) Divider()
+                                ArticleRow(article, thumbnails[article.thumbnail])
+                            }
                         }
                     }
                 }

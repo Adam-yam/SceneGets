@@ -77,8 +77,10 @@ fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<Strin
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
                         itemsIndexed(songs) { index, song ->
-                            if (index > 0) ChartDivider()
-                            SongRow(song, albumImages[song.albumImageUrl])
+                            Column(modifier = GlanceModifier.fillMaxWidth()) {
+                                if (index > 0) ChartDivider()
+                                SongRow(song, albumImages[song.albumImageUrl])
+                            }
                         }
                     }
                 }
