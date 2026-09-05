@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SceneGets — 인앱 디자인</title>
+<style>
+  :root{
+    --bg:#0A0A0A;
+    --bg-elev:#0F0F0F;
+    --surface:#161616;
+    --surface-2:#1D1D1D;
+    --stroke:#242424;
+    --divider:#2A2A2A;
+    --text-1:#FFFFFF;
+    --text-2:#A0A0A0;
+    --text-3:#6E6E6E;
+    --accent:#FFB74D;
+    --accent-dim:rgba(255,183,77,0.14);
+    --up:#FF5C5C;
+    --down:#5C9BFF;
+    --flat:#8C8C8C;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Pretendard", "Apple SD Gothic Neo", sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%; background:#000; font-family:var(--font);}
+  body{
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:40px 16px; min-height:100%;
+    background:
+      radial-gradient(circle at 25% 15%, rgba(255,183,77,0.06), transparent 40%),
+      radial-gradient(circle at 80% 85%, rgba(92,155,255,0.05), transparent 45%),
+      #000;
+  }
+
+  /* ---------- device frame ---------- */
+  .device{
+    position:relative;
+    width:390px;
+    height:844px;
+    max-width:100%;
+    background:#000;
+    border-radius:54px;
+    border:10px solid #1a1a1a;
+    box-shadow:0 30px 80px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.03);
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  .island{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    width:100px; height:26px; background:#000; border-radius:20px; z-index:50;
+  }
+  .statusbar{
+    position:absolute; top:0; left:0; right:0; height:47px;
+    display:flex; align-items:flex-end; justify-content:space-between;
+    padding:0 26px 8px; z-index:40; color:var(--text-1);
+    font-size:15px; font-weight:600; letter-spacing:0.2px;
+    pointer-events:none;
+  }
+  .statusbar .icons{display:flex; align-items:center; gap:5px;}
+  .statusbar svg{display:block;}
+
+  .screen{
+    position:absolute; inset:0;
+    background:var(--bg);
+    overflow:hidden;
+  }
+
+  /* ---------- nav ---------- */
+  .navbar{
+    position:absolute; top:0; left:0; right:0; z-index:30;
+    padding-top:47px;
+    background:rgba(10,10,10,0.72);
+    backdrop-filter:blur(20px) saturate(150%);
+    -webkit-backdrop-filter:blur(20px) saturate(150%);
+    border-bottom:1px solid transparent;
+    transition:border-color .2s ease;
+  }
+  .navbar.scrolled{border-bottom-color:var(--divider);}
+  .nav-inline{
+    height:44px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px;
+  }
+  .nav-inline .title{
+    font-size:17px; font-weight:700; color:var(--text-1);
+    opacity:0; transform:translateY(6px); transition:all .18s ease;
+  }
+  .navbar.scrolled .nav-inline .title{opacity:1; transform:translateY(0);}
+  .nav-actions{display:flex; align-items:center; gap:14px;}
+  .icon-btn{
+    width:30px; height:30px; border-radius:15px; background:var(--surface-2);
+    display:flex; align-items:center; justify-content:center; color:var(--text-1);
+    border:1px solid var(--stroke); flex-shrink:0;
+  }
+  .large-title-wrap{padding:2px 20px 14px;}
+  .large-title{font-size:32px; font-weight:800; color:var(--text-1); letter-spacing:-0.4px; margin:0;}
+  .subtitle-row{display:flex; align-items:center; gap:8px; margin-top:4px;}
+  .subtitle{font-size:13px; color:var(--text-3);}
+  .live-dot{width:6px; height:6px; border-radius:50%; background:var(--up); box-shadow:0 0 0 3px rgba(255,92,92,0.15);}
+
+  .content{
+    position:absolute; inset:0; overflow-y:auto; overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:110px;
+  }
+  .content::-webkit-scrollbar{display:none;}
+
+  /* ---------- shared bits ---------- */
+  .section{padding:0 20px; margin-top:26px;}
+  .section-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px;}
+  .section-title{font-size:20px; font-weight:800; color:var(--text-1); letter-spacing:-0.2px;}
+  .section-link{font-size:13px; color:var(--accent); font-weight:600; display:flex; align-items:center; gap:2px;}
+
+  .card{background:var(--surface); border:1px solid var(--stroke); border-radius:16px;}
+
+  .pill-row{display:flex; gap:8px; overflow-x:auto; padding:0 20px; scrollbar-width:none;}
+  .pill-row::-webkit-scrollbar{display:none;}
+  .pill{
+    flex-shrink:0; padding:8px 15px; border-radius:100px; font-size:13.5px; font-weight:600;
+    background:var(--surface-2); color:var(--text-2); border:1px solid var(--stroke);
+    transition:all .15s ease;
+  }
+  .pill.active{background:var(--accent); color:#1a1206; border-color:var(--accent);}
+
+  .badge{
+    display:inline-flex; align-items:center; padding:3px 8px; border-radius:6px;
+    font-size:10.5px; font-weight:700;
+  }
+  .badge.broadcast{background:rgba(92,155,255,0.16); color:var(--down);}
+  .badge.radio{background:rgba(140,140,140,0.16); color:var(--flat);}
+  .badge.event{background:rgba(255,92,92,0.16); color:var(--up);}
+  .badge.fansign{background:var(--surface-2); color:var(--text-2);}
+  .badge.concert{background:rgba(255,92,92,0.16); color:var(--up);}
+  .badge.notice{background:var(--surface-2); color:var(--text-2);}
+
+  .thumb{
+    border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    color:rgba(255,255,255,0.85); font-weight:800; font-size:14px; letter-spacing:-0.3px;
+  }
+
+  .chevron{color:var(--text-3); flex-shrink:0;}
+
+  /* ---------- tab bar ---------- */
+  .tabbar{
+    position:absolute; left:0; right:0; bottom:0; z-index:30;
+    display:flex; padding:8px 6px 26px;
+    background:rgba(10,10,10,0.78);
+    backdrop-filter:blur(22px) saturate(160%);
+    -webkit-backdrop-filter:blur(22px) saturate(160%);
+    border-top:1px solid var(--divider);
+  }
+  .tab{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    color:var(--text-3); padding:4px 0; cursor:pointer;
+  }
+  .tab svg{stroke:var(--text-3); transition:stroke .15s ease;}
+  .tab span{font-size:10.5px; font-weight:600; transition:color .15s ease;}
+  .tab.active{color:var(--accent);}
+  .tab.active svg{stroke:var(--accent);}
+  .tab.active span{color:var(--accent);}
+
+  /* ---------- HOME ---------- */
+  .greeting-name{color:var(--accent);}
+  .today-card{
+    padding:16px; display:flex; flex-direction:column; gap:10px;
+  }
+  .today-empty{
+    padding:22px 16px; text-align:center; color:var(--text-3); font-size:13px;
+  }
+  .today-item{display:flex; align-items:center; gap:12px;}
+  .today-item + .today-item{border-top:1px solid var(--divider); padding-top:10px; margin-top:0;}
+  .today-item .content-col{flex:1; min-width:0;}
+  .today-item .item-title{font-size:14.5px; font-weight:700; color:var(--text-1); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .time-chip{
+    background:var(--accent-dim); color:var(--accent); font-weight:700; font-size:12.5px;
+    padding:5px 9px; border-radius:8px; flex-shrink:0;
+  }
+
+  .chart-mini-row{display:flex; align-items:center; gap:12px; padding:12px 14px;}
+  .chart-mini-row + .chart-mini-row{border-top:1px solid var(--divider);}
+  .rank-num{width:20px; text-align:center; font-size:15px; font-weight:800; color:var(--text-1); flex-shrink:0;}
+  .rank-num.top3{color:var(--accent);}
+  .mini-info{flex:1; min-width:0;}
+  .mini-title{font-size:14px; font-weight:700; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .mini-artist{font-size:12px; color:var(--text-3); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .delta{font-size:11.5px; font-weight:700; flex-shrink:0; display:flex; align-items:center; gap:2px;}
+  .delta.up{color:var(--up);} .delta.down{color:var(--down);} .delta.flat{color:var(--flat);}
+
+  .news-mini{display:flex; gap:12px; padding:12px; align-items:center;}
+  .news-mini + .news-mini{border-top:1px solid var(--divider);}
+  .news-mini .n-title{font-size:13.5px; font-weight:700; color:var(--text-1); line-height:1.35;}
+  .news-mini .n-meta{font-size:11.5px; color:var(--text-3); margin-top:5px;}
+
+  .quicklinks{display:flex; gap:10px; padding:0 20px; margin-top:22px;}
+  .qlink{
+    flex:1; background:var(--surface); border:1px solid var(--stroke); border-radius:14px;
+    padding:14px 10px; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .qlink svg{stroke:var(--accent);}
+  .qlink span{font-size:12px; font-weight:600; color:var(--text-2);}
+
+  /* ---------- CHART ---------- */
+  .song-row{display:flex; align-items:center; gap:12px; padding:12px 20px;}
+  .song-row + .song-row{border-top:1px solid var(--divider);}
+  .song-rank{width:26px; text-align:center; font-size:19px; font-weight:800; color:var(--text-2); flex-shrink:0;}
+  .song-rank.top3{color:var(--accent);}
+  .song-info{flex:1; min-width:0;}
+  .song-title{font-size:15px; font-weight:700; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .song-artist{font-size:12.5px; color:var(--text-3); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .chip-wrap{display:flex; flex-wrap:wrap; gap:5px; margin-top:7px;}
+  .plat-chip{
+    background:var(--surface-2); border-radius:7px; padding:3px 6px; display:flex; align-items:center; gap:4px;
+    font-size:10px; color:var(--text-2); font-weight:600;
+  }
+  .plat-chip b{color:var(--text-1); font-size:11px;}
+  .single-delta{width:56px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .single-delta .n{font-size:18px; font-weight:800; color:var(--text-1);}
+  .single-delta .d{font-size:10.5px; font-weight:700;}
+
+  /* ---------- NEWS ---------- */
+  .article-row{display:flex; gap:13px; padding:14px 20px; align-items:center;}
+  .article-row + .article-row{border-top:1px solid var(--divider);}
+  .art-title{font-size:14.5px; font-weight:700; color:var(--text-1); line-height:1.38;}
+  .art-meta{display:flex; align-items:center; gap:7px; margin-top:7px;}
+  .art-source{font-size:11.5px; color:var(--text-2); font-weight:600;}
+  .art-dot{width:2.5px; height:2.5px; border-radius:50%; background:var(--text-3);}
+  .art-date{font-size:11.5px; color:var(--text-3);}
+
+  /* ---------- SCHEDULE ---------- */
+  .date-strip{display:flex; gap:8px; overflow-x:auto; padding:2px 20px 4px; scrollbar-width:none;}
+  .date-strip::-webkit-scrollbar{display:none;}
+  .date-cell{
+    flex-shrink:0; width:52px; padding:10px 0 12px; border-radius:14px; text-align:center;
+    background:var(--surface); border:1px solid var(--stroke);
+  }
+  .date-cell.today{background:var(--accent); border-color:var(--accent);}
+  .date-cell .dow{font-size:11px; color:var(--text-3); font-weight:600;}
+  .date-cell.today .dow{color:rgba(20,14,2,0.65);}
+  .date-cell .dnum{font-size:17px; font-weight:800; color:var(--text-1); margin-top:4px;}
+  .date-cell.today .dnum{color:#1a1206;}
+  .date-cell .dot{width:4px; height:4px; border-radius:50%; background:var(--accent); margin:5px auto 0;}
+  .date-cell.today .dot{background:#1a1206;}
+
+  .date-group{margin-top:24px; padding:0 20px;}
+  .date-header{display:flex; align-items:baseline; gap:7px; margin-bottom:10px;}
+  .date-header .d1{font-size:16px; font-weight:800; color:var(--text-1);}
+  .date-header .d2{font-size:13px; font-weight:700; color:var(--text-2);}
+  .date-header .d2.weekend-sat{color:var(--down);}
+  .date-header .d2.weekend-sun{color:var(--up);}
+
+  .event-card{padding:4px 14px;}
+  .event-line{display:flex; align-items:center; gap:10px; padding:12px 2px;}
+  .event-line + .event-line{border-top:1px solid var(--divider);}
+  .event-main{flex:1; min-width:0;}
+  .event-title{font-size:15px; font-weight:700; color:var(--text-1); margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  /* utility */
+  .row{display:flex; align-items:center;}
+  .grow{flex:1; min-width:0;}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="device">
+  <div class="island"></div>
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="icons">
+      <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M1 9.5L1 10.5C1 11.05 1.45 11.5 2 11.5C2.55 11.5 3 11.05 3 10.5V9.5C3 8.95 2.55 8.5 2 8.5C1.45 8.5 1 8.95 1 9.5Z" fill="white"/><path d="M5 7.5V10.5C5 11.05 5.45 11.5 6 11.5C6.55 11.5 7 11.05 7 10.5V7.5C7 6.95 6.55 6.5 6 6.5C5.45 6.5 5 6.95 5 7.5Z" fill="white"/><path d="M9 5V10.5C9 11.05 9.45 11.5 10 11.5C10.55 11.5 11 11.05 11 10.5V5C11 4.45 10.55 4 10 4C9.45 4 9 4.45 9 5Z" fill="white"/><path d="M13 2.5V10.5C13 11.05 13.45 11.5 14 11.5C14.55 11.5 15 11.05 15 10.5V2.5C15 1.95 14.55 1.5 14 1.5C13.45 1.5 13 1.95 13 2.5Z" fill="white" fill-opacity="0.4"/></svg>
+      <svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="2.5" stroke="white" stroke-opacity="0.6"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.2" fill="white"/><rect x="22" y="4" width="1.5" height="4" rx="0.7" fill="white" fill-opacity="0.6"/></svg>
+    </span>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <div class="screen" id="screen-home">
+    <div class="navbar" id="nav-home">
+      <div class="nav-inline">
+        <span class="title">홈</span>
+        <div class="nav-actions"></div>
+      </div>
+    </div>
+    <div class="content" id="scroll-home">
+      <div style="height:8px"></div>
+      <div class="large-title-wrap">
+        <h1 class="large-title">홈</h1>
+        <div class="subtitle-row"><span class="subtitle">9월 5일 토요일</span></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">오늘의 스케줄</span>
+          <span class="section-link">전체보기 <svg width="7" height="11" viewBox="0 0 7 11" fill="none"><path d="M1 1L5.5 5.5L1 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
+        <div class="card">
+          <div class="today-card">
+            <div class="today-item">
+              <div class="content-col">
+                <span class="badge broadcast">방송</span>
+                <div class="item-title">NEON ECHO — 음악중심 컴백 무대</div>
+              </div>
+              <span class="time-chip">18:00</span>
+            </div>
+            <div class="today-item">
+              <div class="content-col">
+                <span class="badge radio">라디오</span>
+                <div class="item-title">ARIA, 볼륨을 높여요 게스트 출연</div>
+              </div>
+              <span class="time-chip">21:30</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">지금 뜨는 차트</span>
+          <span class="section-link">차트 <svg width="7" height="11" viewBox="0 0 7 11" fill="none"><path d="M1 1L5.5 5.5L1 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
+        <div class="card">
+          <div class="chart-mini-row">
+            <span class="rank-num top3">1</span>
+            <div class="thumb" style="width:38px;height:38px;background:linear-gradient(135deg,#3a2e1a,#FFB74D)">N</div>
+            <div class="mini-info">
+              <div class="mini-title">만개</div>
+              <div class="mini-artist">NEON ECHO</div>
+            </div>
+            <span class="delta flat">NEW</span>
+          </div>
+          <div class="chart-mini-row">
+            <span class="rank-num top3">2</span>
+            <div class="thumb" style="width:38px;height:38px;background:linear-gradient(135deg,#2a1f3d,#7C6CF0)">A</div>
+            <div class="mini-info">
+              <div class="mini-title">Butterfly Kiss</div>
+              <div class="mini-artist">ARIA</div>
+            </div>
+            <span class="delta up">▲1</span>
+          </div>
+          <div class="chart-mini-row">
+            <span class="rank-num top3">3</span>
+            <div class="thumb" style="width:38px;height:38px;background:linear-gradient(135deg,#1d2f3a,#5C9BFF)">T</div>
+            <div class="mini-info">
+              <div class="mini-title">Run It Back</div>
+              <div class="mini-artist">TEMPO</div>
+            </div>
+            <span class="delta down">▼2</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">최신 뉴스</span>
+          <span class="section-link">뉴스 <svg width="7" height="11" viewBox="0 0 7 11" fill="none"><path d="M1 1L5.5 5.5L1 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
+        <div class="card">
+          <div class="news-mini">
+            <div class="thumb" style="width:52px;height:52px;background:linear-gradient(135deg,#3d1f27,#FF5C5C)">K</div>
+            <div>
+              <div class="n-title">NEON ECHO, 첫 단독 콘서트 전석 매진</div>
+              <div class="n-meta">K-STAR TODAY · 2시간 전</div>
+            </div>
+          </div>
+          <div class="news-mini">
+            <div class="thumb" style="width:52px;height:52px;background:linear-gradient(135deg,#1f2b3d,#5C9BFF)">I</div>
+            <div>
+              <div class="n-title">ARIA 새 앨범 콘셉트 포토 전격 공개</div>
+              <div class="n-meta">IDOL PICK · 5시간 전</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="quicklinks">
+        <div class="qlink">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 13V17H7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 17L8.5 11.5L12.5 15.5L17 9" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 9H17V13" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>실시간 차트</span>
+        </div>
+        <div class="qlink">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="13" rx="2" stroke-width="1.7"/><path d="M2.5 8H17.5" stroke-width="1.7"/><path d="M6.5 2V5.5M13.5 2V5.5" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span>이번 주 일정</span>
+        </div>
+        <div class="qlink">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M17 9.5C17 13.6 10 17.5 10 17.5C10 17.5 3 13.6 3 9.5C3 6.7 5.2 4.5 8 4.5C9.1 4.5 10 5 10 5C10 5 10.9 4.5 12 4.5C14.8 4.5 17 6.7 17 9.5Z" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          <span>즐겨찾기</span>
+        </div>
+      </div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+
+  <!-- ============ CHART ============ -->
+  <div class="screen hidden" id="screen-chart">
+    <div class="navbar" id="nav-chart">
+      <div class="nav-inline">
+        <span class="title">차트</span>
+        <div class="nav-actions">
+          <div class="icon-btn">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="content" id="scroll-chart">
+      <div style="height:8px"></div>
+      <div class="large-title-wrap">
+        <h1 class="large-title">차트</h1>
+        <div class="subtitle-row"><span class="live-dot"></span><span class="subtitle">10분 전 업데이트 · 통합 차트</span></div>
+      </div>
+
+      <div class="pill-row" id="platform-pills">
+        <div class="pill active" data-p="all">전체</div>
+        <div class="pill" data-p="melon">멜론</div>
+        <div class="pill" data-p="genie">지니</div>
+        <div class="pill" data-p="vibe">바이브</div>
+        <div class="pill" data-p="bugs">벅스</div>
+        <div class="pill" data-p="flo">플로</div>
+        <div class="pill" data-p="ytm">유튜브뮤직</div>
+        <div class="pill" data-p="spotify">스포티파이</div>
+      </div>
+
+      <div class="section" style="margin-top:18px;">
+        <div class="card" id="chart-list"></div>
+      </div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+
+  <!-- ============ NEWS ============ -->
+  <div class="screen hidden" id="screen-news">
+    <div class="navbar" id="nav-news">
+      <div class="nav-inline"><span class="title">뉴스</span><div class="nav-actions"></div></div>
+    </div>
+    <div class="content" id="scroll-news">
+      <div style="height:8px"></div>
+      <div class="large-title-wrap">
+        <h1 class="large-title">뉴스</h1>
+        <div class="subtitle-row"><span class="subtitle">최근 소식 순</span></div>
+      </div>
+      <div class="section" style="margin-top:2px;">
+        <div class="card" id="news-list"></div>
+      </div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+
+  <!-- ============ SCHEDULE ============ -->
+  <div class="screen hidden" id="screen-schedule">
+    <div class="navbar" id="nav-schedule">
+      <div class="nav-inline"><span class="title">스케줄</span><div class="nav-actions"></div></div>
+    </div>
+    <div class="content" id="scroll-schedule">
+      <div style="height:8px"></div>
+      <div class="large-title-wrap">
+        <h1 class="large-title">스케줄</h1>
+        <div class="subtitle-row"><span class="subtitle">2026년 9월</span></div>
+      </div>
+      <div class="date-strip" id="date-strip"></div>
+      <div id="schedule-groups"></div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+
+  <!-- ============ TAB BAR ============ -->
+  <div class="tabbar">
+    <div class="tab active" data-tab="home">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5L12 4.5L20 11.5"/><path d="M6 10V19.5H18V10"/></svg>
+      <span>홈</span>
+    </div>
+    <div class="tab" data-tab="chart">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19V11"/><path d="M12 19V5"/><path d="M18 19V14"/></svg>
+      <span>차트</span>
+    </div>
+    <div class="tab" data-tab="news">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M7.5 9H16.5"/><path d="M7.5 12.5H16.5"/><path d="M7.5 16H13"/></svg>
+      <span>뉴스</span>
+    </div>
+    <div class="tab" data-tab="schedule">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14" rx="1.8"/><path d="M4 9.5H20"/><path d="M8.5 3.5V6.5"/><path d="M15.5 3.5V6.5"/></svg>
+      <span>스케줄</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const PLATFORM_LABEL = {melon:"멜론", genie:"지니", vibe:"바이브", bugs:"벅스", flo:"플로", ytm:"유튜브뮤직", spotify:"스포티파이"};
+const PLATFORM_ORDER = ["melon","genie","vibe","bugs","flo","ytm","spotify"];
+
+const chartSongs = [
+  {rank:1, title:"만개", artist:"NEON ECHO", grad:"linear-gradient(135deg,#3a2e1a,#FFB74D)", initial:"N",
+    ranks:{melon:{r:1,p:2}, genie:{r:1,p:1}, vibe:{r:2,p:3}, bugs:{r:1,p:1}, flo:{r:3,p:2}, ytm:{r:2,p:2}, spotify:{r:4,p:null}}},
+  {rank:2, title:"Butterfly Kiss", artist:"ARIA", grad:"linear-gradient(135deg,#2a1f3d,#7C6CF0)", initial:"A",
+    ranks:{melon:{r:2,p:3}, genie:{r:3,p:2}, vibe:{r:1,p:1}, bugs:{r:2,p:2}, ytm:{r:1,p:1}, spotify:{r:2,p:2}}},
+  {rank:3, title:"Run It Back", artist:"TEMPO", grad:"linear-gradient(135deg,#1d2f3a,#5C9BFF)", initial:"T",
+    ranks:{melon:{r:5,p:3}, genie:{r:4,p:3}, vibe:{r:6,p:4}, flo:{r:2,p:1}, ytm:{r:4,p:3}}},
+  {rank:4, title:"New Constellation", artist:"HALCYON", grad:"linear-gradient(135deg,#2b1a1a,#FF8A65)", initial:"H",
+    ranks:{melon:{r:4,p:4}, genie:{r:2,p:1}, bugs:{r:5,p:5}, flo:{r:5,p:6}}},
+  {rank:5, title:"밤의 온도", artist:"VELVET SEOUL", grad:"linear-gradient(135deg,#241a2e,#B388FF)", initial:"V",
+    ranks:{melon:{r:3,p:1}, vibe:{r:4,p:4}, bugs:{r:3,p:3}, spotify:{r:1,p:1}}},
+  {rank:6, title:"GRAVITY", artist:"ECLIPSE9", grad:"linear-gradient(135deg,#1a2320,#4DD0A9)", initial:"E",
+    ranks:{genie:{r:6,p:8}, vibe:{r:5,p:5}, flo:{r:1,p:1}, ytm:{r:6,p:7}}},
+  {rank:7, title:"Colorwave", artist:"MOONRISE", grad:"linear-gradient(135deg,#2e1f24,#FF7597)", initial:"M",
+    ranks:{melon:{r:7,p:6}, bugs:{r:6,p:4}, spotify:{r:5,p:3}}},
+  {rank:8, title:"숨", artist:"PRISM", grad:"linear-gradient(135deg,#1a2733,#64B5F6)", initial:"P",
+    ranks:{genie:{r:5,p:5}, vibe:{r:8,p:null}, ytm:{r:8,p:9}}},
+];
+
+const newsArticles = [
+  {title:"NEON ECHO, 첫 단독 콘서트 전석 매진", source:"K-STAR TODAY", date:"2시간 전", grad:"linear-gradient(135deg,#3d1f27,#FF5C5C)", i:"K"},
+  {title:"ARIA 새 앨범 콘셉트 포토 전격 공개", source:"IDOL PICK", date:"5시간 전", grad:"linear-gradient(135deg,#1f2b3d,#5C9BFF)", i:"I"},
+  {title:"TEMPO, 월드투어 서울 앙코르 공연 확정", source:"튠업뉴스", date:"7시간 전", grad:"linear-gradient(135deg,#1e2a20,#4DD0A9)", i:"T"},
+  {title:"HALCYON 신곡 뮤직비디오 티저 첫 공개", source:"스타라인", date:"9시간 전", grad:"linear-gradient(135deg,#2b1e14,#FF8A65)", i:"H"},
+  {title:"VELVET SEOUL, 연말 시상식 3관왕 예약", source:"K-STAR TODAY", date:"어제", grad:"linear-gradient(135deg,#241a2e,#B388FF)", i:"V"},
+  {title:"ECLIPSE9 데뷔 2주년 팬미팅 개최 소식", source:"IDOL PICK", date:"어제", grad:"linear-gradient(135deg,#1a2320,#4DD0A9)", i:"E"},
+];
+
+const scheduleByDate = {
+  "9-5":[{type:"broadcast", title:"NEON ECHO — 음악중심 컴백 무대", time:"18:00"},
+         {type:"radio", title:"ARIA, 볼륨을 높여요 게스트 출연", time:"21:30"}],
+  "9-6":[{type:"concert", title:"TEMPO 월드투어 서울 — 2일차", time:"19:00"}],
+  "9-8":[{type:"fansign", title:"HALCYON 팬사인회 (성수)", time:"14:00"},
+         {type:"notice", title:"VELVET SEOUL 컴백 티저 예고", time:""}],
+  "9-11":[{type:"event", title:"ECLIPSE9 데뷔 2주년 팬미팅", time:"17:00"}],
+  "9-13":[{type:"broadcast", title:"MOONRISE 음악방송 3주 연속 1위 후보", time:"18:00"},
+          {type:"radio", title:"PRISM 라디오 스페셜 DJ", time:"20:00"}],
+};
+
+const dateStripDays = [
+  {d:1,dow:"화"},{d:2,dow:"수"},{d:3,dow:"목"},{d:4,dow:"금"},{d:5,dow:"토"},{d:6,dow:"일"},{d:7,dow:"월"},
+  {d:8,dow:"화"},{d:9,dow:"수"},{d:10,dow:"목"},{d:11,dow:"금"},{d:12,dow:"토"},{d:13,dow:"일"},{d:14,dow:"월"}
+];
+
+/* ---------------- render: chart ---------------- */
+function deltaMarkup(r,p){
+  if(p===undefined) return '';
+  if(p===null) return '<span class="delta flat">NEW</span>';
+  const diff = p - r;
+  if(diff>0) return `<span class="delta up">▲${diff}</span>`;
+  if(diff<0) return `<span class="delta down">▼${-diff}</span>`;
+  return '<span class="delta flat">-</span>';
+}
+function singleDeltaMarkup(r,p){
+  if(p===undefined) return {n:'-', d:'', cls:'flat'};
+  if(p===null) return {n:r, d:'NEW', cls:'flat'};
+  const diff = p-r;
+  if(diff>0) return {n:r, d:`▲${diff}`, cls:'up'};
+  if(diff<0) return {n:r, d:`▼${-diff}`, cls:'down'};
+  return {n:r, d:'-', cls:'flat'};
+}
+
+function renderChart(platform){
+  const list = document.getElementById('chart-list');
+  if(platform==='all'){
+    list.innerHTML = chartSongs.map(s=>{
+      const chips = PLATFORM_ORDER.filter(p=>s.ranks[p]).map(p=>{
+        const rk = s.ranks[p];
+        return `<span class="plat-chip">${PLATFORM_LABEL[p]} <b>${rk.r}</b></span>`;
+      }).join('');
+      return `<div class="song-row">
+        <span class="song-rank ${s.rank<=3?'top3':''}">${s.rank}</span>
+        <div class="thumb" style="width:44px;height:44px;background:${s.grad}">${s.initial}</div>
+        <div class="song-info">
+          <div class="song-title">${s.title}</div>
+          <div class="song-artist">${s.artist}</div>
+          <div class="chip-wrap">${chips}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    const filtered = chartSongs.filter(s=>s.ranks[platform]).sort((a,b)=>a.ranks[platform].r-b.ranks[platform].r);
+    list.innerHTML = filtered.map(s=>{
+      const rk = s.ranks[platform];
+      const dm = singleDeltaMarkup(rk.r, rk.p);
+      return `<div class="song-row">
+        <span class="song-rank ${rk.r<=3?'top3':''}">${rk.r}</span>
+        <div class="thumb" style="width:44px;height:44px;background:${s.grad}">${s.initial}</div>
+        <div class="song-info">
+          <div class="song-title">${s.title}</div>
+          <div class="song-artist">${s.artist}</div>
+        </div>
+        <div class="single-delta"><span class="n">${dm.n}</span><span class="d" style="color:var(--${dm.cls==='flat'?'flat':dm.cls})">${dm.d}</span></div>
+      </div>`;
+    }).join('');
+  }
+}
+document.getElementById('platform-pills').addEventListener('click', (e)=>{
+  const pill = e.target.closest('.pill');
+  if(!pill) return;
+  document.querySelectorAll('#platform-pills .pill').forEach(p=>p.classList.remove('active'));
+  pill.classList.add('active');
+  renderChart(pill.dataset.p);
+});
+renderChart('all');
+
+/* ---------------- render: news ---------------- */
+document.getElementById('news-list').innerHTML = newsArticles.map(a=>`
+  <div class="article-row">
+    <div class="thumb" style="width:56px;height:56px;background:${a.grad}">${a.i}</div>
+    <div class="grow">
+      <div class="art-title">${a.title}</div>
+      <div class="art-meta"><span class="art-source">${a.source}</span><span class="art-dot"></span><span class="art-date">${a.date}</span></div>
+    </div>
+    <svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+`).join('');
+
+/* ---------------- render: schedule ---------------- */
+const typeLabel = {broadcast:"방송", radio:"라디오", event:"행사", fansign:"팬사인회", concert:"공연", notice:"공지"};
+function weekdayLabel(dow){ return ["일","월","화","수","목","금","토"][dow]; }
+
+document.getElementById('date-strip').innerHTML = dateStripDays.map(x=>{
+  const isToday = x.d===5;
+  const hasEvent = !!scheduleByDate["9-"+x.d];
+  return `<div class="date-cell ${isToday?'today':''}">
+    <div class="dow">${x.dow}</div>
+    <div class="dnum">${x.d}</div>
+    ${hasEvent?'<div class="dot"></div>':''}
+  </div>`;
+}).join('');
+
+const scheduleGroupsEl = document.getElementById('schedule-groups');
+scheduleGroupsEl.innerHTML = Object.entries(scheduleByDate).map(([key, events])=>{
+  const day = parseInt(key.split('-')[1]);
+  const dateObj = new Date(2026,8,day); // Sept = month 8
+  const dow = dateObj.getDay();
+  const dowClass = dow===6?'weekend-sat':(dow===0?'weekend-sun':'');
+  const eventsHtml = events.map(ev=>`
+    <div class="event-line">
+      <div class="event-main">
+        <span class="badge ${ev.type}">${typeLabel[ev.type]}</span>
+        <div class="event-title">${ev.title}</div>
+      </div>
+      ${ev.time?`<span class="time-chip">${ev.time}</span>`:''}
+    </div>
+  `).join('');
+  return `<div class="date-group">
+    <div class="date-header">
+      <span class="d1">9월 ${day}일</span>
+      <span class="d2 ${dowClass}">${weekdayLabel(dow)}요일</span>
+    </div>
+    <div class="card event-card">${eventsHtml}</div>
+  </div>`;
+}).join('');
+
+/* ---------------- tab switching ---------------- */
+const tabs = document.querySelectorAll('.tab');
+const screens = {home:'screen-home', chart:'screen-chart', news:'screen-news', schedule:'screen-schedule'};
+tabs.forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    tabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    Object.values(screens).forEach(id=>document.getElementById(id).classList.add('hidden'));
+    document.getElementById(screens[tab.dataset.tab]).classList.remove('hidden');
+  });
+});
+
+/* ---------------- nav-bar scroll collapse (per screen) ---------------- */
+Object.keys(screens).forEach(key=>{
+  const scrollEl = document.getElementById('scroll-'+key);
+  const navEl = document.getElementById('nav-'+key);
+  if(!scrollEl || !navEl) return;
+  scrollEl.addEventListener('scroll', ()=>{
+    if(scrollEl.scrollTop > 36){ navEl.classList.add('scrolled'); }
+    else{ navEl.classList.remove('scrolled'); }
+  });
+});
+</script>
+</body>
+</html>
