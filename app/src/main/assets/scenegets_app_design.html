@@ -18,6 +18,8 @@
     --accent-dim:rgba(94,92,230,0.12);
     --up:#FF3B30;
     --down:#007AFF;
+    --status-ok:#34C759;
+    --status-warn:#FF9500;
     --flat:#8E8E93;
     --sat:#0A84FF;
     --sun:#FF3B30;
@@ -43,6 +45,8 @@
       --accent-dim:rgba(125,122,255,0.18);
       --up:#FF453A;
       --down:#0A84FF;
+      --status-ok:#30D158;
+      --status-warn:#FF9F0A;
       --flat:#8E8E93;
       --sat:#409CFF;
       --sun:#FF453A;
@@ -68,6 +72,8 @@
       --accent-dim:rgba(125,122,255,0.18);
       --up:#FF453A;
       --down:#0A84FF;
+      --status-ok:#30D158;
+      --status-warn:#FF9F0A;
       --flat:#8E8E93;
       --sat:#409CFF;
       --sun:#FF453A;
@@ -232,14 +238,20 @@
   .plat-chip b{display:inline-flex; align-items:center; color:var(--text-1); font-size:11px; font-weight:600; line-height:1;}
   .chip-delta{display:inline-flex; align-items:center; font-size:9.5px; font-weight:700; line-height:1; margin-left:1px;}
 
+  .platform-rank{
+    width:50px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  }
+  .platform-rank .prk-num{font-size:22px; font-weight:800; color:var(--text-1); letter-spacing:-0.4px; line-height:1;}
+  .platform-rank .prk-delta{font-size:11.5px; font-weight:700; line-height:1;}
+
   /* ---------- NEWS ---------- */
   .article-row{display:flex; gap:13px; padding:13px 16px; align-items:center;}
   .article-row + .article-row{border-top:1px solid var(--divider);}
   .art-title{font-size:14.5px; font-weight:600; color:var(--text-1); line-height:1.38;}
   .art-meta{display:flex; align-items:center; gap:7px; margin-top:6px;}
-  .art-source{font-size:11.5px; color:var(--text-2); font-weight:500;}
-  .art-dot{width:2.5px; height:2.5px; border-radius:50%; background:var(--text-3);}
-  .art-date{font-size:11.5px; color:var(--text-3);}
+  .art-source{display:inline-flex; align-items:center; font-size:11.5px; color:var(--text-2); font-weight:500; line-height:1;}
+  .art-dot{width:2.5px; height:2.5px; border-radius:50%; background:var(--text-3); flex-shrink:0;}
+  .art-date{display:inline-flex; align-items:center; font-size:11.5px; color:var(--text-3); line-height:1;}
 
   /* ---------- SCHEDULE ---------- */
   .sched-title{padding:2px 18px 2px; font-size:26px; font-weight:700; color:var(--text-1); letter-spacing:-0.4px;}
@@ -308,8 +320,8 @@
     font-size:12.5px; color:var(--text-2); line-height:1.4;
   }
   .status-dot{width:8px; height:8px; border-radius:5px; background:var(--flat); flex-shrink:0;}
-  .status-dot.ok{background:var(--up);}
-  .status-dot.warn{background:var(--down);}
+  .status-dot.ok{background:var(--status-ok);}
+  .status-dot.warn{background:var(--status-warn);}
   .set-btn{
     margin-top:12px; width:100%; padding:12px 14px; border-radius:12px; border:none;
     background:var(--accent); color:#FFFFFF; font-size:14.5px; font-weight:650;
@@ -467,7 +479,7 @@
         <div class="card set-card">
           <div class="set-status"><span class="status-dot" id="batt-dot"></span><span id="batt-status">상태 확인 중…</span></div>
           <button class="set-btn" type="button" id="batt-open">
-            시스템 설정으로 이동
+            배터리 제한없음으로 설정
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
           </button>
         </div>
@@ -538,7 +550,7 @@ function weekdayLabel(n){return ["일","월","화","수","목","금","토"][n];}
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
 function delta(x){if(!x)return{n:"—",d:"—",cls:"flat"};if(x.previousRank==null)return{n:String(x.rank),d:"NEW",cls:"flat"};const d=x.previousRank-x.rank;return d>0?{n:String(x.rank),d:`↑${d}`,cls:"up"}:d<0?{n:String(x.rank),d:`↓${-d}`,cls:"down"}:{n:String(x.rank),d:"—",cls:"flat"};}
 function applyChartData(d){nativeData.chart=d||{songs:[]};renderChart(document.querySelector("#platform-pills .pill.active")?.dataset.p||"all");}
-function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(stripKoreanAlias(s.artistName))}</div><div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]&&(platform==="all"||k===platform)).map(k=>{const dm=delta(ranks[k]);return `<span class="plat-chip"><span class="plat-label">${PLATFORM_LABEL[k]}</span> <b>${ranks[k].rank}</b><span class="chip-delta" style="color:var(--${dm.cls})">${dm.d}</span></span>`;}).join("")}</div></div></div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
+function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};const chips=platform==="all"?`<div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]).map(k=>{const dm=delta(ranks[k]);return `<span class="plat-chip"><span class="plat-label">${PLATFORM_LABEL[k]}</span> <b>${ranks[k].rank}</b><span class="chip-delta" style="color:var(--${dm.cls})">${dm.d}</span></span>`;}).join("")}</div>`:"";const rightRank=platform!=="all"?(()=>{const dm=delta(ranks[platform]);return `<div class="platform-rank"><span class="prk-num">${ranks[platform]?.rank??"—"}</span><span class="prk-delta" style="color:var(--${dm.cls})">${dm.d}</span></div>`;})():"";return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(stripKoreanAlias(s.artistName))}</div>${chips}</div>${rightRank}</div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
 function applyNewsData(d){nativeData.news=d||{articles:[]};document.getElementById("news-list").innerHTML=(nativeData.news.articles||[]).map(a=>`<div class="article-row" data-url="${esc(a.url)}"><div class="thumb" style="width:56px;height:56px;">${a.thumbnail?`<img src="${esc(a.thumbnail)}" alt="" onerror="this.remove()">`:`${esc((a.source||"N").slice(0,1))}`}</div><div class="grow"><div class="art-title">${esc(a.title)}</div><div class="art-meta"><span class="art-source">${esc(a.source)}</span><span class="art-dot"></span><span class="art-date">${esc(a.date)}</span></div></div><svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`).join("")||`<div class="today-empty">표시할 뉴스가 없습니다.</div>`;}
 function applyScheduleData(d){
   nativeData.schedule=d||{events:[]};
