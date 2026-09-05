@@ -203,42 +203,41 @@
   .art-date{font-size:11.5px; color:var(--text-3);}
 
   /* ---------- SCHEDULE ---------- */
-  .date-strip{display:flex; gap:6px; overflow-x:auto; padding:2px 16px 4px; scrollbar-width:none;}
-  .date-strip::-webkit-scrollbar{display:none;}
-  .date-cell{
-    flex-shrink:0; width:46px; padding:9px 0 10px; border-radius:15px; text-align:center;
-    background:transparent;
-  }
-  .date-cell.today{background:var(--accent);}
-  .date-cell .dow{font-size:11px; color:var(--text-3); font-weight:500;}
-  .date-cell.today .dow{color:rgba(255,255,255,0.75);}
-  .date-cell .dnum{font-size:16px; font-weight:700; color:var(--text-1); margin-top:5px;}
-  .date-cell.today .dnum{color:#FFFFFF;}
-  .date-cell .dot{width:4px; height:4px; border-radius:50%; background:var(--accent); margin:6px auto 0;}
-  .date-cell.today .dot{background:#FFFFFF;}
+  .sched-title{padding:2px 18px 2px; font-size:26px; font-weight:700; color:var(--text-1); letter-spacing:-0.4px;}
+  .sched-sub{padding:4px 18px 2px; font-size:13px; color:var(--text-3); font-weight:500;}
 
-  .date-group{margin-top:24px; padding:0 16px;}
-  .date-group:first-child{margin-top:8px;}
-  .date-header{display:flex; align-items:baseline; gap:7px; margin-bottom:10px; padding:0 2px;}
-  .date-header .d1{font-size:13px; font-weight:700; color:var(--text-2); text-transform:uppercase; letter-spacing:0.02em;}
+  .date-group{margin-top:22px; padding:0 16px;}
+  .date-group:first-of-type{margin-top:14px;}
+  .date-header{display:flex; align-items:center; gap:8px; margin-bottom:9px; padding:0 4px;}
+  .date-header .d1{font-size:14px; font-weight:700; color:var(--text-1); letter-spacing:-0.2px;}
   .date-header .d2{font-size:13px; font-weight:600; color:var(--text-3);}
   .date-header .d2.weekend-sat{color:var(--sat);}
   .date-header .d2.weekend-sun{color:var(--sun);}
+  .date-header .today-tag{
+    margin-left:auto; font-size:10.5px; font-weight:700; letter-spacing:0.02em;
+    color:var(--accent); background:var(--accent-dim); padding:3px 8px; border-radius:100px;
+  }
 
-  .event-card{padding:0 14px;}
-  .event-line{display:flex; align-items:center; gap:11px; padding:12px 2px;}
+  .event-card{padding:0 14px; overflow:hidden;}
+  .event-line{display:flex; align-items:flex-start; gap:12px; padding:13px 2px;}
   .event-line + .event-line{border-top:1px solid var(--divider);}
-  .event-time{width:42px; flex-shrink:0; font-size:12px; font-weight:600; color:var(--text-2); letter-spacing:-0.2px;}
-  .event-accent{width:3px; align-self:stretch; min-height:30px; border-radius:2px; background:var(--flat); flex-shrink:0;}
-  .event-line.type-broadcast .event-accent{background:var(--blue);}
-  .event-line.type-radio .event-accent{background:var(--text-3);}
-  .event-line.type-event .event-accent,
-  .event-line.type-concert .event-accent{background:var(--pink);}
-  .event-line.type-fansign .event-accent{background:var(--accent);}
-  .event-line.type-notice .event-accent{background:var(--text-3);}
+  .event-time{
+    width:46px; flex-shrink:0; font-size:13px; font-weight:700; color:var(--text-1);
+    letter-spacing:-0.3px; padding-top:1px;
+  }
+  .event-time.allday{font-size:11.5px; font-weight:600; color:var(--text-3);}
+  .event-dot{width:7px; height:7px; border-radius:50%; background:var(--flat); flex-shrink:0; margin-top:6px;}
+  .event-line.type-broadcast .event-dot{background:var(--blue);}
+  .event-line.type-radio .event-dot{background:var(--text-3);}
+  .event-line.type-event .event-dot,
+  .event-line.type-concert .event-dot{background:var(--pink);}
+  .event-line.type-fansign .event-dot{background:var(--accent);}
+  .event-line.type-notice .event-dot{background:var(--text-3);}
   .event-main{flex:1; min-width:0;}
-  .event-title{font-size:14.5px; font-weight:600; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .event-type{font-size:11.5px; color:var(--text-3); margin-top:3px;}
+  .event-title{font-size:14.5px; font-weight:600; color:var(--text-1); line-height:1.35; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .event-type{font-size:11.5px; color:var(--text-3); margin-top:4px; font-weight:500;}
+  .sched-empty{margin:28px 16px; padding:44px 20px; text-align:center; color:var(--text-3); font-size:13.5px;}
+
 
   /* ---------- SETTINGS ---------- */
   .settings-empty{
@@ -393,7 +392,9 @@
   <!-- ============ SCHEDULE ============ -->
   <div class="screen hidden" id="screen-schedule">
     <div class="content" id="scroll-schedule">
-      <div class="date-strip" id="date-strip"></div>
+      <div class="sched-title">스케줄</div>
+      <div class="sched-sub" id="sched-sub"></div>
+
       <div id="schedule-groups"></div>
       <div style="height:8px"></div>
     </div>
@@ -412,23 +413,23 @@
   <!-- ============ TAB BAR (liquid glass floating) ============ -->
   <div class="tabbar">
     <div class="tab active" data-tab="home">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5L12 4.5L20 11.5"/><path d="M6 10V19.5H18V10"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-7a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v7"/><path d="M3 10.2a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6a2 2 0 0 1 .7 1.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
       <span>홈</span>
     </div>
     <div class="tab" data-tab="chart">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19V11"/><path d="M12 19V5"/><path d="M18 19V14"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-4"/><path d="M13 17V8"/><path d="M18 17v-6"/></svg>
       <span>차트</span>
     </div>
     <div class="tab" data-tab="news">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M7.5 9H16.5"/><path d="M7.5 12.5H16.5"/><path d="M7.5 16H13"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 1-2 2z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
       <span>뉴스</span>
     </div>
     <div class="tab" data-tab="schedule">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14" rx="1.8"/><path d="M4 9.5H20"/><path d="M8.5 3.5V6.5"/><path d="M15.5 3.5V6.5"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
       <span>스케줄</span>
     </div>
     <div class="tab" data-tab="settings">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V19.5a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .33-1.87 1.7 1.7 0 0 0-1.55-1.04H2.5a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.15 7.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.33 1.7 1.7 0 0 0 1.04-1.55V1.4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1.04 1.55 1.7 1.7 0 0 0 1.87-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.33 1.87v.06a1.7 1.7 0 0 0 1.55 1.04h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.55 1.04Z"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-8"/><path d="M6 7H4"/><circle cx="9" cy="7" r="3"/><path d="M20 17h-2"/><path d="M12 17H4"/><circle cx="15" cy="17" r="3"/></svg>
       <span>설정</span>
     </div>
   </div>
@@ -446,7 +447,39 @@ function delta(x){if(!x)return{n:"—",d:"—",cls:"flat"};if(x.previousRank==nu
 function applyChartData(d){nativeData.chart=d||{songs:[]};renderChart(document.querySelector("#platform-pills .pill.active")?.dataset.p||"all");}
 function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};const r=platform==="all"?Object.values(ranks).sort((a,b)=>a.rank-b.rank)[0]:ranks[platform];const dm=delta(r);return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><span class="song-rank ${i<3?'top3':''}">${dm.n}</span><div class="thumb" style="width:44px;height:44px;">${esc((s.songName||"?").slice(0,1))}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(s.artistName)}</div><div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]).map(k=>`<span class="plat-chip">${PLATFORM_LABEL[k]} <b>${ranks[k].rank}</b></span>`).join("")}</div></div><div class="single-delta"><span class="n">${dm.n}</span><span class="d" style="color:var(--${dm.cls})">${dm.d}</span></div></div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
 function applyNewsData(d){nativeData.news=d||{articles:[]};document.getElementById("news-list").innerHTML=(nativeData.news.articles||[]).map(a=>`<div class="article-row" data-url="${esc(a.url)}"><div class="thumb" style="width:56px;height:56px;">${esc((a.source||"N").slice(0,1))}</div><div class="grow"><div class="art-title">${esc(a.title)}</div><div class="art-meta"><span class="art-source">${esc(a.source)}</span><span class="art-dot"></span><span class="art-date">${esc(a.date)}</span></div></div><svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`).join("")||`<div class="today-empty">표시할 뉴스가 없습니다.</div>`;}
-function applyScheduleData(d){nativeData.schedule=d||{events:[]};const by={};(nativeData.schedule.events||[]).forEach(e=>(by[e.date]??=[]).push(e));const dates=Object.keys(by).sort();const first=dates[0]||todayISO();const mm=Number(first.slice(5,7));const labels={broadcast:"방송",radio:"라디오",event:"행사",fansign:"팬사인회",concert:"공연",notice:"공지"};document.getElementById("date-strip").innerHTML=dates.map(date=>{const d=new Date(date+"T00:00:00");return `<div class="date-cell ${date===todayISO()?"today":""}" data-date="${date}"><div class="dow">${weekdayLabel(d.getDay())}</div><div class="dnum">${d.getDate()}</div><div class="dot"></div></div>`}).join("")||`<div class="today-empty">예정된 일정이 없습니다.</div>`;document.getElementById("schedule-groups").innerHTML=dates.map(date=>{const d=new Date(date+"T00:00:00"),cls=d.getDay()===6?"weekend-sat":d.getDay()===0?"weekend-sun":"";return `<div class="date-group" id="date-${date}"><div class="date-header"><span class="d1">${mm}월 ${d.getDate()}일</span><span class="d2 ${cls}">${weekdayLabel(d.getDay())}요일</span></div><div class="card event-card">${by[date].map(e=>`<div class="event-line type-${esc(e.type||"notice")}"><div class="event-time">${e.time?esc(e.time):"종일"}</div><div class="event-accent"></div><div class="event-main"><div class="event-title">${esc(e.title)}</div><div class="event-type">${esc(labels[e.type]||e.type||"일정")}</div></div></div>`).join("")}</div></div>`}).join("");}
+function applyScheduleData(d){
+  nativeData.schedule=d||{events:[]};
+  const by={};
+  (nativeData.schedule.events||[]).forEach(e=>(by[e.date]??=[]).push(e));
+  const dates=Object.keys(by).sort();
+  const labels={broadcast:"방송",radio:"라디오",event:"행사",fansign:"팬사인회",concert:"공연",notice:"공지"};
+  const sub=document.getElementById("sched-sub");
+  const total=(nativeData.schedule.events||[]).length;
+  if(sub) sub.textContent = total ? `예정된 일정 ${total}개` : "";
+  const groups=document.getElementById("schedule-groups");
+  if(!dates.length){groups.innerHTML=`<div class="card sched-empty">예정된 일정이 없습니다.</div>`;return;}
+  groups.innerHTML=dates.map(date=>{
+    const d=new Date(date+"T00:00:00");
+    const cls=d.getDay()===6?"weekend-sat":d.getDay()===0?"weekend-sun":"";
+    const isToday=date===todayISO();
+    const items=[...by[date]].sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));
+    return `<div class="date-group" id="date-${date}">
+      <div class="date-header">
+        <span class="d1">${d.getMonth()+1}월 ${d.getDate()}일</span>
+        <span class="d2 ${cls}">${weekdayLabel(d.getDay())}</span>
+        ${isToday?`<span class="today-tag">오늘</span>`:""}
+      </div>
+      <div class="card event-card">${items.map(e=>`<div class="event-line type-${esc(e.type||"notice")}">
+        <div class="event-time ${e.time?"":"allday"}">${e.time?esc(e.time):"종일"}</div>
+        <div class="event-dot"></div>
+        <div class="event-main">
+          <div class="event-title">${esc(e.title)}</div>
+          <div class="event-type">${esc(labels[e.type]||e.type||"일정")}</div>
+        </div>
+      </div>`).join("")}</div>
+    </div>`;
+  }).join("");
+}
 function updateHome(){const ev=(nativeData.schedule.events||[]).filter(e=>e.date===todayISO()).sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));const tc=document.querySelector("#screen-home .today-card");tc.innerHTML=ev.slice(0,3).map(e=>`<div class="today-item"><div class="content-col"><span class="badge ${esc(e.type)}">${esc(e.type||"일정")}</span><div class="item-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")||`<div class="today-empty">오늘 예정된 일정이 없습니다.</div>`;const songs=[...(nativeData.chart.songs||[])].sort((a,b)=>Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999))-Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999))).slice(0,3);const cc=document.querySelector("#screen-home .chart-mini-row")?.parentElement;if(cc)cc.innerHTML=songs.map((s,i)=>{const r=Object.values(s.ranks||{}).sort((a,b)=>a.rank-b.rank)[0],dm=delta(r);return `<div class="chart-mini-row"><span class="rank-num ${i<3?'top3':''}">${dm.n}</span><div class="thumb" style="width:38px;height:38px;">${esc((s.songName||"?").slice(0,1))}</div><div class="mini-info"><div class="mini-title">${esc(s.songName)}</div><div class="mini-artist">${esc(s.artistName)}</div></div><span class="delta ${dm.cls}">${dm.d}</span></div>`}).join("")||`<div class="today-empty">차트 데이터가 없습니다.</div>`;const n=nativeData.news.articles||[],nc=document.querySelector("#screen-home .news-mini")?.parentElement;if(nc)nc.innerHTML=n.slice(0,2).map(a=>`<div class="news-mini" data-url="${esc(a.url)}"><div class="thumb" style="width:52px;height:52px;">${esc((a.source||"N").slice(0,1))}</div><div><div class="n-title">${esc(a.title)}</div><div class="n-meta">${esc(a.source)}${a.date?` · ${esc(a.date)}`:""}</div></div></div>`).join("")||`<div class="today-empty">뉴스 데이터가 없습니다.</div>`;}
 window.SceneGetsWeb={onData:function(payload){try{nativeData=JSON.parse(payload);applyChartData(nativeData.chart);applyNewsData(nativeData.news);applyScheduleData(nativeData.schedule);updateHome();}catch(e){console.error(e);}}};
 renderChart("all");
@@ -465,7 +498,7 @@ tabs.forEach(tab=>{
 
 // Functional navigation and real data actions.
 function showFavorites(){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]");let rows=f.map(id=>`<div class="favorite-row">${esc((id||"").replace(/^song:/,""))}</div>`).join("")||'<div class="today-empty">저장된 즐겨찾기가 없습니다.</div>';let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">즐겨찾기</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);}
-document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const date=e.target.closest(".date-cell");if(date?.dataset.date)document.getElementById("date-"+date.dataset.date)?.scrollIntoView({behavior:"smooth",block:"start"});const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);});
+document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);});
 function toggleFavorite(id){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]"),i=f.indexOf("song:"+id);if(i>=0)f.splice(i,1);else f.push("song:"+id);localStorage.setItem("scenegets_favorites",JSON.stringify(f));}
 document.getElementById("chart-refresh")?.addEventListener("click",()=>window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll());
 document.getElementById("platform-pills").addEventListener("click",e=>{const p=e.target.closest(".pill");if(!p)return;document.querySelectorAll("#platform-pills .pill").forEach(x=>x.classList.remove("active"));p.classList.add("active");renderChart(p.dataset.p);});

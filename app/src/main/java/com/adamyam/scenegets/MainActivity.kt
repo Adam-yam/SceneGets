@@ -54,9 +54,9 @@ class MainActivity : Activity() {
         window.statusBarColor = chromeColor
         window.navigationBarColor = chromeColor
 
-        // 엣지투엣지를 명시적으로 켜서, Android 버전/제조사(One UI 등)에 관계없이
-        // 시스템 바 인셋을 우리가 직접 계산해 웹뷰 콘텐츠에 반영한다.
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // 상태바/내비게이션바를 시스템이 그대로 차지하도록 두고(일반 앱과 동일),
+        // 웹뷰 콘텐츠는 그 아래 영역에만 그린다. 인셋은 0으로 유지된다.
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = true
             isAppearanceLightNavigationBars = true
@@ -94,11 +94,12 @@ class MainActivity : Activity() {
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            lastInsetTop = bars.top
-            lastInsetBottom = bars.bottom
+            // 시스템 바 영역은 이미 시스템이 차지하므로 웹 콘텐츠에는 추가 여백을 주지 않는다.
+            lastInsetTop = 0
+            lastInsetBottom = 0
             applyInsetVars()
             insets
+
         }
 
         setContentView(webView)
