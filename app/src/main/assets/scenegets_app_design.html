@@ -7,7 +7,6 @@
 <style>
   :root{
     --bg:#F2F2F7;
-    --bg-elev:rgba(249,249,251,0.82);
     --surface:#FFFFFF;
     --surface-2:#F2F2F7;
     --stroke:rgba(60,60,67,0.10);
@@ -25,12 +24,14 @@
     --blue:#007AFF;
     --pink:#FF2D55;
     --card-shadow:0 1px 2px rgba(0,0,0,0.03), 0 1px 8px rgba(0,0,0,0.03);
+    --glass-bg:rgba(255,255,255,0.62);
+    --glass-border:rgba(255,255,255,0.6);
+    --glass-shadow:0 10px 30px rgba(0,0,0,0.12), 0 1px 1px rgba(255,255,255,0.5) inset;
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Pretendard", "Apple SD Gothic Neo", sans-serif;
   }
   @media (prefers-color-scheme: dark){
     :root{
       --bg:#000000;
-      --bg-elev:rgba(20,20,22,0.78);
       --surface:#1C1C1E;
       --surface-2:#2C2C2E;
       --stroke:rgba(255,255,255,0.07);
@@ -48,6 +49,9 @@
       --blue:#0A84FF;
       --pink:#FF375F;
       --card-shadow:none;
+      --glass-bg:rgba(44,44,46,0.55);
+      --glass-border:rgba(255,255,255,0.08);
+      --glass-shadow:0 10px 30px rgba(0,0,0,0.55), 0 1px 1px rgba(255,255,255,0.05) inset;
     }
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -60,54 +64,37 @@
     overflow:hidden;
   }
 
-  /* ---------- nav ---------- */
-  .navbar{
-    position:absolute; top:0; left:0; right:0; z-index:30;
-    padding-top:calc(47px + var(--system-top));
-    background:var(--bg-elev);
-    backdrop-filter:blur(20px) saturate(150%);
-    -webkit-backdrop-filter:blur(20px) saturate(150%);
-    border-bottom:1px solid transparent;
-    transition:border-color .2s ease;
-  }
-  .navbar.scrolled{border-bottom-color:var(--divider);}
-  .nav-inline{
-    height:44px; display:flex; align-items:center; justify-content:space-between;
-    padding:0 16px;
-  }
-  .nav-inline .title{
-    font-size:17px; font-weight:600; color:var(--text-1);
-    opacity:0; transform:translateY(6px); transition:all .18s ease;
-  }
-  .navbar.scrolled .nav-inline .title{opacity:1; transform:translateY(0);}
-  .nav-actions{display:flex; align-items:center; gap:12px;}
-  .icon-btn{
-    width:30px; height:30px; border-radius:15px; background:var(--surface-2);
-    display:flex; align-items:center; justify-content:center; color:var(--accent);
-    flex-shrink:0;
-  }
-  .large-title-wrap{padding:2px 16px 12px;}
-  .large-title{font-size:30px; font-weight:700; color:var(--text-1); letter-spacing:-0.4px; margin:0;}
-  .subtitle-row{display:flex; align-items:center; gap:6px; margin-top:3px;}
-  .subtitle{font-size:13px; color:var(--text-2);}
-  .live-dot{width:6px; height:6px; border-radius:50%; background:var(--up); box-shadow:0 0 0 3px var(--accent-dim);}
-
   .content{
     position:absolute; inset:0; overflow-y:auto; overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
-    padding-bottom:110px;
+    padding-top:calc(var(--system-top) + 16px);
+    padding-bottom:132px;
   }
   .content::-webkit-scrollbar{display:none;}
 
+  /* ---------- floating icon button (glass) ---------- */
+  .icon-btn{
+    position:absolute; z-index:25; right:16px;
+    top:calc(var(--system-top) + 12px);
+    width:34px; height:34px; border-radius:17px;
+    background:var(--glass-bg);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid var(--glass-border);
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+    display:flex; align-items:center; justify-content:center; color:var(--accent);
+  }
+
   /* ---------- shared bits ---------- */
-  .section{padding:0 16px; margin-top:24px;}
+  .section{padding:0 16px; margin-top:20px;}
+  .section:first-child{margin-top:4px;}
   .section-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;}
   .section-title{font-size:14px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.02em;}
   .section-link{font-size:13px; color:var(--accent); font-weight:500; display:flex; align-items:center; gap:2px;}
 
   .card{background:var(--surface); border:1px solid var(--stroke); border-radius:14px; box-shadow:var(--card-shadow);}
 
-  .pill-row{display:flex; gap:8px; overflow-x:auto; padding:0 16px; scrollbar-width:none;}
+  .pill-row{display:flex; gap:8px; overflow-x:auto; padding:0 16px 2px; scrollbar-width:none;}
   .pill-row::-webkit-scrollbar{display:none;}
   .pill{
     flex-shrink:0; padding:7px 14px; border-radius:100px; font-size:13.5px; font-weight:500;
@@ -134,22 +121,26 @@
 
   .chevron{color:var(--text-3); flex-shrink:0;}
 
-  /* ---------- tab bar ---------- */
+  /* ---------- tab bar: liquid glass floating ---------- */
   .tabbar{
-    position:absolute; left:0; right:0; bottom:0; z-index:30;
-    display:flex; padding:8px 6px calc(22px + var(--system-bottom));
-    background:var(--bg-elev);
-    backdrop-filter:blur(22px) saturate(160%);
-    -webkit-backdrop-filter:blur(22px) saturate(160%);
-    border-top:1px solid var(--divider);
+    position:absolute; left:18px; right:18px; bottom:calc(14px + var(--system-bottom));
+    z-index:30; display:flex; align-items:center;
+    padding:8px 6px;
+    border-radius:30px;
+    background:var(--glass-bg);
+    backdrop-filter:blur(28px) saturate(190%);
+    -webkit-backdrop-filter:blur(28px) saturate(190%);
+    border:1px solid var(--glass-border);
+    box-shadow:var(--glass-shadow);
   }
   .tab{
-    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
-    color:var(--text-3); padding:4px 0; cursor:pointer;
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    color:var(--text-3); padding:7px 0; cursor:pointer;
+    border-radius:22px; transition:background .15s ease, color .15s ease;
   }
   .tab svg{stroke:var(--text-3); transition:stroke .15s ease;}
-  .tab span{font-size:10.5px; font-weight:500; transition:color .15s ease;}
-  .tab.active{color:var(--accent);}
+  .tab span{font-size:10px; font-weight:500; transition:color .15s ease;}
+  .tab.active{color:var(--accent); background:var(--accent-dim);}
   .tab.active svg{stroke:var(--accent);}
   .tab.active span{color:var(--accent);}
 
@@ -183,14 +174,6 @@
   .news-mini + .news-mini{border-top:1px solid var(--divider);}
   .news-mini .n-title{font-size:13.5px; font-weight:600; color:var(--text-1); line-height:1.35;}
   .news-mini .n-meta{font-size:11.5px; color:var(--text-3); margin-top:5px;}
-
-  .quicklinks{display:flex; gap:10px; padding:0 16px; margin-top:22px;}
-  .qlink{
-    flex:1; background:var(--surface); border:1px solid var(--stroke); border-radius:14px; box-shadow:var(--card-shadow);
-    padding:14px 8px; display:flex; flex-direction:column; align-items:center; gap:8px;
-  }
-  .qlink svg{stroke:var(--accent);}
-  .qlink span{font-size:11.5px; font-weight:500; color:var(--text-2);}
 
   /* ---------- CHART ---------- */
   .song-row{display:flex; align-items:center; gap:12px; padding:12px 16px;}
@@ -235,6 +218,7 @@
   .date-cell.today .dot{background:#FFFFFF;}
 
   .date-group{margin-top:22px; padding:0 16px;}
+  .date-group:first-child{margin-top:2px;}
   .date-header{display:flex; align-items:baseline; gap:7px; margin-bottom:8px;}
   .date-header .d1{font-size:15px; font-weight:700; color:var(--text-1);}
   .date-header .d2{font-size:13px; font-weight:600; color:var(--text-2);}
@@ -246,6 +230,14 @@
   .event-line + .event-line{border-top:1px solid var(--divider);}
   .event-main{flex:1; min-width:0;}
   .event-title{font-size:15px; font-weight:600; color:var(--text-1); margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  /* ---------- SETTINGS ---------- */
+  .settings-empty{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; padding:80px 20px; color:var(--text-3);
+  }
+  .settings-empty svg{stroke:var(--text-3);}
+  .settings-empty span{font-size:14px; font-weight:500;}
 
   /* utility */
   .row{display:flex; align-items:center;}
@@ -265,18 +257,7 @@
 
   <!-- ============ HOME ============ -->
   <div class="screen" id="screen-home">
-    <div class="navbar" id="nav-home">
-      <div class="nav-inline">
-        <span class="title">홈</span>
-        <div class="nav-actions"></div>
-      </div>
-    </div>
     <div class="content" id="scroll-home">
-      <div style="height:8px"></div>
-      <div class="large-title-wrap">
-        <h1 class="large-title">홈</h1>
-        <div class="subtitle-row"><span class="subtitle">9월 5일 토요일</span></div>
-      </div>
 
       <div class="section">
         <div class="section-head">
@@ -362,43 +343,16 @@
         </div>
       </div>
 
-      <div class="quicklinks">
-        <div class="qlink" data-action="chart">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 13V17H7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 17L8.5 11.5L12.5 15.5L17 9" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 9H17V13" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>실시간 차트</span>
-        </div>
-        <div class="qlink" data-action="schedule">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="13" rx="2" stroke-width="1.7"/><path d="M2.5 8H17.5" stroke-width="1.7"/><path d="M6.5 2V5.5M13.5 2V5.5" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <span>이번 주 일정</span>
-        </div>
-        <div class="qlink" data-action="favorites">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M17 9.5C17 13.6 10 17.5 10 17.5C10 17.5 3 13.6 3 9.5C3 6.7 5.2 4.5 8 4.5C9.1 4.5 10 5 10 5C10 5 10.9 4.5 12 4.5C14.8 4.5 17 6.7 17 9.5Z" stroke-width="1.7" stroke-linejoin="round"/></svg>
-          <span>즐겨찾기</span>
-        </div>
-      </div>
-      <div style="height:24px"></div>
+      <div style="height:8px"></div>
     </div>
   </div>
 
   <!-- ============ CHART ============ -->
   <div class="screen hidden" id="screen-chart">
-    <div class="navbar" id="nav-chart">
-      <div class="nav-inline">
-        <span class="title">차트</span>
-        <div class="nav-actions">
-          <div class="icon-btn" id="chart-refresh" role="button" tabindex="0">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-        </div>
-      </div>
+    <div class="icon-btn" id="chart-refresh" role="button" tabindex="0">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </div>
     <div class="content" id="scroll-chart">
-      <div style="height:8px"></div>
-      <div class="large-title-wrap">
-        <h1 class="large-title">차트</h1>
-        <div class="subtitle-row"><span class="live-dot"></span><span class="subtitle">10분 전 업데이트 · 통합 차트</span></div>
-      </div>
-
       <div class="pill-row" id="platform-pills">
         <div class="pill active" data-p="all">전체</div>
         <div class="pill" data-p="melon">멜론</div>
@@ -410,65 +364,63 @@
         <div class="pill" data-p="spotify">스포티파이</div>
       </div>
 
-      <div class="section" style="margin-top:16px;">
+      <div class="section" style="margin-top:14px;">
         <div class="card" id="chart-list"></div>
       </div>
-      <div style="height:24px"></div>
+      <div style="height:8px"></div>
     </div>
   </div>
 
   <!-- ============ NEWS ============ -->
   <div class="screen hidden" id="screen-news">
-    <div class="navbar" id="nav-news">
-      <div class="nav-inline"><span class="title">뉴스</span><div class="nav-actions"></div></div>
-    </div>
     <div class="content" id="scroll-news">
-      <div style="height:8px"></div>
-      <div class="large-title-wrap">
-        <h1 class="large-title">뉴스</h1>
-        <div class="subtitle-row"><span class="subtitle">최근 소식 순</span></div>
-      </div>
-      <div class="section" style="margin-top:2px;">
+      <div class="section">
         <div class="card" id="news-list"></div>
       </div>
-      <div style="height:24px"></div>
+      <div style="height:8px"></div>
     </div>
   </div>
 
   <!-- ============ SCHEDULE ============ -->
   <div class="screen hidden" id="screen-schedule">
-    <div class="navbar" id="nav-schedule">
-      <div class="nav-inline"><span class="title">스케줄</span><div class="nav-actions"></div></div>
-    </div>
     <div class="content" id="scroll-schedule">
-      <div style="height:8px"></div>
-      <div class="large-title-wrap">
-        <h1 class="large-title">스케줄</h1>
-        <div class="subtitle-row"><span class="subtitle">2026년 9월</span></div>
-      </div>
       <div class="date-strip" id="date-strip"></div>
       <div id="schedule-groups"></div>
-      <div style="height:24px"></div>
+      <div style="height:8px"></div>
     </div>
   </div>
 
-  <!-- ============ TAB BAR ============ -->
+  <!-- ============ SETTINGS ============ -->
+  <div class="screen hidden" id="screen-settings">
+    <div class="content" id="scroll-settings">
+      <div class="settings-empty">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V19.5a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 13a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 6.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06A2 2 0 1 1 7.07 2.14l.06.06A1.7 1.7 0 0 0 9 2.54a1.7 1.7 0 0 0 1-1.55V.9a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 7a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z" transform="translate(0.3 0.3) scale(0.92)"/></svg>
+        <span>설정은 준비 중이에요</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB BAR (liquid glass floating) ============ -->
   <div class="tabbar">
     <div class="tab active" data-tab="home">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5L12 4.5L20 11.5"/><path d="M6 10V19.5H18V10"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5L12 4.5L20 11.5"/><path d="M6 10V19.5H18V10"/></svg>
       <span>홈</span>
     </div>
     <div class="tab" data-tab="chart">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19V11"/><path d="M12 19V5"/><path d="M18 19V14"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19V11"/><path d="M12 19V5"/><path d="M18 19V14"/></svg>
       <span>차트</span>
     </div>
     <div class="tab" data-tab="news">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M7.5 9H16.5"/><path d="M7.5 12.5H16.5"/><path d="M7.5 16H13"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="1.5"/><path d="M7.5 9H16.5"/><path d="M7.5 12.5H16.5"/><path d="M7.5 16H13"/></svg>
       <span>뉴스</span>
     </div>
     <div class="tab" data-tab="schedule">
-      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14" rx="1.8"/><path d="M4 9.5H20"/><path d="M8.5 3.5V6.5"/><path d="M15.5 3.5V6.5"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14" rx="1.8"/><path d="M4 9.5H20"/><path d="M8.5 3.5V6.5"/><path d="M15.5 3.5V6.5"/></svg>
       <span>스케줄</span>
+    </div>
+    <div class="tab" data-tab="settings">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V19.5a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .33-1.87 1.7 1.7 0 0 0-1.55-1.04H2.5a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.15 7.4a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.33 1.7 1.7 0 0 0 1.04-1.55V1.4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1.04 1.55 1.7 1.7 0 0 0 1.87-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.33 1.87v.06a1.7 1.7 0 0 0 1.55 1.04h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.55 1.04Z"/></svg>
+      <span>설정</span>
     </div>
   </div>
 </div>
@@ -485,14 +437,14 @@ function delta(x){if(!x)return{n:"—",d:"—",cls:"flat"};if(x.previousRank==nu
 function applyChartData(d){nativeData.chart=d||{songs:[]};renderChart(document.querySelector("#platform-pills .pill.active")?.dataset.p||"all");}
 function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};const r=platform==="all"?Object.values(ranks).sort((a,b)=>a.rank-b.rank)[0]:ranks[platform];const dm=delta(r);return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><span class="song-rank ${i<3?'top3':''}">${dm.n}</span><div class="thumb" style="width:44px;height:44px;">${esc((s.songName||"?").slice(0,1))}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(s.artistName)}</div><div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]).map(k=>`<span class="plat-chip">${PLATFORM_LABEL[k]} <b>${ranks[k].rank}</b></span>`).join("")}</div></div><div class="single-delta"><span class="n">${dm.n}</span><span class="d" style="color:var(--${dm.cls})">${dm.d}</span></div></div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
 function applyNewsData(d){nativeData.news=d||{articles:[]};document.getElementById("news-list").innerHTML=(nativeData.news.articles||[]).map(a=>`<div class="article-row" data-url="${esc(a.url)}"><div class="thumb" style="width:56px;height:56px;">${esc((a.source||"N").slice(0,1))}</div><div class="grow"><div class="art-title">${esc(a.title)}</div><div class="art-meta"><span class="art-source">${esc(a.source)}</span><span class="art-dot"></span><span class="art-date">${esc(a.date)}</span></div></div><svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`).join("")||`<div class="today-empty">표시할 뉴스가 없습니다.</div>`;}
-function applyScheduleData(d){nativeData.schedule=d||{events:[]};const by={};(nativeData.schedule.events||[]).forEach(e=>(by[e.date]??=[]).push(e));const dates=Object.keys(by).sort();const first=dates[0]||todayISO();const yy=Number(first.slice(0,4)),mm=Number(first.slice(5,7));document.querySelector("#screen-schedule .subtitle").textContent=`${yy}년 ${mm}월`;const labels={broadcast:"방송",radio:"라디오",event:"행사",fansign:"팬사인회",concert:"공연",notice:"공지"};document.getElementById("date-strip").innerHTML=dates.map(date=>{const d=new Date(date+"T00:00:00");return `<div class="date-cell ${date===todayISO()?"today":""}" data-date="${date}"><div class="dow">${weekdayLabel(d.getDay())}</div><div class="dnum">${d.getDate()}</div><div class="dot"></div></div>`}).join("")||`<div class="today-empty">예정된 일정이 없습니다.</div>`;document.getElementById("schedule-groups").innerHTML=dates.map(date=>{const d=new Date(date+"T00:00:00"),cls=d.getDay()===6?"weekend-sat":d.getDay()===0?"weekend-sun":"";return `<div class="date-group" id="date-${date}"><div class="date-header"><span class="d1">${mm}월 ${d.getDate()}일</span><span class="d2 ${cls}">${weekdayLabel(d.getDay())}요일</span></div><div class="card event-card">${by[date].map(e=>`<div class="event-line"><div class="event-main"><span class="badge ${esc(e.type)}">${esc(labels[e.type]||e.type||"일정")}</span><div class="event-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")}</div></div>`}).join("");}
-function updateHome(){const ev=(nativeData.schedule.events||[]).filter(e=>e.date===todayISO()).sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));const tc=document.querySelector("#screen-home .today-card");tc.innerHTML=ev.slice(0,3).map(e=>`<div class="today-item"><div class="content-col"><span class="badge ${esc(e.type)}">${esc(e.type||"일정")}</span><div class="item-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")||`<div class="today-empty">오늘 예정된 일정이 없습니다.</div>`;const songs=[...(nativeData.chart.songs||[])].sort((a,b)=>Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999))-Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999))).slice(0,3);const cc=document.querySelector("#screen-home .chart-mini-row")?.parentElement;if(cc)cc.innerHTML=songs.map((s,i)=>{const r=Object.values(s.ranks||{}).sort((a,b)=>a.rank-b.rank)[0],dm=delta(r);return `<div class="chart-mini-row"><span class="rank-num ${i<3?'top3':''}">${dm.n}</span><div class="thumb" style="width:38px;height:38px;">${esc((s.songName||"?").slice(0,1))}</div><div class="mini-info"><div class="mini-title">${esc(s.songName)}</div><div class="mini-artist">${esc(s.artistName)}</div></div><span class="delta ${dm.cls}">${dm.d}</span></div>`}).join("")||`<div class="today-empty">차트 데이터가 없습니다.</div>`;const n=nativeData.news.articles||[],nc=document.querySelector("#screen-home .news-mini")?.parentElement;if(nc)nc.innerHTML=n.slice(0,2).map(a=>`<div class="news-mini" data-url="${esc(a.url)}"><div class="thumb" style="width:52px;height:52px;">${esc((a.source||"N").slice(0,1))}</div><div><div class="n-title">${esc(a.title)}</div><div class="n-meta">${esc(a.source)}${a.date?` · ${esc(a.date)}`:""}</div></div></div>`).join("")||`<div class="today-empty">뉴스 데이터가 없습니다.</div>`;const d=new Date();document.querySelector("#screen-home .subtitle").textContent=`${d.getMonth()+1}월 ${d.getDate()}일 ${weekdayLabel(d.getDay())}요일`;}
+function applyScheduleData(d){nativeData.schedule=d||{events:[]};const by={};(nativeData.schedule.events||[]).forEach(e=>(by[e.date]??=[]).push(e));const dates=Object.keys(by).sort();const first=dates[0]||todayISO();const mm=Number(first.slice(5,7));const labels={broadcast:"방송",radio:"라디오",event:"행사",fansign:"팬사인회",concert:"공연",notice:"공지"};document.getElementById("date-strip").innerHTML=dates.map(date=>{const d=new Date(date+"T00:00:00");return `<div class="date-cell ${date===todayISO()?"today":""}" data-date="${date}"><div class="dow">${weekdayLabel(d.getDay())}</div><div class="dnum">${d.getDate()}</div><div class="dot"></div></div>`}).join("")||`<div class="today-empty">예정된 일정이 없습니다.</div>`;document.getElementById("schedule-groups").innerHTML=dates.map(date=>{const d=new Date(date+"T00:00:00"),cls=d.getDay()===6?"weekend-sat":d.getDay()===0?"weekend-sun":"";return `<div class="date-group" id="date-${date}"><div class="date-header"><span class="d1">${mm}월 ${d.getDate()}일</span><span class="d2 ${cls}">${weekdayLabel(d.getDay())}요일</span></div><div class="card event-card">${by[date].map(e=>`<div class="event-line"><div class="event-main"><span class="badge ${esc(e.type)}">${esc(labels[e.type]||e.type||"일정")}</span><div class="event-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")}</div></div>`}).join("");}
+function updateHome(){const ev=(nativeData.schedule.events||[]).filter(e=>e.date===todayISO()).sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));const tc=document.querySelector("#screen-home .today-card");tc.innerHTML=ev.slice(0,3).map(e=>`<div class="today-item"><div class="content-col"><span class="badge ${esc(e.type)}">${esc(e.type||"일정")}</span><div class="item-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")||`<div class="today-empty">오늘 예정된 일정이 없습니다.</div>`;const songs=[...(nativeData.chart.songs||[])].sort((a,b)=>Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999))-Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999))).slice(0,3);const cc=document.querySelector("#screen-home .chart-mini-row")?.parentElement;if(cc)cc.innerHTML=songs.map((s,i)=>{const r=Object.values(s.ranks||{}).sort((a,b)=>a.rank-b.rank)[0],dm=delta(r);return `<div class="chart-mini-row"><span class="rank-num ${i<3?'top3':''}">${dm.n}</span><div class="thumb" style="width:38px;height:38px;">${esc((s.songName||"?").slice(0,1))}</div><div class="mini-info"><div class="mini-title">${esc(s.songName)}</div><div class="mini-artist">${esc(s.artistName)}</div></div><span class="delta ${dm.cls}">${dm.d}</span></div>`}).join("")||`<div class="today-empty">차트 데이터가 없습니다.</div>`;const n=nativeData.news.articles||[],nc=document.querySelector("#screen-home .news-mini")?.parentElement;if(nc)nc.innerHTML=n.slice(0,2).map(a=>`<div class="news-mini" data-url="${esc(a.url)}"><div class="thumb" style="width:52px;height:52px;">${esc((a.source||"N").slice(0,1))}</div><div><div class="n-title">${esc(a.title)}</div><div class="n-meta">${esc(a.source)}${a.date?` · ${esc(a.date)}`:""}</div></div></div>`).join("")||`<div class="today-empty">뉴스 데이터가 없습니다.</div>`;}
 window.SceneGetsWeb={onData:function(payload){try{nativeData=JSON.parse(payload);applyChartData(nativeData.chart);applyNewsData(nativeData.news);applyScheduleData(nativeData.schedule);updateHome();}catch(e){console.error(e);}}};
 renderChart("all");
 
 /* ---------------- tab switching ---------------- */
 const tabs = document.querySelectorAll('.tab');
-const screens = {home:'screen-home', chart:'screen-chart', news:'screen-news', schedule:'screen-schedule'};
+const screens = {home:'screen-home', chart:'screen-chart', news:'screen-news', schedule:'screen-schedule', settings:'screen-settings'};
 tabs.forEach(tab=>{
   tab.addEventListener('click', ()=>{
     tabs.forEach(t=>t.classList.remove('active'));
@@ -502,16 +454,6 @@ tabs.forEach(tab=>{
   });
 });
 
-/* ---------------- nav-bar scroll collapse (per screen) ---------------- */
-Object.keys(screens).forEach(key=>{
-  const scrollEl = document.getElementById('scroll-'+key);
-  const navEl = document.getElementById('nav-'+key);
-  if(!scrollEl || !navEl) return;
-  scrollEl.addEventListener('scroll', ()=>{
-    if(scrollEl.scrollTop > 36){ navEl.classList.add('scrolled'); }
-    else{ navEl.classList.remove('scrolled'); }
-  });
-});
 // Functional navigation and real data actions.
 function showFavorites(){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]");let rows=f.map(id=>`<div class="favorite-row">${esc((id||"").replace(/^song:/,""))}</div>`).join("")||'<div class="today-empty">저장된 즐겨찾기가 없습니다.</div>';let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">즐겨찾기</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);}
 document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const date=e.target.closest(".date-cell");if(date?.dataset.date)document.getElementById("date-"+date.dataset.date)?.scrollIntoView({behavior:"smooth",block:"start"});const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);});
