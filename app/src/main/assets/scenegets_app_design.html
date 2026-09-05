@@ -226,10 +226,11 @@
   .chip-wrap{display:flex; flex-wrap:wrap; gap:5px; margin-top:7px;}
   .plat-chip{
     background:var(--surface-2); border-radius:6px; padding:3px 6px; display:flex; align-items:center; gap:4px;
-    font-size:10px; color:var(--text-2); font-weight:500;
+    font-size:10px; color:var(--text-2); font-weight:500; line-height:1;
   }
-  .plat-chip b{color:var(--text-1); font-size:11px; font-weight:600;}
-  .chip-delta{font-size:9.5px; font-weight:700; margin-left:1px;}
+  .plat-chip .plat-label{display:inline-flex; align-items:center; line-height:1;}
+  .plat-chip b{display:inline-flex; align-items:center; color:var(--text-1); font-size:11px; font-weight:600; line-height:1;}
+  .chip-delta{display:inline-flex; align-items:center; font-size:9.5px; font-weight:700; line-height:1; margin-left:1px;}
 
   /* ---------- NEWS ---------- */
   .article-row{display:flex; gap:13px; padding:13px 16px; align-items:center;}
@@ -247,8 +248,8 @@
   .date-group{margin-top:22px; padding:0 16px;}
   .date-group:first-of-type{margin-top:14px;}
   .date-header{display:flex; align-items:center; gap:8px; margin-bottom:9px; padding:0 4px;}
-  .date-header .d1{font-size:14px; font-weight:700; color:var(--text-1); letter-spacing:-0.2px;}
-  .date-header .d2{font-size:13px; font-weight:600; color:var(--text-3);}
+  .date-header .d1{display:inline-flex; align-items:center; font-size:14px; font-weight:700; color:var(--text-1); letter-spacing:-0.2px; line-height:1;}
+  .date-header .d2{display:inline-flex; align-items:center; font-size:13px; font-weight:600; color:var(--text-3); line-height:1;}
   .date-header .d2.weekend-sat{color:var(--sat);}
   .date-header .d2.weekend-sun{color:var(--sun);}
   .date-header .today-tag{
@@ -257,8 +258,14 @@
   }
 
   .event-card{padding:0 14px; overflow:hidden;}
-  .event-line{display:flex; align-items:flex-start; gap:12px; padding:13px 2px; cursor:pointer;}
+  .event-line{display:flex; align-items:flex-start; gap:12px; padding:13px 2px;}
   .event-line .chevron{margin-top:2px;}
+  .event-search-btn{
+    flex-shrink:0; width:24px; height:24px; margin-top:1px; border-radius:12px; border:none;
+    background:var(--surface-2); color:var(--text-3); display:flex; align-items:center; justify-content:center;
+    padding:0;
+  }
+  .event-search-btn:active{background:var(--accent-dim); color:var(--accent);}
   .event-line + .event-line{border-top:1px solid var(--divider);}
   .event-time{
     width:46px; flex-shrink:0; font-size:13px; font-weight:700; color:var(--text-1);
@@ -529,9 +536,9 @@ function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function stripKoreanAlias(name){return String(name??"").replace(/\s*\([^()]*[\uac00-\ud7a3][^()]*\)\s*$/,"").trim();}
 function weekdayLabel(n){return ["일","월","화","수","목","금","토"][n];}
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
-function delta(x){if(!x)return{n:"—",d:"—",cls:"flat"};if(x.previousRank==null)return{n:String(x.rank),d:"NEW",cls:"flat"};const d=x.previousRank-x.rank;return d>0?{n:String(x.rank),d:`▲${d}`,cls:"up"}:d<0?{n:String(x.rank),d:`▼${-d}`,cls:"down"}:{n:String(x.rank),d:"—",cls:"flat"};}
+function delta(x){if(!x)return{n:"—",d:"—",cls:"flat"};if(x.previousRank==null)return{n:String(x.rank),d:"NEW",cls:"flat"};const d=x.previousRank-x.rank;return d>0?{n:String(x.rank),d:`↑${d}`,cls:"up"}:d<0?{n:String(x.rank),d:`↓${-d}`,cls:"down"}:{n:String(x.rank),d:"—",cls:"flat"};}
 function applyChartData(d){nativeData.chart=d||{songs:[]};renderChart(document.querySelector("#platform-pills .pill.active")?.dataset.p||"all");}
-function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(stripKoreanAlias(s.artistName))}</div><div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]&&(platform==="all"||k===platform)).map(k=>{const dm=delta(ranks[k]);return `<span class="plat-chip">${PLATFORM_LABEL[k]} <b>${ranks[k].rank}</b><span class="chip-delta" style="color:var(--${dm.cls})">${dm.d}</span></span>`;}).join("")}</div></div></div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
+function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(stripKoreanAlias(s.artistName))}</div><div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]&&(platform==="all"||k===platform)).map(k=>{const dm=delta(ranks[k]);return `<span class="plat-chip"><span class="plat-label">${PLATFORM_LABEL[k]}</span> <b>${ranks[k].rank}</b><span class="chip-delta" style="color:var(--${dm.cls})">${dm.d}</span></span>`;}).join("")}</div></div></div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
 function applyNewsData(d){nativeData.news=d||{articles:[]};document.getElementById("news-list").innerHTML=(nativeData.news.articles||[]).map(a=>`<div class="article-row" data-url="${esc(a.url)}"><div class="thumb" style="width:56px;height:56px;">${a.thumbnail?`<img src="${esc(a.thumbnail)}" alt="" onerror="this.remove()">`:`${esc((a.source||"N").slice(0,1))}`}</div><div class="grow"><div class="art-title">${esc(a.title)}</div><div class="art-meta"><span class="art-source">${esc(a.source)}</span><span class="art-dot"></span><span class="art-date">${esc(a.date)}</span></div></div><svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`).join("")||`<div class="today-empty">표시할 뉴스가 없습니다.</div>`;}
 function applyScheduleData(d){
   nativeData.schedule=d||{events:[]};
@@ -555,14 +562,16 @@ function applyScheduleData(d){
         <span class="d2 ${cls}">${weekdayLabel(d.getDay())}</span>
         ${isToday?`<span class="today-tag">오늘</span>`:""}
       </div>
-      <div class="card event-card">${items.map(e=>`<div class="event-line type-${esc(e.type||"notice")}" data-search="${esc(e.title)}">
+      <div class="card event-card">${items.map(e=>`<div class="event-line type-${esc(e.type||"notice")}">
         ${e.time?`<div class="event-time">${esc(e.time)}</div>`:""}
         <div class="event-dot"></div>
         <div class="event-main">
           <div class="event-title">${esc(e.title)}</div>
           <div class="event-type">${esc(labels[e.type]||e.type||"일정")}</div>
         </div>
-        <svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button class="event-search-btn" type="button" data-search="${esc(e.title)}" aria-label="검색">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
       </div>`).join("")}</div>
     </div>`;
   }).join("");
@@ -603,7 +612,7 @@ tabs.forEach(tab=>{
 
 // Functional navigation and real data actions.
 function showFavorites(){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]");let rows=f.map(id=>`<div class="favorite-row">${esc((id||"").replace(/^song:/,""))}</div>`).join("")||'<div class="today-empty">저장된 즐겨찾기가 없습니다.</div>';let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">즐겨찾기</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);}
-document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);const ev=e.target.closest(".event-line");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));});
+document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));});
 function toggleFavorite(id){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]"),i=f.indexOf("song:"+id);if(i>=0)f.splice(i,1);else f.push("song:"+id);localStorage.setItem("scenegets_favorites",JSON.stringify(f));}
 document.getElementById("chart-refresh")?.addEventListener("click",()=>{pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
 document.getElementById("home-refresh-btn")?.addEventListener("click",()=>{const el=document.getElementById("home-refresh-time");if(el)el.textContent="갱신 중…";pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
