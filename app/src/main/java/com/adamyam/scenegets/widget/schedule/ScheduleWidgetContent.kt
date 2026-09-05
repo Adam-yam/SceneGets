@@ -106,7 +106,9 @@ private fun ScheduleHeader() {
             Image(
                 provider = ImageProvider(R.drawable.ic_refresh),
                 contentDescription = "새로고침",
-                modifier = GlanceModifier.size(13.dp)
+                modifier = GlanceModifier
+                    .width(13.dp)
+                    .height(13.dp)
             )
         }
     }
