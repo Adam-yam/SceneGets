@@ -17,6 +17,7 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
+import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.Text
@@ -77,51 +78,43 @@ private fun groupEventsByDate(events: List<ScheduleEvent>): List<DateEventGroup>
             DateEventGroup(date, dayEvents.sortedWith(compareBy({ it.time.isBlank() }, { it.time })))
         }
 
-// 날짜 헤더용 짧은 요일 표기(월/화/수...). 한눈에 훑을 때 "월요일"보다 부담이 적다.
+// 날짜 헤더의 요일 표기. 날짜 숫자만으로는 무슨 요일인지 바로 안 와닿아서
+// "월요일"처럼 완전한 형태로 붙여 날짜 헤더 한 줄만 봐도 바로 알 수 있게 했다.
 private fun weekdayShortLabel(dayOfWeek: DayOfWeek): String = when (dayOfWeek) {
-    DayOfWeek.MONDAY -> "월"
-    DayOfWeek.TUESDAY -> "화"
-    DayOfWeek.WEDNESDAY -> "수"
-    DayOfWeek.THURSDAY -> "목"
-    DayOfWeek.FRIDAY -> "금"
-    DayOfWeek.SATURDAY -> "토"
-    DayOfWeek.SUNDAY -> "일"
-}
-
-/**
- * 오늘/내일은 날짜 대신 "오늘"/"내일"로 바로 보여주고, 그 외에는
- * "9.12 (금)"처럼 짧게 표기해서 헤더 한 줄이 눈에 바로 들어오게 한다.
- */
-private fun dateHeaderLabel(parsed: LocalDate): String {
-    val today = LocalDate.now()
-    return when (parsed) {
-        today -> "오늘 · ${parsed.monthValue}.${parsed.dayOfMonth}"
-        today.plusDays(1) -> "내일 · ${parsed.monthValue}.${parsed.dayOfMonth}"
-        else -> "${parsed.monthValue}.${parsed.dayOfMonth} (${weekdayShortLabel(parsed.dayOfWeek)})"
-    }
+    DayOfWeek.MONDAY -> "월요일"
+    DayOfWeek.TUESDAY -> "화요일"
+    DayOfWeek.WEDNESDAY -> "수요일"
+    DayOfWeek.THURSDAY -> "목요일"
+    DayOfWeek.FRIDAY -> "금요일"
+    DayOfWeek.SATURDAY -> "토요일"
+    DayOfWeek.SUNDAY -> "일요일"
 }
 
 @Composable
 private fun EventGroupSection(group: DateEventGroup) {
     // 탭 액션 없음 - 정보 표시 전용.
     // 카드형 배경 대신 여백과 얇은 구분선만으로 그룹을 나눠서 한 화면에
-    // 더 많은 일정이 가볍게 들어오도록 했다. 날짜 헤더는 색 배지 없이
-    // 텍스트만 쓰고, 오늘/내일만 강조색으로 표시해 시선이 자연스럽게 간다.
+    // 더 많은 일정이 가볍게 들어오도록 했다.
     Column(modifier = GlanceModifier.fillMaxWidth()) {
         DateHeader(group.date)
-        Spacer(modifier = GlanceModifier.height(6.dp))
+        Spacer(modifier = GlanceModifier.height(8.dp))
         group.events.forEachIndexed { index, event ->
             if (index > 0) {
-                Spacer(modifier = GlanceModifier.height(8.dp))
+                Spacer(modifier = GlanceModifier.height(9.dp))
             }
             EventLine(event)
         }
     }
-    Spacer(modifier = GlanceModifier.height(4.dp))
+    Spacer(modifier = GlanceModifier.height(6.dp))
     WidgetDivider()
     Spacer(modifier = GlanceModifier.height(10.dp))
 }
 
+/**
+ * 날짜를 한눈에 알아보게 굵고 크게 키우고, 요일은 주말이면 색으로 구분한다.
+ * 오늘/내일은 날짜 옆에 작은 강조색 알약(pill) 태그로 따로 붙여서
+ * 날짜 숫자 자체는 항상 같은 자리·같은 크기로 훑을 수 있게 했다.
+ */
 @Composable
 private fun DateHeader(date: String) {
     val parsed = try {
@@ -129,32 +122,79 @@ private fun DateHeader(date: String) {
     } catch (e: DateTimeParseException) {
         null
     }
-    if (parsed != null) {
-        val today = LocalDate.now()
-        val isNearTerm = parsed == today || parsed == today.plusDays(1)
-        val color = when {
-            isNearTerm -> WidgetColors.accent
-            parsed.dayOfWeek == DayOfWeek.SATURDAY -> WidgetColors.down
-            parsed.dayOfWeek == DayOfWeek.SUNDAY -> WidgetColors.up
-            else -> WidgetColors.textSecondary
-        }
-        Text(
-            text = dateHeaderLabel(parsed),
-            style = TextStyle(color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        )
-    } else {
+    if (parsed == null) {
         Text(
             text = date,
-            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         )
+        return
+    }
+
+    val today = LocalDate.now()
+    val isToday = parsed == today
+    val isTomorrow = parsed == today.plusDays(1)
+    val weekdayColor = when (parsed.dayOfWeek) {
+        DayOfWeek.SATURDAY -> WidgetColors.down
+        DayOfWeek.SUNDAY -> WidgetColors.up
+        else -> WidgetColors.textSecondary
+    }
+
+    Row(
+        modifier = GlanceModifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "${parsed.monthValue}.${parsed.dayOfMonth}",
+            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        )
+        Spacer(modifier = GlanceModifier.width(6.dp))
+        Text(
+            text = weekdayShortLabel(parsed.dayOfWeek),
+            style = TextStyle(color = weekdayColor, fontSize = 12.5.sp, fontWeight = FontWeight.Medium)
+        )
+        Spacer(modifier = GlanceModifier.defaultWeight())
+        if (isToday || isTomorrow) {
+            DateTag(if (isToday) "오늘" else "내일")
+        }
     }
 }
 
 @Composable
+private fun DateTag(label: String) {
+    Box(
+        modifier = GlanceModifier
+            .background(WidgetColors.accentChipBackground)
+            .cornerRadius(20.dp)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    ) {
+        Text(
+            text = label,
+            style = TextStyle(color = WidgetColors.accent, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+        )
+    }
+}
+
+/**
+ * 시간을 맨 앞 고정폭 칸에 둬서, 여러 일정이 쌓여도 시간이 세로로 열을
+ * 맞춰 보이게 했다(표처럼 훑을 수 있음). 시간 미정 일정은 "종일"로 표시.
+ */
+@Composable
 private fun EventLine(event: ScheduleEvent) {
-    // 배지(pill)와 시간 칩을 없애고 타입은 작은 색 점, 시간은 배경 없는 텍스트로
-    // 단순화했다. 한 줄에 담기는 요소가 줄어들어 리스트를 훑기가 더 가볍다.
     Row(verticalAlignment = Alignment.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
+        Box(modifier = GlanceModifier.width(34.dp)) {
+            if (event.time.isNotBlank()) {
+                Text(
+                    text = event.time,
+                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                )
+            } else {
+                Text(
+                    text = "종일",
+                    style = TextStyle(color = WidgetColors.textFaint, fontSize = 10.5.sp, fontWeight = FontWeight.Medium)
+                )
+            }
+        }
+        Spacer(modifier = GlanceModifier.width(6.dp))
         TypeDot(event.type)
         Spacer(modifier = GlanceModifier.width(8.dp))
         Text(
@@ -163,13 +203,6 @@ private fun EventLine(event: ScheduleEvent) {
             modifier = GlanceModifier.defaultWeight(),
             style = TextStyle(color = WidgetColors.textPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.Medium)
         )
-        if (event.time.isNotBlank()) {
-            Spacer(modifier = GlanceModifier.width(8.dp))
-            Text(
-                text = event.time,
-                style = TextStyle(color = WidgetColors.textFaint, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
-            )
-        }
     }
 }
 
