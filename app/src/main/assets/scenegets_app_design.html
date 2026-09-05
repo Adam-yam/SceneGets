@@ -16,8 +16,8 @@
     --text-3:#AEAEB2;
     --accent:#5E5CE6;
     --accent-dim:rgba(94,92,230,0.12);
-    --up:#34C759;
-    --down:#FF3B30;
+    --up:#FF3B30;
+    --down:#007AFF;
     --flat:#8E8E93;
     --sat:#0A84FF;
     --sun:#FF3B30;
@@ -41,8 +41,8 @@
       --text-3:#636366;
       --accent:#7D7AFF;
       --accent-dim:rgba(125,122,255,0.18);
-      --up:#30D158;
-      --down:#FF453A;
+      --up:#FF453A;
+      --down:#0A84FF;
       --flat:#8E8E93;
       --sat:#409CFF;
       --sun:#FF453A;
@@ -66,8 +66,8 @@
       --text-3:#636366;
       --accent:#7D7AFF;
       --accent-dim:rgba(125,122,255,0.18);
-      --up:#30D158;
-      --down:#FF453A;
+      --up:#FF453A;
+      --down:#0A84FF;
       --flat:#8E8E93;
       --sat:#409CFF;
       --sun:#FF453A;
@@ -257,7 +257,8 @@
   }
 
   .event-card{padding:0 14px; overflow:hidden;}
-  .event-line{display:flex; align-items:flex-start; gap:12px; padding:13px 2px;}
+  .event-line{display:flex; align-items:flex-start; gap:12px; padding:13px 2px; cursor:pointer;}
+  .event-line .chevron{margin-top:2px;}
   .event-line + .event-line{border-top:1px solid var(--divider);}
   .event-time{
     width:46px; flex-shrink:0; font-size:13px; font-weight:700; color:var(--text-1);
@@ -338,6 +339,16 @@
   .modal-title{font-size:18px;font-weight:700;color:var(--text-1);}
   .modal-close{border:none;background:var(--surface-2);color:var(--accent);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600;}
   .favorite-row{padding:12px 0;border-top:1px solid var(--divider);color:var(--text-1);font-size:14px;}
+
+  .toast{
+    position:fixed; left:50%; bottom:calc(14px + var(--system-bottom) + 78px);
+    transform:translateX(-50%) translateY(6px);
+    background:rgba(28,28,30,0.92); color:#FFFFFF; font-size:13px; font-weight:600;
+    padding:10px 18px; border-radius:100px; z-index:80;
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+    white-space:nowrap;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
 </style>
 </head>
@@ -544,21 +555,32 @@ function applyScheduleData(d){
         <span class="d2 ${cls}">${weekdayLabel(d.getDay())}</span>
         ${isToday?`<span class="today-tag">오늘</span>`:""}
       </div>
-      <div class="card event-card">${items.map(e=>`<div class="event-line type-${esc(e.type||"notice")}">
+      <div class="card event-card">${items.map(e=>`<div class="event-line type-${esc(e.type||"notice")}" data-search="${esc(e.title)}">
         ${e.time?`<div class="event-time">${esc(e.time)}</div>`:""}
         <div class="event-dot"></div>
         <div class="event-main">
           <div class="event-title">${esc(e.title)}</div>
           <div class="event-type">${esc(labels[e.type]||e.type||"일정")}</div>
         </div>
+        <svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>`).join("")}</div>
     </div>`;
   }).join("");
 }
 function updateHome(){const ev=(nativeData.schedule.events||[]).filter(e=>e.date===todayISO()).sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));const tc=document.querySelector("#screen-home .today-card");tc.innerHTML=ev.map(e=>`<div class="today-item"><div class="content-col"><span class="badge ${esc(e.type)}">${esc(e.type||"일정")}</span><div class="item-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")||`<div class="today-empty">오늘 예정된 일정이 없습니다.</div>`;const songs=[...(nativeData.chart.songs||[])].sort((a,b)=>Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999))-Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999))).slice(0,3);const cc=document.getElementById("home-chart-card");if(cc)cc.innerHTML=songs.map(s=>{const ranks=s.ranks||{},melon=ranks.melon?.rank??"—",ytm=ranks.youtube_music?.rank??"—",fallback=esc((s.songName||"?").slice(0,1));return `<div class="chart-mini-row"><div class="thumb">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.outerHTML='<span>${fallback}</span>'">`:`<span>${fallback}</span>`}</div><div class="mini-info"><div class="mini-title">${esc(s.songName)}</div><div class="mini-artist">${esc(s.artistName)}</div></div><div class="mini-ranks"><div class="mini-rank"><span style="color:#03dd30">멜론</span><b>${melon}</b></div><div class="mini-rank"><span style="color:#ff0033">유튜브 뮤직</span><b>${ytm}</b></div></div></div>`}).join("")||`<div class="today-empty">차트 데이터가 없습니다.</div>`;const n=nativeData.news.articles||[],nc=document.getElementById("home-news-card");if(nc)nc.innerHTML=n.slice(0,5).map(a=>`<div class="news-mini" data-url="${esc(a.url)}"><div class="thumb" style="width:52px;height:52px;">${a.thumbnail?`<img src="${esc(a.thumbnail)}" alt="" onerror="this.remove()">`:`${esc((a.source||"N").slice(0,1))}`}</div><div><div class="n-title">${esc(a.title)}</div><div class="n-meta">${esc(a.source)}${a.date?` · ${esc(a.date)}`:""}</div></div></div>`).join("")||`<div class="today-empty">뉴스 데이터가 없습니다.</div>`;}
+let pendingRefreshToast=false;
+let toastTimer=null;
+function showToast(msg){
+  let el=document.getElementById("app-toast");
+  if(!el){el=document.createElement("div");el.id="app-toast";el.className="toast";document.body.appendChild(el);}
+  el.textContent=msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove("show"),1800);
+}
 function updateRefreshTime(){const el=document.getElementById("home-refresh-time");if(!el)return;const d=new Date(),pad=n=>String(n).padStart(2,"0");el.textContent=`마지막 갱신 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
 window.SceneGetsWeb={
-  onData:function(payload){try{nativeData=JSON.parse(payload);applyChartData(nativeData.chart);applyNewsData(nativeData.news);applyScheduleData(nativeData.schedule);updateHome();updateRefreshTime();}catch(e){console.error(e);}},
+  onData:function(payload){try{nativeData=JSON.parse(payload);applyChartData(nativeData.chart);applyNewsData(nativeData.news);applyScheduleData(nativeData.schedule);updateHome();updateRefreshTime();if(pendingRefreshToast){pendingRefreshToast=false;showToast("갱신 완료");}}catch(e){console.error(e);}},
   applyTheme:function(t){applyTheme(t,false);}
 };
 renderChart("all");
@@ -581,10 +603,10 @@ tabs.forEach(tab=>{
 
 // Functional navigation and real data actions.
 function showFavorites(){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]");let rows=f.map(id=>`<div class="favorite-row">${esc((id||"").replace(/^song:/,""))}</div>`).join("")||'<div class="today-empty">저장된 즐겨찾기가 없습니다.</div>';let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">즐겨찾기</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);}
-document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);});
+document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);const ev=e.target.closest(".event-line");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));});
 function toggleFavorite(id){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]"),i=f.indexOf("song:"+id);if(i>=0)f.splice(i,1);else f.push("song:"+id);localStorage.setItem("scenegets_favorites",JSON.stringify(f));}
-document.getElementById("chart-refresh")?.addEventListener("click",()=>window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll());
-document.getElementById("home-refresh-btn")?.addEventListener("click",()=>{const el=document.getElementById("home-refresh-time");if(el)el.textContent="갱신 중…";window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
+document.getElementById("chart-refresh")?.addEventListener("click",()=>{pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
+document.getElementById("home-refresh-btn")?.addEventListener("click",()=>{const el=document.getElementById("home-refresh-time");if(el)el.textContent="갱신 중…";pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
 document.getElementById("platform-pills").addEventListener("click",e=>{const p=e.target.closest(".pill");if(!p)return;document.querySelectorAll("#platform-pills .pill").forEach(x=>x.classList.remove("active"));p.classList.add("active");renderChart(p.dataset.p);});
 window.addEventListener("load",()=>window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll());
 
