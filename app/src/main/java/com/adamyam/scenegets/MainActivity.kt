@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
-import android.widget.FrameLayout
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -62,10 +61,9 @@ class MainActivity : Activity() {
 
         themeMode = prefs.getString(KEY_THEME, THEME_SYSTEM) ?: THEME_SYSTEM
 
-        // Android 15(targetSdk 35)에서는 edge-to-edge가 강제될 수 있으므로,
-        // WebView 자체를 시스템 바 영역만큼 안쪽으로 배치해 일반 앱처럼
-        // 상태바/내비게이션바와 콘텐츠가 겹치지 않도록 한다.
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // 일반 Android 앱처럼 시스템 바 영역은 시스템이 소유한다.
+        // 콘텐츠는 상태바/내비게이션바와 절대 겹치지 않는다.
+        WindowCompat.setDecorFitsSystemWindows(window, true)
 
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
@@ -85,31 +83,15 @@ class MainActivity : Activity() {
             addJavascriptInterface(SceneGetsBridge(), "SceneGetsBridge")
         }
 
-        val root = FrameLayout(this).apply {
-            setBackgroundColor(Color.parseColor("#F2F2F7"))
-            addView(webView, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            ))
-        }
-
-        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
-            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            val lp = webView.layoutParams as FrameLayout.LayoutParams
-            lp.leftMargin = 0
-            lp.topMargin = bars.top
-            lp.rightMargin = 0
-            lp.bottomMargin = bars.bottom
-            webView.layoutParams = lp
-
-            // WebView가 이미 안전 영역 안에 배치되므로 HTML에는 추가 inset을 주지 않는다.
+        ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
+            // decorFitsSystemWindows = true 이므로 콘텐츠 영역은 이미 안전 영역이다.
             applyInsetVars()
             insets
         }
 
         applySystemBars()
-        setContentView(root)
-        ViewCompat.requestApplyInsets(root)
+        setContentView(webView)
+        ViewCompat.requestApplyInsets(webView)
         webView.loadUrl("file:///android_asset/scenegets_app_design.html")
     }
 
@@ -125,7 +107,15 @@ class MainActivity : Activity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        if (themeMode == THEME_SYSTEM) applySystemBars()
+        if (themeMode == THEME_SYSTEM) {
+            applySystemBars()
+            if (::webView.isInitialized) {
+                webView.evaluateJavascript(
+                    "window.SceneGetsWeb && window.SceneGetsWeb.applyTheme && window.SceneGetsWeb.applyTheme('system');",
+                    null
+                )
+            }
+        }
     }
 
     private fun isDarkTheme(): Boolean = when (themeMode) {
@@ -149,8 +139,7 @@ class MainActivity : Activity() {
     }
 
     private fun applyInsetVars() {
-        // WebView 자체가 시스템 바 영역만큼 안쪽에 배치되므로
-        // HTML에는 추가 시스템 여백을 넣지 않는다.
+        // 시스템 바 영역은 시스템이 차지하므로 웹 콘텐츠에는 추가 여백이 필요 없다.
         webView.evaluateJavascript(
             "document.documentElement.style.setProperty('\u002d\u002dsystem-top','0px');" +
                 "document.documentElement.style.setProperty('\u002d\u002dsystem-bottom','0px');",
@@ -231,6 +220,9 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun getTheme(): String = themeMode
+
+        @JavascriptInterface
+        fun getResolvedTheme(): String = if (isDarkTheme()) "dark" else "light"
 
         @JavascriptInterface
         fun setTheme(mode: String?) {
