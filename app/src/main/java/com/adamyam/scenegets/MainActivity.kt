@@ -10,6 +10,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.adamyam.scenegets.data.ChartRepository
 import com.adamyam.scenegets.data.NewsRepository
@@ -53,6 +54,25 @@ class MainActivity : Activity() {
         window.statusBarColor = chromeColor
         window.navigationBarColor = chromeColor
 
+        // 엣지투엣지를 명시적으로 켜서, Android 버전/제조사(One UI 등)에 관계없이
+        // 시스템 바 인셋을 우리가 직접 계산해 웹뷰 콘텐츠에 반영한다.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
+
+        var lastInsetTop = 0
+        var lastInsetBottom = 0
+
+        fun applyInsetVars() {
+            webView.evaluateJavascript(
+                "document.documentElement.style.setProperty('\u002d\u002dsystem-top','${lastInsetTop}px');" +
+                    "document.documentElement.style.setProperty('\u002d\u002dsystem-bottom','${lastInsetBottom}px');",
+                null
+            )
+        }
+
         webView = WebView(this).apply {
             setBackgroundColor(chromeColor)
             settings.javaScriptEnabled = true
@@ -62,21 +82,27 @@ class MainActivity : Activity() {
             settings.setSupportZoom(false)
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    // 페이지가 새로 로드된 직후에도 최신 인셋 값을 다시 주입한다.
+                    applyInsetVars()
+                }
+            }
             webChromeClient = WebChromeClient()
             addJavascriptInterface(SceneGetsBridge(), "SceneGetsBridge")
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            webView.evaluateJavascript(
-                "document.documentElement.style.setProperty('\u002d\u002dsystem-top','${bars.top}px');document.documentElement.style.setProperty('\u002d\u002dsystem-bottom','${bars.bottom}px');",
-                null
-            )
+            lastInsetTop = bars.top
+            lastInsetBottom = bars.bottom
+            applyInsetVars()
             insets
         }
 
         setContentView(webView)
+        ViewCompat.requestApplyInsets(webView)
         webView.loadUrl("file:///android_asset/scenegets_app_design.html")
     }
 
