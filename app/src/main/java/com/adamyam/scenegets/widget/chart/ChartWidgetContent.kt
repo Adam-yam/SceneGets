@@ -15,7 +15,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
+import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.background
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -60,11 +60,12 @@ fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<Strin
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(WidgetColors.background)
-            .padding(8.dp)
+            .background(WidgetColors.surface)
+            .cornerRadius(20.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         ChartHeader(state)
-        Spacer(modifier = GlanceModifier.height(4.dp))
+        Spacer(modifier = GlanceModifier.height(6.dp))
 
         when (state) {
             is WidgetState.Loading -> CenterMessage("차트를 불러오는 중...")
@@ -75,7 +76,10 @@ fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<Strin
                     CenterMessage("표시할 차트 데이터가 없어요")
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                        items(songs) { song -> SongRow(song, albumImages[song.albumImageUrl]) }
+                        itemsIndexed(songs) { index, song ->
+                            if (index > 0) ChartDivider()
+                            SongRow(song, albumImages[song.albumImageUrl])
+                        }
                     }
                 }
             }
@@ -93,24 +97,34 @@ private fun ChartHeader(state: WidgetState<ChartResponse>) {
             text = "차트",
             style = TextStyle(
                 color = WidgetColors.textPrimary,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
         )
         Spacer(modifier = GlanceModifier.defaultWeight())
         Text(
             text = freshnessLabel(state),
-            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 9.sp)
+            style = TextStyle(color = WidgetColors.textFaint, fontSize = 10.sp)
         )
         Spacer(modifier = GlanceModifier.width(6.dp))
         Image(
             provider = ImageProvider(R.drawable.ic_refresh),
             contentDescription = "새로고침",
             modifier = GlanceModifier
-                .size(16.dp)
+                .size(15.dp)
                 .clickable(actionRunCallback<RefreshChartAction>())
         )
     }
+}
+
+@Composable
+private fun ChartDivider() {
+    Box(
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(WidgetColors.divider)
+    ) {}
 }
 
 @Composable
@@ -123,12 +137,10 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .background(WidgetColors.cardBackground)
-            .cornerRadius(8.dp)
-            .padding(6.dp)
+            .padding(vertical = 8.dp)
     ) {
         AlbumCover(albumImage)
-        Spacer(modifier = GlanceModifier.width(8.dp))
+        Spacer(modifier = GlanceModifier.width(10.dp))
         Column(
             // 와이드 레이아웃에서는 고정 폭을 줘서 순위 칩이 제목 바로 옆(좌측)부터
             // 시작하게 하고, 좁은 레이아웃에서는 기존처럼 가로 전체를 채운다.
@@ -141,12 +153,12 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
             Text(
                 text = stripHiddenTags(song.songName),
                 maxLines = 1,
-                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             )
             Text(
                 text = stripHiddenTags(song.artistName),
                 maxLines = 1,
-                style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.sp)
+                style = TextStyle(color = WidgetColors.textFaint, fontSize = 10.5.sp)
             )
             if (!isWideLayout) {
                 Spacer(modifier = GlanceModifier.height(3.dp))
@@ -166,7 +178,6 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
             )
         }
     }
-    Spacer(modifier = GlanceModifier.height(6.dp))
 }
 
 /**
@@ -175,8 +186,7 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
  * 칩 하나의 평균 폭으로 나눈 값. 넉넉하게 잡아서 칩이 잘려나가는 것을 막는다.)
  */
 private fun sideChipsPerRow(widgetWidth: Dp): Int {
-    // 카드 패딩(6*2) + 앨범 커버 + 스페이서 + 제목 컬럼 고정폭 + 스페이서
-    val reserved = 12.dp + 40.dp + 8.dp + TITLE_COLUMN_WIDE_WIDTH + 8.dp
+    val reserved = 24.dp + 42.dp + 10.dp + TITLE_COLUMN_WIDE_WIDTH + 8.dp
     val available = widgetWidth - reserved
     val approxChipWidth = PLATFORM_CHIP_WIDTH + PLATFORM_CHIP_SPACING
     val count = (available / approxChipWidth).toInt()
@@ -222,16 +232,15 @@ private fun AlbumCover(bitmap: Bitmap?) {
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = GlanceModifier
-                .size(40.dp)
-                .cornerRadius(6.dp)
+                .size(42.dp)
+                .cornerRadius(8.dp)
         )
     } else {
-        // 이미지가 아직 없거나 로드에 실패했을 때의 빈 자리 표시
         Box(
             modifier = GlanceModifier
-                .size(40.dp)
-                .cornerRadius(6.dp)
-                .background(WidgetColors.chipBackground)
+                .size(42.dp)
+                .cornerRadius(8.dp)
+                .background(WidgetColors.surfaceVariant)
         ) {}
     }
 }
@@ -251,7 +260,7 @@ private fun PlatformChip(platform: String, rank: ChartRank, modifier: GlanceModi
     // 위젯 크기와 무관하게 칩 하나의 크기는 표처럼 일정하게 유지된다.
     Column(
         modifier = modifier
-            .background(WidgetColors.chipBackground)
+            .background(WidgetColors.surfaceVariant)
             .cornerRadius(8.dp)
             .padding(vertical = 4.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -259,7 +268,7 @@ private fun PlatformChip(platform: String, rank: ChartRank, modifier: GlanceModi
         Text(
             text = PlatformOrder.label(platform),
             maxLines = 1,
-            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 8.sp)
+            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 8.5.sp)
         )
         Spacer(modifier = GlanceModifier.height(2.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {

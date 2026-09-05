@@ -364,7 +364,7 @@
   .grow{flex:1; min-width:0;}
   .hidden{display:none !important;}
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90;display:flex;align-items:flex-end;}
-  .modal{width:100%;max-height:70%;background:var(--surface);border-radius:16px 16px 0 0;padding:8px 20px 28px;box-shadow:0 -8px 30px rgba(0,0,0,.16); overflow-y:auto;}
+  .modal{width:100%;max-height:70%;background:var(--surface);border-radius:16px 16px 0 0;padding:8px 20px 28px;box-shadow:0 -8px 30px rgba(0,0,0,.16); overflow-y:auto; touch-action:none;}
   .modal::before{content:"";display:block;width:36px;height:5px;border-radius:3px;background:var(--divider);margin:6px auto 14px;}
   .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .modal-title{font-size:18px;font-weight:700;color:var(--text-1);}
@@ -650,7 +650,7 @@ tabs.forEach(tab=>{
 });
 
 // Functional navigation and real data actions.
-function attachModalSwipe(b){const modal=b.querySelector(".modal");let startY=0,curY=0,dragging=false;const HANDLE_H=70;modal.addEventListener("pointerdown",e=>{const rect=modal.getBoundingClientRect();if(e.clientY-rect.top>HANDLE_H)return;dragging=true;startY=e.clientY;curY=0;modal.style.transition="none";modal.setPointerCapture(e.pointerId);});modal.addEventListener("pointermove",e=>{if(!dragging)return;curY=Math.max(0,e.clientY-startY);modal.style.transform=`translateY(${curY}px)`;});const end=()=>{if(!dragging)return;dragging=false;modal.style.transition="transform .2s ease";if(curY>80){modal.style.transform="translateY(100%)";setTimeout(()=>b.remove(),200);}else{modal.style.transform="translateY(0)";}};modal.addEventListener("pointerup",end);modal.addEventListener("pointercancel",end);}
+function attachModalSwipe(b){const modal=b.querySelector(".modal");let startY=0,curY=0,dragging=false;const HANDLE_H=80;modal.addEventListener("pointerdown",e=>{const rect=modal.getBoundingClientRect();if(e.clientY-rect.top>HANDLE_H)return;dragging=true;startY=e.clientY;curY=0;modal.style.transition="none";modal.setPointerCapture(e.pointerId);e.preventDefault();});modal.addEventListener("pointermove",e=>{if(!dragging)return;e.preventDefault();curY=Math.max(0,e.clientY-startY);modal.style.transform=`translateY(${curY}px)`;});const end=()=>{if(!dragging)return;dragging=false;modal.style.transition="transform .2s ease";if(curY>80){modal.style.transform="translateY(100%)";setTimeout(()=>b.remove(),200);}else{modal.style.transform="translateY(0)";}};modal.addEventListener("pointerup",end);modal.addEventListener("pointercancel",end);}
 const CHART_INFO=[["멜론","TOP 100"],["유튜브 뮤직","주간 인기곡"],["스포티파이","한국 데일리 차트"],["지니","TOP 200"],["플로","전체 연령 차트"],["벅스","실시간 차트"],["바이브","오늘 TOP 100"]];
 function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);attachModalSwipe(b);}
 document.getElementById("chart-info-btn")?.addEventListener("click",showChartInfo);

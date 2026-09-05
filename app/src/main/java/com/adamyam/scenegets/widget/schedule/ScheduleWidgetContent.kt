@@ -40,11 +40,12 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(WidgetColors.background)
-            .padding(8.dp)
+            .background(WidgetColors.pageBackground)
+            .cornerRadius(20.dp)
+            .padding(10.dp)
     ) {
         ScheduleHeader(state)
-        Spacer(modifier = GlanceModifier.height(4.dp))
+        Spacer(modifier = GlanceModifier.height(6.dp))
 
         when (state) {
             is WidgetState.Loading -> CenterMessage("스케줄을 불러오는 중...")
@@ -73,19 +74,19 @@ private fun ScheduleHeader(state: WidgetState<List<ScheduleEvent>>) {
     ) {
         Text(
             text = "스케줄",
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         )
         Spacer(modifier = GlanceModifier.defaultWeight())
         Text(
             text = freshnessLabel(state),
-            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 9.sp)
+            style = TextStyle(color = WidgetColors.textFaint, fontSize = 10.sp)
         )
         Spacer(modifier = GlanceModifier.width(6.dp))
         Image(
             provider = ImageProvider(R.drawable.ic_refresh),
             contentDescription = "새로고침",
             modifier = GlanceModifier
-                .size(16.dp)
+                .size(15.dp)
                 .clickable(actionRunCallback<RefreshScheduleAction>())
         )
     }
@@ -129,7 +130,7 @@ private fun EventGroupCard(group: DateEventGroup) {
         Column(
             modifier = GlanceModifier
                 .fillMaxWidth()
-                .background(WidgetColors.cardBackground)
+                .background(WidgetColors.surface)
                 .cornerRadius(14.dp)
                 .padding(vertical = 10.dp, horizontal = 12.dp)
         ) {
@@ -228,15 +229,16 @@ private fun TimeChip(time: String) {
 
 @Composable
 private fun TypeBadge(type: String) {
+    val (bg, fg) = typeColors(type)
     Row(
         modifier = GlanceModifier
-            .background(typeColor(type))
+            .background(bg)
             .cornerRadius(6.dp)
-            .padding(horizontal = 7.dp, vertical = 3.dp)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         Text(
             text = typeLabel(type),
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(color = fg, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         )
     }
 }
@@ -251,13 +253,13 @@ private fun typeLabel(type: String): String = when (type) {
     else -> type.ifBlank { "일정" }
 }
 
-private fun typeColor(type: String) = when (type) {
-    "broadcast" -> WidgetColors.down
-    "radio" -> WidgetColors.flat
-    "event" -> WidgetColors.up
-    "fansign" -> WidgetColors.chipBackground
-    "concert" -> WidgetColors.up
-    else -> WidgetColors.chipBackground
+private fun typeColors(type: String) = when (type) {
+    "broadcast" -> WidgetColors.downTint to WidgetColors.down
+    "radio" -> WidgetColors.surfaceVariant to WidgetColors.textSecondary
+    "event" -> WidgetColors.pinkTint to WidgetColors.pink
+    "fansign" -> WidgetColors.accentChipBackground to WidgetColors.accent
+    "concert" -> WidgetColors.pinkTint to WidgetColors.pink
+    else -> WidgetColors.surfaceVariant to WidgetColors.textSecondary
 }
 
 @Composable

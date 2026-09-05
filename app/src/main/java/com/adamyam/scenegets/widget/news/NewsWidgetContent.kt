@@ -16,7 +16,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
+import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.background
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -43,11 +43,11 @@ fun NewsWidgetContent(state: WidgetState<NewsResponse>, thumbnails: Map<String, 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(WidgetColors.background)
-            .padding(8.dp)
+            .background(WidgetColors.surface)
+            .cornerRadius(20.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         NewsHeader(state)
-        Spacer(modifier = GlanceModifier.height(4.dp))
 
         when (state) {
             is WidgetState.Loading -> CenterMessage("뉴스를 불러오는 중...")
@@ -57,13 +57,27 @@ fun NewsWidgetContent(state: WidgetState<NewsResponse>, thumbnails: Map<String, 
                 if (articles.isEmpty()) {
                     CenterMessage("표시할 뉴스가 없어요")
                 } else {
+                    Spacer(modifier = GlanceModifier.height(6.dp))
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                        items(articles) { article -> ArticleRow(article, thumbnails[article.thumbnail]) }
+                        itemsIndexed(articles) { index, article ->
+                            if (index > 0) Divider()
+                            ArticleRow(article, thumbnails[article.thumbnail])
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun Divider() {
+    Box(
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(WidgetColors.divider)
+    ) {}
 }
 
 @Composable
@@ -74,19 +88,19 @@ private fun NewsHeader(state: WidgetState<NewsResponse>) {
     ) {
         Text(
             text = "뉴스",
-            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            style = TextStyle(color = WidgetColors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         )
         Spacer(modifier = GlanceModifier.defaultWeight())
         Text(
             text = freshnessLabel(state),
-            style = TextStyle(color = WidgetColors.textSecondary, fontSize = 9.sp)
+            style = TextStyle(color = WidgetColors.textFaint, fontSize = 10.sp)
         )
         Spacer(modifier = GlanceModifier.width(6.dp))
         Image(
             provider = ImageProvider(R.drawable.ic_refresh),
             contentDescription = "새로고침",
             modifier = GlanceModifier
-                .size(16.dp)
+                .size(15.dp)
                 .clickable(actionRunCallback<RefreshNewsAction>())
         )
     }
@@ -97,39 +111,35 @@ private fun ArticleRow(article: NewsArticle, thumbnail: Bitmap?) {
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .background(WidgetColors.cardBackground)
-            .cornerRadius(8.dp)
-            .padding(8.dp)
-            // 뉴스는 항목을 누르면 해당 기사로 바로 이동
+            .padding(vertical = 9.dp)
             .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(article.url))))
     ) {
-        ArticleThumbnail(thumbnail)
-        Spacer(modifier = GlanceModifier.width(8.dp))
+        ArticleThumbnail(thumbnail, article.source)
+        Spacer(modifier = GlanceModifier.width(10.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
                 text = article.title,
                 maxLines = 2,
-                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                style = TextStyle(color = WidgetColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             )
-            Spacer(modifier = GlanceModifier.height(3.dp))
+            Spacer(modifier = GlanceModifier.height(4.dp))
             Row(modifier = GlanceModifier.fillMaxWidth()) {
                 Text(
                     text = article.source,
-                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 9.sp)
+                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 10.5.sp, fontWeight = FontWeight.Medium)
                 )
                 Spacer(modifier = GlanceModifier.width(6.dp))
                 Text(
                     text = article.date,
-                    style = TextStyle(color = WidgetColors.textFaint, fontSize = 9.sp)
+                    style = TextStyle(color = WidgetColors.textFaint, fontSize = 10.5.sp)
                 )
             }
         }
     }
-    Spacer(modifier = GlanceModifier.height(6.dp))
 }
 
 @Composable
-private fun ArticleThumbnail(bitmap: Bitmap?) {
+private fun ArticleThumbnail(bitmap: Bitmap?, source: String) {
     if (bitmap != null) {
         Image(
             provider = ImageProvider(bitmap),
@@ -137,16 +147,21 @@ private fun ArticleThumbnail(bitmap: Bitmap?) {
             contentScale = ContentScale.Crop,
             modifier = GlanceModifier
                 .size(48.dp)
-                .cornerRadius(6.dp)
+                .cornerRadius(10.dp)
         )
     } else {
-        // 이미지가 아직 없거나 로드에 실패했을 때의 빈 자리 표시
         Box(
             modifier = GlanceModifier
                 .size(48.dp)
-                .cornerRadius(6.dp)
-                .background(WidgetColors.chipBackground)
-        ) {}
+                .cornerRadius(10.dp)
+                .background(WidgetColors.accentChipBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = source.take(1).ifBlank { "N" },
+                style = TextStyle(color = WidgetColors.accent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            )
+        }
     }
 }
 
