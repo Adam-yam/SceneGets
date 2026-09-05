@@ -334,6 +334,12 @@
     font-family:var(--font); display:flex; align-items:center; justify-content:center; gap:6px;
   }
   .set-btn.secondary{background:var(--surface-2); color:var(--accent);}
+  .set-link-row{display:flex; gap:10px; margin-top:12px;}
+  .set-link-btn{
+    flex:1; padding:12px 10px; border-radius:12px; border:none;
+    background:var(--surface-2); color:var(--accent); font-size:13.5px; font-weight:650;
+    font-family:var(--font); display:flex; align-items:center; justify-content:center; gap:6px;
+  }
   .set-steps{margin:12px 0 0; padding:0; list-style:none; counter-reset:step;}
   .set-steps li{
     counter-increment:step; position:relative; padding:0 0 0 26px; margin-top:8px;
@@ -363,7 +369,6 @@
   .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .modal-title{font-size:18px;font-weight:700;color:var(--text-1);}
   .modal-close{border:none;background:var(--surface-2);color:var(--accent);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600;}
-  .favorite-row{padding:12px 0;border-top:1px solid var(--divider);color:var(--text-1);font-size:14px;}
 
   .toast{
     position:fixed; left:50%; bottom:calc(14px + var(--system-bottom) + 78px);
@@ -516,7 +521,21 @@
         </div>
       </div>
 
-
+      <div class="section">
+        <div class="section-head"><span class="section-title">정보</span></div>
+        <div class="card set-card">
+          <div class="set-link-row">
+            <button class="set-link-btn" type="button" id="contact-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+              문의하기
+            </button>
+            <button class="set-link-btn" type="button" id="github-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
+              Github 바로가기
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div class="set-foot">SceneGets · 인앱 설정</div>
     </div>
@@ -631,12 +650,11 @@ tabs.forEach(tab=>{
 });
 
 // Functional navigation and real data actions.
-function showFavorites(){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]");let rows=f.map(id=>`<div class="favorite-row">${esc((id||"").replace(/^song:/,""))}</div>`).join("")||'<div class="today-empty">저장된 즐겨찾기가 없습니다.</div>';let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">즐겨찾기</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);}
+function attachModalSwipe(b){const modal=b.querySelector(".modal");let startY=0,curY=0,dragging=false;const HANDLE_H=70;modal.addEventListener("pointerdown",e=>{const rect=modal.getBoundingClientRect();if(e.clientY-rect.top>HANDLE_H)return;dragging=true;startY=e.clientY;curY=0;modal.style.transition="none";modal.setPointerCapture(e.pointerId);});modal.addEventListener("pointermove",e=>{if(!dragging)return;curY=Math.max(0,e.clientY-startY);modal.style.transform=`translateY(${curY}px)`;});const end=()=>{if(!dragging)return;dragging=false;modal.style.transition="transform .2s ease";if(curY>80){modal.style.transform="translateY(100%)";setTimeout(()=>b.remove(),200);}else{modal.style.transform="translateY(0)";}};modal.addEventListener("pointerup",end);modal.addEventListener("pointercancel",end);}
 const CHART_INFO=[["멜론","TOP 100"],["유튜브 뮤직","주간 인기곡"],["스포티파이","한국 데일리 차트"],["지니","TOP 200"],["플로","전체 연령 차트"],["벅스","실시간 차트"],["바이브","오늘 TOP 100"]];
-function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);}
+function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);attachModalSwipe(b);}
 document.getElementById("chart-info-btn")?.addEventListener("click",showChartInfo);
-document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));});
-function toggleFavorite(id){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]"),i=f.indexOf("song:"+id);if(i>=0)f.splice(i,1);else f.push("song:"+id);localStorage.setItem("scenegets_favorites",JSON.stringify(f));}
+document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));});
 document.getElementById("chart-refresh")?.addEventListener("click",()=>{pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
 document.getElementById("home-refresh-btn")?.addEventListener("click",()=>{const el=document.getElementById("home-refresh-time");if(el)el.textContent="갱신 중…";pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
 document.getElementById("platform-pills").addEventListener("click",e=>{const p=e.target.closest(".pill");if(!p)return;document.querySelectorAll("#platform-pills .pill").forEach(x=>x.classList.remove("active"));p.classList.add("active");renderChart(p.dataset.p);});
@@ -698,6 +716,12 @@ document.getElementById("batt-open")?.addEventListener("click",()=>{
   else { const t=document.getElementById("batt-status"); if(t) t.textContent="이 설정은 Android 앱에서만 열 수 있어요."; }
 });
 document.getElementById("batt-recheck")?.addEventListener("click",refreshBatteryStatus);
+document.getElementById("contact-btn")?.addEventListener("click",()=>{
+  if(window.SceneGetsBridge&&window.SceneGetsBridge.openEmail) window.SceneGetsBridge.openEmail("sceneflix.may@gmail.com");
+});
+document.getElementById("github-btn")?.addEventListener("click",()=>{
+  if(window.SceneGetsBridge&&window.SceneGetsBridge.openUrl) window.SceneGetsBridge.openUrl("https://github.com/Adam-yam");
+});
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refreshBatteryStatus(); });
 window.SceneGetsWeb=window.SceneGetsWeb||{};
 window.SceneGetsWeb.onResume=function(){ refreshBatteryStatus(); };

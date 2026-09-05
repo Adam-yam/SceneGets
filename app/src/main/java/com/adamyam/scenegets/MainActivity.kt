@@ -286,6 +286,15 @@ class MainActivity : Activity() {
             if (uri.scheme != "http" && uri.scheme != "https") return
             startActivity(Intent(Intent.ACTION_VIEW, uri))
         }
+
+        @JavascriptInterface
+        fun openEmail(address: String?) {
+            val to = address?.takeIf { it.isNotBlank() } ?: return
+            val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(to))
+            }
+            runCatching { startActivity(intent) }
+        }
     }
 
     override fun onDestroy() {
