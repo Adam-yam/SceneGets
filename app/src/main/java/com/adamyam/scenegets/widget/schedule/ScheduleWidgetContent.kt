@@ -54,7 +54,7 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
                         WidgetCenterMessage("예정된 일정이 없어요")
                     } else {
                         val groups = groupEventsByDate(events)
-                        Box(modifier = GlanceModifier.defaultWeight()) {
+                        Box(modifier = GlanceModifier.fillMaxWidth()) {
                             LazyColumn(
                                 modifier = GlanceModifier
                                     .fillMaxSize()
@@ -89,9 +89,9 @@ private fun ScheduleHeader(state: WidgetState<List<ScheduleEvent>>) {
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = GlanceModifier.defaultWeight()) {
+            Column(modifier = GlanceModifier.fillMaxWidth()) {
                 Text(
-                    text = "일정 카드",
+                    text = "일정",
                     style = TextStyle(
                         color = WidgetColors.textPrimary,
                         fontSize = 17.sp,
@@ -153,100 +153,92 @@ private fun ScheduleDateCard(group: DateEventGroup) {
         null
     }
 
+    Column(modifier = GlanceModifier.fillMaxWidth()) {
+        // Fantastical 스타일의 날짜 라벨: 날짜별 일정 묶음의 시작점에 고정된 듯한
+        // 가벼운 헤더를 두어 카드가 많아져도 날짜를 빠르게 찾을 수 있게 한다.
+        Text(
+            text = formatDateLabel(parsed, group.date),
+            style = TextStyle(
+                color = WidgetColors.textSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            ),
+            modifier = GlanceModifier.padding(top = 8.dp, bottom = 6.dp)
+        )
+
+        group.events.forEachIndexed { index, event ->
+            ScheduleItem(event, addBottomPadding = index != group.events.lastIndex)
+        }
+    }
+}
+
+@Composable
+private fun ScheduleItem(event: ScheduleEvent, addBottomPadding: Boolean = true) {
+    val color = typeColor(event.type)
+
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .padding(bottom = 10.dp)
             .background(WidgetColors.surfaceVariant)
-            .cornerRadius(16.dp)
-            .padding(12.dp)
+            .cornerRadius(12.dp)
+            .padding(end = 10.dp)
+            .then(if (addBottomPadding) GlanceModifier.padding(bottom = 6.dp) else GlanceModifier.padding(bottom = 0.dp))
     ) {
-        DateSide(parsed, group.date)
+        Box(
+            modifier = GlanceModifier
+                .width(4.dp)
+                .height(42.dp)
+                .background(color)
+        ) {}
 
-        Spacer(modifier = GlanceModifier.width(12.dp))
-        DashedDivider()
-        Spacer(modifier = GlanceModifier.width(12.dp))
+        Spacer(modifier = GlanceModifier.width(10.dp))
 
-        Column(modifier = GlanceModifier.defaultWeight()) {
-            group.events.forEachIndexed { index, event ->
-                if (index > 0) Spacer(modifier = GlanceModifier.height(8.dp))
-                ScheduleItem(event)
-            }
+        Column(
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            Text(
+                text = timeText(event),
+                maxLines = 1,
+                style = TextStyle(
+                    color = color,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+            Text(
+                text = event.title,
+                maxLines = 1,
+                style = TextStyle(
+                    color = WidgetColors.textPrimary,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            )
         }
     }
 }
 
-@Composable
-private fun DateSide(parsed: LocalDate?, rawDate: String) {
-    val dateNumber = parsed?.dayOfMonth?.toString() ?: rawDate.takeLast(2)
-    val weekday = parsed?.let { weekdayLabel(it) } ?: ""
-
-    Column(
-        modifier = GlanceModifier.width(52.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = dateNumber,
-            style = TextStyle(
-                color = WidgetColors.textPrimary,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-        )
-        Text(
-            text = weekday,
-            style = TextStyle(
-                color = WidgetColors.textSecondary,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Bold
-            )
-        )
-    }
+private fun formatDateLabel(parsed: LocalDate?, rawDate: String): String {
+    if (parsed == null) return rawDate
+    return String.format(
+        Locale.KOREA,
+        "%d월 %d일 · %s요일",
+        parsed.monthValue,
+        parsed.dayOfMonth,
+        weekdayShort(parsed)
+    )
 }
 
-@Composable
-private fun DashedDivider() {
-    // Glance에는 CSS border-left:dashed가 없어서 짧은 선을 반복해 점선을 만든다.
-    Column(
-        modifier = GlanceModifier.width(1.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        repeat(8) {
-            Box(
-                modifier = GlanceModifier
-                    .width(1.dp)
-                    .height(3.dp)
-                    .background(WidgetColors.divider)
-            ) {}
-            if (it < 7) Spacer(modifier = GlanceModifier.height(3.dp))
-        }
-    }
-}
-
-@Composable
-private fun ScheduleItem(event: ScheduleEvent) {
-    val color = typeColor(event.type)
-
-    Column(modifier = GlanceModifier.fillMaxWidth()) {
-        Text(
-            text = timeText(event),
-            maxLines = 1,
-            style = TextStyle(
-                color = color,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Bold
-            )
-        )
-        Text(
-            text = event.title,
-            maxLines = 1,
-            style = TextStyle(
-                color = WidgetColors.textPrimary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium
-            )
-        )
-    }
+private fun weekdayShort(date: LocalDate): String = when (date.dayOfWeek.value) {
+    1 -> "월"
+    2 -> "화"
+    3 -> "수"
+    4 -> "목"
+    5 -> "금"
+    6 -> "토"
+    else -> "일"
 }
 
 private fun timeText(event: ScheduleEvent): String =
@@ -258,16 +250,6 @@ private fun typeColor(type: String) = when (type) {
     "radio" -> WidgetColors.accent
     "notice" -> WidgetColors.textSecondary
     else -> WidgetColors.textSecondary
-}
-
-private fun weekdayLabel(date: LocalDate): String = when (date.dayOfWeek.value) {
-    1 -> "월요일"
-    2 -> "화요일"
-    3 -> "수요일"
-    4 -> "목요일"
-    5 -> "금요일"
-    6 -> "토요일"
-    else -> "일요일"
 }
 
 private fun monthLabel(dateString: String): String {
