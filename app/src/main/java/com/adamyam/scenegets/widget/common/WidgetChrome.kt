@@ -60,8 +60,7 @@ fun WidgetCard(content: @Composable ColumnScope.() -> Unit) {
 }
 
 /**
- * 위젯 헤더. 제목 앞의 작은 색 사각형은 위젯 3종을 홈 화면에서 한눈에
- * 구분하기 위한 최소한의 장치(스케줄=보라, 뉴스=파랑, 차트=핑크).
+ * 위젯 공통 헤더. 제목과 최신 시각, 새로고침 버튼만 간결하게 배치한다.
  */
 @Composable
 fun WidgetHeader(
@@ -74,13 +73,6 @@ fun WidgetHeader(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = GlanceModifier
-                .size(7.dp)
-                .cornerRadius(2.dp)
-                .background(accentColor)
-        ) {}
-        Spacer(modifier = GlanceModifier.width(6.dp))
         Text(
             text = title,
             style = TextStyle(color = WidgetColors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)

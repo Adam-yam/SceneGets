@@ -5,6 +5,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
@@ -27,8 +29,8 @@ import com.adamyam.scenegets.data.WidgetState
 import com.adamyam.scenegets.models.ScheduleEvent
 import com.adamyam.scenegets.widget.common.WidgetColors
 import com.adamyam.scenegets.widget.common.WidgetCenterMessage
+import com.adamyam.scenegets.R
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
 
@@ -43,13 +45,13 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
             .cornerRadius(26.dp)
     ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
-            ScheduleHeader(state)
+            ScheduleHeader()
 
             when (state) {
                 is WidgetState.Loading -> WidgetCenterMessage("스케줄을 불러오는 중...")
                 is WidgetState.Failed -> WidgetCenterMessage("스케줄을 불러오지 못했어요\n${state.message}")
                 is WidgetState.Loaded -> {
-                    val events = state.data
+                    val events = withBirthdays(state.data)
                     if (events.isEmpty()) {
                         WidgetCenterMessage("예정된 일정이 없어요")
                     } else {
@@ -74,58 +76,38 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
 }
 
 @Composable
-private fun ScheduleHeader(state: WidgetState<List<ScheduleEvent>>) {
-    val month = when (state) {
-        is WidgetState.Loaded -> state.data.firstOrNull()?.date?.let(::monthLabel)
-        else -> null
-    } ?: monthLabel(LocalDate.now().toString())
-
-    Column(
+private fun ScheduleHeader() {
+    Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 16.dp, top = 18.dp, bottom = 10.dp)
+            .padding(start = 20.dp, end = 16.dp, top = 12.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = GlanceModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = GlanceModifier.fillMaxWidth()) {
-                Text(
-                    text = "일정",
-                    style = TextStyle(
-                        color = WidgetColors.textPrimary,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-                Text(
-                    text = month,
-                    style = TextStyle(
-                        color = WidgetColors.textSecondary,
-                        fontSize = 12.sp
-                    )
-                )
-            }
+        Text(
+            text = "일정",
+            style = TextStyle(
+                color = WidgetColors.textPrimary,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold
+            )
+        )
 
-            // 기존 위젯의 수동 새로고침 동작은 유지한다.
-            Box(
-                modifier = GlanceModifier
-                    .width(24.dp)
-                    .height(24.dp)
-                    .cornerRadius(12.dp)
-                    .background(WidgetColors.surfaceVariant)
-                    .clickable(actionRunCallback<RefreshScheduleAction>()),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "↻",
-                    style = TextStyle(
-                        color = WidgetColors.textSecondary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
+        Spacer(modifier = GlanceModifier.defaultWeight())
+
+        Box(
+            modifier = GlanceModifier
+                .width(24.dp)
+                .height(24.dp)
+                .cornerRadius(12.dp)
+                .background(WidgetColors.surfaceVariant)
+                .clickable(actionRunCallback<RefreshScheduleAction>()),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                provider = ImageProvider(R.drawable.ic_refresh),
+                contentDescription = "새로고침",
+                modifier = GlanceModifier.size(13.dp)
+            )
         }
     }
 }
@@ -156,15 +138,38 @@ private fun ScheduleDateCard(group: DateEventGroup) {
     Column(modifier = GlanceModifier.fillMaxWidth()) {
         // Fantastical 스타일의 날짜 라벨: 날짜별 일정 묶음의 시작점에 고정된 듯한
         // 가벼운 헤더를 두어 카드가 많아져도 날짜를 빠르게 찾을 수 있게 한다.
-        Text(
-            text = formatDateLabel(parsed, group.date),
-            style = TextStyle(
-                color = WidgetColors.textSecondary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            ),
-            modifier = GlanceModifier.padding(top = 8.dp, bottom = 6.dp)
-        )
+        Row(
+            modifier = GlanceModifier.padding(top = 8.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (parsed != null) {
+                Text(
+                    text = String.format(Locale.KOREA, "%d월 %d일 · ", parsed.monthValue, parsed.dayOfMonth),
+                    style = TextStyle(
+                        color = WidgetColors.textSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Text(
+                    text = weekdayShort(parsed) + "요일",
+                    style = TextStyle(
+                        color = weekdayColor(parsed),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            } else {
+                Text(
+                    text = group.date,
+                    style = TextStyle(
+                        color = WidgetColors.textSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+        }
 
         group.events.forEachIndexed { index, event ->
             ScheduleItem(event, addBottomPadding = index != group.events.lastIndex)
@@ -198,15 +203,17 @@ private fun ScheduleItem(event: ScheduleEvent, addBottomPadding: Boolean = true)
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
         ) {
-            Text(
-                text = timeText(event),
-                maxLines = 1,
-                style = TextStyle(
-                    color = color,
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Bold
+            if (event.time.isNotBlank()) {
+                Text(
+                    text = event.time,
+                    maxLines = 1,
+                    style = TextStyle(
+                        color = color,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 )
-            )
+            }
             Text(
                 text = event.title,
                 maxLines = 1,
@@ -241,22 +248,45 @@ private fun weekdayShort(date: LocalDate): String = when (date.dayOfWeek.value) 
     else -> "일"
 }
 
-private fun timeText(event: ScheduleEvent): String =
-    if (event.time.isBlank()) "종일" else event.time
+private fun weekdayColor(date: LocalDate) = when (date.dayOfWeek.value) {
+    6 -> WidgetColors.down
+    7 -> WidgetColors.up
+    else -> WidgetColors.textSecondary
+}
 
 private fun typeColor(type: String) = when (type) {
     "concert", "fansign", "event" -> WidgetColors.pink
     "broadcast" -> WidgetColors.down
     "radio" -> WidgetColors.accent
+    "birthday" -> WidgetColors.accent
     "notice" -> WidgetColors.textSecondary
     else -> WidgetColors.textSecondary
 }
 
-private fun monthLabel(dateString: String): String {
-    val parsed = try {
-        LocalDate.parse(dateString)
-    } catch (_: DateTimeParseException) {
-        return dateString
+private data class Birthday(val month: Int, val day: Int, val name: String)
+
+private val birthdays = listOf(
+    Birthday(5, 25, "원이"),
+    Birthday(10, 11, "리브"),
+    Birthday(11, 29, "미나미"),
+    Birthday(8, 19, "메이"),
+    Birthday(11, 27, "제나")
+)
+
+private fun withBirthdays(events: List<ScheduleEvent>): List<ScheduleEvent> {
+    val years = (events.mapNotNull { it.date.takeIf { d -> d.length >= 4 }?.take(4)?.toIntOrNull() } + LocalDate.now().year).toSet()
+    val existingBirthdayDates = events.filter { it.type == "birthday" }.map { it.date }.toSet()
+    val birthdayEvents = years.flatMap { year ->
+        birthdays.mapNotNull { birthday ->
+            val date = runCatching { LocalDate.of(year, birthday.month, birthday.day) }.getOrNull() ?: return@mapNotNull null
+            if (date.toString() in existingBirthdayDates) null
+            else ScheduleEvent(
+                date = date.toString(),
+                title = "${birthday.name} 생일",
+                type = "birthday",
+                source = "local"
+            )
+        }
     }
-    return String.format(Locale.KOREA, "%d년 %d월", parsed.year, parsed.monthValue)
+    return events + birthdayEvents
 }
