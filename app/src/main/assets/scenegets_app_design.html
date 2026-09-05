@@ -369,31 +369,7 @@
         </div>
         <div class="card">
           <div class="chart-mini-row">
-            <span class="rank-num top3">1</span>
-            <div class="thumb" style="width:38px;height:38px;">N</div>
-            <div class="mini-info">
-              <div class="mini-title">만개</div>
-              <div class="mini-artist">NEON ECHO</div>
-            </div>
-            <span class="delta flat">NEW</span>
-          </div>
-          <div class="chart-mini-row">
-            <span class="rank-num top3">2</span>
-            <div class="thumb" style="width:38px;height:38px;">A</div>
-            <div class="mini-info">
-              <div class="mini-title">Butterfly Kiss</div>
-              <div class="mini-artist">ARIA</div>
-            </div>
-            <span class="delta up">▲1</span>
-          </div>
-          <div class="chart-mini-row">
-            <span class="rank-num top3">3</span>
-            <div class="thumb" style="width:38px;height:38px;">T</div>
-            <div class="mini-info">
-              <div class="mini-title">Run It Back</div>
-              <div class="mini-artist">TEMPO</div>
-            </div>
-            <span class="delta down">▼2</span>
+            <div class="today-empty">실제 차트 데이터를 불러오는 중입니다.</div>
           </div>
         </div>
       </div>
@@ -405,18 +381,7 @@
         </div>
         <div class="card">
           <div class="news-mini">
-            <div class="thumb" style="width:52px;height:52px;">K</div>
-            <div>
-              <div class="n-title">NEON ECHO, 첫 단독 콘서트 전석 매진</div>
-              <div class="n-meta">K-STAR TODAY · 2시간 전</div>
-            </div>
-          </div>
-          <div class="news-mini">
-            <div class="thumb" style="width:52px;height:52px;">I</div>
-            <div>
-              <div class="n-title">ARIA 새 앨범 콘셉트 포토 전격 공개</div>
-              <div class="n-meta">IDOL PICK · 5시간 전</div>
-            </div>
+            <div class="today-empty">실제 뉴스 데이터를 불러오는 중입니다.</div>
           </div>
         </div>
       </div>
@@ -592,7 +557,7 @@ function applyScheduleData(d){
   }).join("");
 }
 function updateHome(){const ev=(nativeData.schedule.events||[]).filter(e=>e.date===todayISO()).sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));const tc=document.querySelector("#screen-home .today-card");tc.innerHTML=ev.map(e=>`<div class="today-item"><div class="content-col"><span class="badge ${esc(e.type)}">${esc(e.type||"일정")}</span><div class="item-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")||`<div class="today-empty">오늘 예정된 일정이 없습니다.</div>`;const songs=[...(nativeData.chart.songs||[])].map(normalizedSong).sort((a,b)=>Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999))-Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999))).slice(0,3);const cc=document.querySelector("#screen-home .chart-mini-row")?.parentElement;if(cc)cc.innerHTML=songs.map(s=>{const ranks=s.ranks||{};return `<div class="chart-mini-row">${albumThumb(s,38,38)}<div class="mini-info"><div class="mini-title">${esc(s.songName)}</div><div class="mini-artist">${esc(s.artistName)}</div></div><div class="home-platform-ranks">${ranks.melon?`<div class="home-platform-rank melon">멜론 <span class="rank-value">#${ranks.melon.rank}</span></div>`:""}${ranks.ytm?`<div class="home-platform-rank ytm">유튜브 뮤직 <span class="rank-value">#${ranks.ytm.rank}</span></div>`:""}</div></div>`}).join("")||`<div class="today-empty">차트 데이터가 없습니다.</div>`;const n=nativeData.news.articles||[],nc=document.querySelector("#screen-home .news-mini")?.parentElement;if(nc)nc.innerHTML=n.slice(0,5).map(a=>`<div class="news-mini" data-url="${esc(a.url)}">${newsThumb(a,52,52)}<div style="min-width:0;flex:1;"><div class="n-title">${esc(a.title)}</div><div class="n-meta">${esc(a.source)}${a.date?` · ${esc(a.date)}`:""}</div></div></div>`).join("")||`<div class="today-empty">뉴스 데이터가 없습니다.</div>`;}
-  onData:function(payload){try{nativeData=JSON.parse(payload);applyChartData(nativeData.chart);applyNewsData(nativeData.news);applyScheduleData(nativeData.schedule);updateHome();}catch(e){console.error(e);}},
+  onData:function(payload){try{nativeData=typeof payload==="string"?JSON.parse(payload):payload;applyChartData(nativeData.chart);applyNewsData(nativeData.news);applyScheduleData(nativeData.schedule);updateHome();}catch(e){console.error("SceneGets data error",e);}},
   applyTheme:function(t){applyTheme(t,false);}
 };
 renderChart("all");
@@ -600,12 +565,33 @@ renderChart("all");
 /* ---------------- tab switching ---------------- */
 const tabs = document.querySelectorAll('.tab');
 const screens = {home:'screen-home', chart:'screen-chart', news:'screen-news', schedule:'screen-schedule', settings:'screen-settings'};
+function resetScreenScroll(tabName){
+  const screenId=screens[tabName];
+  if(!screenId)return;
+  const screen=document.getElementById(screenId);
+  if(!screen)return;
+  const content=screen.querySelector(".content");
+  if(content){
+    content.scrollTop=0;
+    content.scrollLeft=0;
+  }
+}
+
 tabs.forEach(tab=>{
-  tab.addEventListener('click', ()=>{
-    tabs.forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    Object.values(screens).forEach(id=>document.getElementById(id).classList.add('hidden'));
-    document.getElementById(screens[tab.dataset.tab]).classList.remove('hidden');
+  tab.addEventListener("click", ()=>{
+    const tabName=tab.dataset.tab;
+    tabs.forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    Object.values(screens).forEach(id=>{
+      const el=document.getElementById(id);
+      if(el)el.classList.add("hidden");
+    });
+    const target=document.getElementById(screens[tabName]);
+    if(!target)return;
+    target.classList.remove("hidden");
+    resetScreenScroll(tabName);
+    requestAnimationFrame(()=>resetScreenScroll(tabName));
+    setTimeout(()=>resetScreenScroll(tabName),0);
   });
 });
 
@@ -615,7 +601,8 @@ document.addEventListener("click",e=>{const action=e.target.closest("[data-actio
 function toggleFavorite(id){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]"),i=f.indexOf("song:"+id);if(i>=0)f.splice(i,1);else f.push("song:"+id);localStorage.setItem("scenegets_favorites",JSON.stringify(f));}
 document.getElementById("chart-refresh")?.addEventListener("click",()=>window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll());
 document.getElementById("platform-pills").addEventListener("click",e=>{const p=e.target.closest(".pill");if(!p)return;document.querySelectorAll("#platform-pills .pill").forEach(x=>x.classList.remove("active"));p.classList.add("active");renderChart(p.dataset.p);});
-window.addEventListener("load",()=>window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll());
+// 초기 실제 데이터 로딩은 MainActivity의 WebView onPageFinished에서 시작한다.
+// window.load에 중복 refresh를 걸지 않아 API 요청이 두 번 나가지 않도록 한다.
 
 /* ---------------- settings: theme & battery ---------------- */
 const THEME_KEY="scenegets_theme";

@@ -51,6 +51,7 @@ class MainActivity : Activity() {
     private lateinit var scheduleRepository: ScheduleRepository
 
     private val prefs by lazy { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
+    private var dataLoadStarted = false
 
     /** "light" | "dark" | "system" */
     private var themeMode: String = THEME_SYSTEM
@@ -81,6 +82,13 @@ class MainActivity : Activity() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     applyInsetVars()
+                    // HTML의 window.load 이벤트에만 의존하면 일부 WebView/Android 버전에서
+                    // JS bridge의 초기 갱신 호출이 누락되어 디자인용 샘플 화면만 남을 수 있다.
+                    // 네이티브의 page-finished 시점에서 실제 데이터를 직접 공급한다.
+                    if (!dataLoadStarted) {
+                        dataLoadStarted = true
+                        scope.launch { loadAll(sendCacheFirst = true) }
+                    }
                 }
             }
             webChromeClient = WebChromeClient()
@@ -221,10 +229,18 @@ class MainActivity : Activity() {
         val newsCache = newsRepository.cachedOrLoading()
         val scheduleCache = scheduleRepository.cachedOrLoading()
         if (sendCacheFirst) {
-            val chart = (chartCache as? WidgetState.Loaded)?.data ?: ChartResponse()
-            val news = (newsCache as? WidgetState.Loaded)?.data ?: NewsResponse()
-            val schedule = (scheduleCache as? WidgetState.Loaded)?.data ?: emptyList()
-            sendData(chart, news, schedule)
+            // 캐시가 실제로 있을 때만 먼저 보낸다. 캐시가 없는데 빈 모델을 보내면
+            // HTML에 남아 있던 샘플 UI를 실제 데이터처럼 보이게 만드는 문제가 있다.
+            val chartLoaded = chartCache as? WidgetState.Loaded
+            val newsLoaded = newsCache as? WidgetState.Loaded
+            val scheduleLoaded = scheduleCache as? WidgetState.Loaded
+            if (chartLoaded != null || newsLoaded != null || scheduleLoaded != null) {
+                sendData(
+                    chartLoaded?.data ?: ChartResponse(),
+                    newsLoaded?.data ?: NewsResponse(),
+                    scheduleLoaded?.data ?: emptyList()
+                )
+            }
         }
 
         val chartFresh = chartRepository.refresh()
