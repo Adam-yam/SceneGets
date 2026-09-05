@@ -14,6 +14,8 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import com.adamyam.scenegets.data.ChartRepository
@@ -40,6 +42,7 @@ import org.json.JSONObject
  */
 class MainActivity : Activity() {
     private lateinit var webView: WebView
+    private lateinit var rootContainer: FrameLayout
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val json = Json { encodeDefaults = true }
 
@@ -61,9 +64,10 @@ class MainActivity : Activity() {
 
         themeMode = prefs.getString(KEY_THEME, THEME_SYSTEM) ?: THEME_SYSTEM
 
-        // 일반 Android 앱처럼 시스템 바 영역은 시스템이 소유한다.
-        // 콘텐츠는 상태바/내비게이션바와 절대 겹치지 않는다.
-        WindowCompat.setDecorFitsSystemWindows(window, true)
+        // Android 15(targetSdk 35)부터 edge-to-edge가 기본/강제되므로,
+        // 시스템이 콘텐츠를 자동으로 밀어준다고 가정하지 않는다.
+        // 앱이 직접 WindowInsets를 받아 콘텐츠 영역을 결정한다.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
@@ -83,15 +87,35 @@ class MainActivity : Activity() {
             addJavascriptInterface(SceneGetsBridge(), "SceneGetsBridge")
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
-            // decorFitsSystemWindows = true 이므로 콘텐츠 영역은 이미 안전 영역이다.
+        // WebView를 시스템 바까지 확장한 뒤, 실제 콘텐츠 뷰의 상/하 margin을
+        // WindowInsets로 잘라낸다. 이 방식은 Android 기본 앱들이 edge-to-edge에서
+        // 사용하는 패턴과 동일하며, WebView 내부 CSS와 무관하게 겹침을 차단한다.
+        rootContainer = FrameLayout(this).apply {
+            setBackgroundColor(if (isDarkTheme()) Color.BLACK else Color.parseColor("#F2F2F7"))
+            addView(
+                webView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootContainer) { _, insets ->
+            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            val lp = webView.layoutParams as FrameLayout.LayoutParams
+            lp.leftMargin = bars.left
+            lp.topMargin = bars.top
+            lp.rightMargin = bars.right
+            lp.bottomMargin = bars.bottom
+            webView.layoutParams = lp
             applyInsetVars()
             insets
         }
 
         applySystemBars()
-        setContentView(webView)
-        ViewCompat.requestApplyInsets(webView)
+        setContentView(rootContainer)
+        ViewCompat.requestApplyInsets(rootContainer)
         webView.loadUrl("file:///android_asset/scenegets_app_design.html")
     }
 
@@ -132,6 +156,7 @@ class MainActivity : Activity() {
         window.statusBarColor = chromeColor
         window.navigationBarColor = chromeColor
         if (::webView.isInitialized) webView.setBackgroundColor(chromeColor)
+        if (::rootContainer.isInitialized) rootContainer.setBackgroundColor(chromeColor)
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = !dark
             isAppearanceLightNavigationBars = !dark
@@ -139,7 +164,8 @@ class MainActivity : Activity() {
     }
 
     private fun applyInsetVars() {
-        // 시스템 바 영역은 시스템이 차지하므로 웹 콘텐츠에는 추가 여백이 필요 없다.
+        // 시스템 바 여백은 WebView padding으로 처리한다. HTML에서 별도로 더하면
+        // 상태바 여백이 두 번 적용되므로 항상 0으로 유지한다.
         webView.evaluateJavascript(
             "document.documentElement.style.setProperty('\u002d\u002dsystem-top','0px');" +
                 "document.documentElement.style.setProperty('\u002d\u002dsystem-bottom','0px');",
@@ -230,9 +256,20 @@ class MainActivity : Activity() {
                 THEME_LIGHT, THEME_DARK, THEME_SYSTEM -> mode
                 else -> THEME_SYSTEM
             }
+            // 반드시 먼저 저장/갱신한 뒤 시스템 테마를 다시 계산한다.
+            // 이전에는 다크 선택 상태에서 '시스템'을 누르면 JS가 아직 themeMode=dark인
+            // 순간에 getResolvedTheme()을 호출해서 계속 다크로 남는 문제가 있었다.
             themeMode = next
             prefs.edit().putString(KEY_THEME, next).apply()
-            runOnUiThread { applySystemBars() }
+            runOnUiThread {
+                applySystemBars()
+                if (::webView.isInitialized) {
+                    webView.evaluateJavascript(
+                        "window.SceneGetsWeb && window.SceneGetsWeb.applyTheme && window.SceneGetsWeb.applyTheme('" + next + "');",
+                        null
+                    )
+                }
+            }
         }
 
         @JavascriptInterface

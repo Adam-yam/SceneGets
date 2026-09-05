@@ -633,7 +633,15 @@ function applyTheme(t,persist){
   const st=document.getElementById("theme-status"); if(st) st.textContent=THEME_TEXT[t];
   if(persist){
     try{ localStorage.setItem(THEME_KEY,t); }catch(e){}
-    try{ window.SceneGetsBridge&&window.SceneGetsBridge.setTheme&&window.SceneGetsBridge.setTheme(t); }catch(e){}
+    // 네이티브 설정을 먼저 갱신한 뒤 다시 적용한다. 특히 dark -> system 전환 시
+    // 네이티브가 새 시스템 테마를 기준으로 해석하도록 한다.
+    try{
+      if(window.SceneGetsBridge&&window.SceneGetsBridge.setTheme){
+        window.SceneGetsBridge.setTheme(t);
+      } else {
+        applyTheme(t,false);
+      }
+    }catch(e){ applyTheme(t,false); }
   }
 }
 document.getElementById("theme-grid")?.addEventListener("click",e=>{
