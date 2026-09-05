@@ -1,17 +1,21 @@
 package com.adamyam.scenegets
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import com.adamyam.scenegets.data.ChartRepository
 import com.adamyam.scenegets.data.NewsRepository
 import com.adamyam.scenegets.data.ScheduleRepository
@@ -43,6 +47,11 @@ class MainActivity : Activity() {
     private lateinit var newsRepository: NewsRepository
     private lateinit var scheduleRepository: ScheduleRepository
 
+    private val prefs by lazy { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
+
+    /** "light" | "dark" | "system" */
+    private var themeMode: String = THEME_SYSTEM
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -50,31 +59,13 @@ class MainActivity : Activity() {
         newsRepository = NewsRepository(applicationContext)
         scheduleRepository = ScheduleRepository(applicationContext)
 
-        val chromeColor = Color.parseColor("#F2F2F7")
-        window.statusBarColor = chromeColor
-        window.navigationBarColor = chromeColor
+        themeMode = prefs.getString(KEY_THEME, THEME_SYSTEM) ?: THEME_SYSTEM
 
-        // 상태바/내비게이션바를 시스템이 그대로 차지하도록 두고(일반 앱과 동일),
-        // 웹뷰 콘텐츠는 그 아래 영역에만 그린다. 인셋은 0으로 유지된다.
+        // 일반 Android 앱처럼 시스템 바 영역은 시스템이 소유한다.
+        // 콘텐츠는 상태바/내비게이션바와 절대 겹치지 않는다.
         WindowCompat.setDecorFitsSystemWindows(window, true)
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = true
-            isAppearanceLightNavigationBars = true
-        }
-
-        var lastInsetTop = 0
-        var lastInsetBottom = 0
-
-        fun applyInsetVars() {
-            webView.evaluateJavascript(
-                "document.documentElement.style.setProperty('\u002d\u002dsystem-top','${lastInsetTop}px');" +
-                    "document.documentElement.style.setProperty('\u002d\u002dsystem-bottom','${lastInsetBottom}px');",
-                null
-            )
-        }
 
         webView = WebView(this).apply {
-            setBackgroundColor(chromeColor)
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.allowFileAccess = true
@@ -85,7 +76,6 @@ class MainActivity : Activity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    // 페이지가 새로 로드된 직후에도 최신 인셋 값을 다시 주입한다.
                     applyInsetVars()
                 }
             }
@@ -94,17 +84,87 @@ class MainActivity : Activity() {
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(webView) { _, insets ->
-            // 시스템 바 영역은 이미 시스템이 차지하므로 웹 콘텐츠에는 추가 여백을 주지 않는다.
-            lastInsetTop = 0
-            lastInsetBottom = 0
+            // decorFitsSystemWindows = true 이므로 콘텐츠 영역은 이미 안전 영역이다.
             applyInsetVars()
             insets
-
         }
 
+        applySystemBars()
         setContentView(webView)
         ViewCompat.requestApplyInsets(webView)
         webView.loadUrl("file:///android_asset/scenegets_app_design.html")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::webView.isInitialized) {
+            webView.evaluateJavascript(
+                "window.SceneGetsWeb && window.SceneGetsWeb.onResume && window.SceneGetsWeb.onResume();",
+                null
+            )
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (themeMode == THEME_SYSTEM) applySystemBars()
+    }
+
+    private fun isDarkTheme(): Boolean = when (themeMode) {
+        THEME_DARK -> true
+        THEME_LIGHT -> false
+        else -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+    }
+
+    /** 상태바/내비게이션바 색과 아이콘 명암을 현재 테마에 맞춘다. */
+    private fun applySystemBars() {
+        val dark = isDarkTheme()
+        val chromeColor = if (dark) Color.parseColor("#000000") else Color.parseColor("#F2F2F7")
+        window.statusBarColor = chromeColor
+        window.navigationBarColor = chromeColor
+        if (::webView.isInitialized) webView.setBackgroundColor(chromeColor)
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark
+        }
+    }
+
+    private fun applyInsetVars() {
+        // 시스템 바 영역은 시스템이 차지하므로 웹 콘텐츠에는 추가 여백이 필요 없다.
+        webView.evaluateJavascript(
+            "document.documentElement.style.setProperty('\u002d\u002dsystem-top','0px');" +
+                "document.documentElement.style.setProperty('\u002d\u002dsystem-bottom','0px');",
+            null
+        )
+    }
+
+    private fun isIgnoringBatteryOptimizations(): Boolean {
+        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return false
+        return pm.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    /**
+     * 배터리 최적화 예외 요청 화면으로 이동한다.
+     * 실패 시 앱 세부 설정 화면으로, 그것도 불가하면 전체 배터리 최적화 목록으로 폴백한다.
+     */
+    private fun openBatteryOptimizationSettings() {
+        val candidates = mutableListOf<Intent>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isIgnoringBatteryOptimizations()) {
+            candidates += Intent(
+                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                Uri.parse("package:$packageName")
+            )
+        }
+        candidates += Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:$packageName")
+        )
+        candidates += Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+        for (intent in candidates) {
+            val ok = runCatching { startActivity(intent) }.isSuccess
+            if (ok) return
+        }
     }
 
     private fun sendData(chart: ChartResponse, news: NewsResponse, schedule: List<ScheduleEvent>) {
@@ -151,6 +211,28 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
+        fun getTheme(): String = themeMode
+
+        @JavascriptInterface
+        fun setTheme(mode: String?) {
+            val next = when (mode) {
+                THEME_LIGHT, THEME_DARK, THEME_SYSTEM -> mode
+                else -> THEME_SYSTEM
+            }
+            themeMode = next
+            prefs.edit().putString(KEY_THEME, next).apply()
+            runOnUiThread { applySystemBars() }
+        }
+
+        @JavascriptInterface
+        fun isBatteryUnrestricted(): Boolean = isIgnoringBatteryOptimizations()
+
+        @JavascriptInterface
+        fun openBatterySettings() {
+            runOnUiThread { openBatteryOptimizationSettings() }
+        }
+
+        @JavascriptInterface
         fun openUrl(url: String?) {
             val uri = runCatching { Uri.parse(url ?: "") }.getOrNull() ?: return
             if (uri.scheme != "http" && uri.scheme != "https") return
@@ -168,5 +250,13 @@ class MainActivity : Activity() {
             webView.destroy()
         }
         super.onDestroy()
+    }
+
+    private companion object {
+        const val PREFS_NAME = "scenegets_settings"
+        const val KEY_THEME = "theme_mode"
+        const val THEME_LIGHT = "light"
+        const val THEME_DARK = "dark"
+        const val THEME_SYSTEM = "system"
     }
 }
