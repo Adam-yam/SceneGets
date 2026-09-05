@@ -600,33 +600,12 @@ renderChart("all");
 /* ---------------- tab switching ---------------- */
 const tabs = document.querySelectorAll('.tab');
 const screens = {home:'screen-home', chart:'screen-chart', news:'screen-news', schedule:'screen-schedule', settings:'screen-settings'};
-function resetScreenScroll(tabName){
-  const screenId=screens[tabName];
-  if(!screenId)return;
-  const screen=document.getElementById(screenId);
-  if(!screen)return;
-  const content=screen.querySelector(".content");
-  if(content){
-    content.scrollTop=0;
-    content.scrollLeft=0;
-  }
-}
-
 tabs.forEach(tab=>{
-  tab.addEventListener("click", ()=>{
-    const tabName=tab.dataset.tab;
-    tabs.forEach(t=>t.classList.remove("active"));
-    tab.classList.add("active");
-    Object.values(screens).forEach(id=>{
-      const el=document.getElementById(id);
-      if(el)el.classList.add("hidden");
-    });
-    const target=document.getElementById(screens[tabName]);
-    if(!target)return;
-    target.classList.remove("hidden");
-    resetScreenScroll(tabName);
-    requestAnimationFrame(()=>resetScreenScroll(tabName));
-    setTimeout(()=>resetScreenScroll(tabName),0);
+  tab.addEventListener('click', ()=>{
+    tabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    Object.values(screens).forEach(id=>document.getElementById(id).classList.add('hidden'));
+    document.getElementById(screens[tab.dataset.tab]).classList.remove('hidden');
   });
 });
 
