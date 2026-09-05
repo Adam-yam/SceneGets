@@ -49,11 +49,12 @@ class MainActivity : Activity() {
         newsRepository = NewsRepository(applicationContext)
         scheduleRepository = ScheduleRepository(applicationContext)
 
-        window.statusBarColor = Color.BLACK
-        window.navigationBarColor = Color.BLACK
+        val chromeColor = Color.parseColor("#F2F2F7")
+        window.statusBarColor = chromeColor
+        window.navigationBarColor = chromeColor
 
         webView = WebView(this).apply {
-            setBackgroundColor(Color.BLACK)
+            setBackgroundColor(chromeColor)
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.allowFileAccess = true
