@@ -208,8 +208,6 @@
   /* ---------- CHART ---------- */
   .song-row{display:flex; align-items:center; gap:12px; padding:12px 16px;}
   .song-row + .song-row{border-top:1px solid var(--divider);}
-  .song-rank{width:24px; text-align:center; font-size:17px; font-weight:700; color:var(--text-2); flex-shrink:0;}
-  .song-rank.top3{color:var(--accent);}
   .song-info{flex:1; min-width:0;}
   .song-title{font-size:15px; font-weight:600; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .song-artist{font-size:12.5px; color:var(--text-3); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -219,9 +217,7 @@
     font-size:10px; color:var(--text-2); font-weight:500;
   }
   .plat-chip b{color:var(--text-1); font-size:11px; font-weight:600;}
-  .single-delta{width:52px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:2px;}
-  .single-delta .n{font-size:17px; font-weight:700; color:var(--text-1);}
-  .single-delta .d{font-size:10.5px; font-weight:600;}
+  .chip-delta{font-size:9.5px; font-weight:700; margin-left:1px;}
 
   /* ---------- NEWS ---------- */
   .article-row{display:flex; gap:13px; padding:13px 16px; align-items:center;}
@@ -346,20 +342,7 @@
         </div>
         <div class="card">
           <div class="today-card">
-            <div class="today-item">
-              <div class="content-col">
-                <span class="badge broadcast">방송</span>
-                <div class="item-title">NEON ECHO — 음악중심 컴백 무대</div>
-              </div>
-              <span class="time-chip">18:00</span>
-            </div>
-            <div class="today-item">
-              <div class="content-col">
-                <span class="badge radio">라디오</span>
-                <div class="item-title">ARIA, 볼륨을 높여요 게스트 출연</div>
-              </div>
-              <span class="time-chip">21:30</span>
-            </div>
+            <div class="today-empty">오늘 예정된 일정이 없습니다.</div>
           </div>
         </div>
       </div>
@@ -369,31 +352,8 @@
           <span class="section-title">음원 차트</span>
           <span class="section-link" data-action="chart">차트 <svg width="7" height="11" viewBox="0 0 7 11" fill="none"><path d="M1 1L5.5 5.5L1 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </div>
-        <div class="card">
-          <div class="chart-mini-row">
-            <div class="thumb"><img src="" alt="" style="display:none"><span>N</span></div>
-            <div class="mini-info">
-              <div class="mini-title">만개</div>
-              <div class="mini-artist">NEON ECHO</div>
-            </div>
-            <div class="mini-ranks"><div class="mini-rank"><span>멜론</span><b>1</b></div><div class="mini-rank"><span>유튜브 뮤직</span><b>1</b></div></div>
-          </div>
-          <div class="chart-mini-row">
-            <div class="thumb"><span>A</span></div>
-            <div class="mini-info">
-              <div class="mini-title">Butterfly Kiss</div>
-              <div class="mini-artist">ARIA</div>
-            </div>
-            <div class="mini-ranks"><div class="mini-rank"><span>멜론</span><b>2</b></div><div class="mini-rank"><span>유튜브 뮤직</span><b>3</b></div></div>
-          </div>
-          <div class="chart-mini-row">
-            <div class="thumb"><span>T</span></div>
-            <div class="mini-info">
-              <div class="mini-title">Run It Back</div>
-              <div class="mini-artist">TEMPO</div>
-            </div>
-            <div class="mini-ranks"><div class="mini-rank"><span>멜론</span><b>3</b></div><div class="mini-rank"><span>유튜브 뮤직</span><b>2</b></div></div>
-          </div>
+        <div class="card" id="home-chart-card">
+          <div class="today-empty">차트 데이터가 없습니다.</div>
         </div>
       </div>
 
@@ -402,21 +362,8 @@
           <span class="section-title">최신 뉴스</span>
           <span class="section-link" data-action="news">뉴스 <svg width="7" height="11" viewBox="0 0 7 11" fill="none"><path d="M1 1L5.5 5.5L1 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </div>
-        <div class="card">
-          <div class="news-mini">
-            <div class="thumb" style="width:52px;height:52px;">K</div>
-            <div>
-              <div class="n-title">NEON ECHO, 첫 단독 콘서트 전석 매진</div>
-              <div class="n-meta">K-STAR TODAY · 2시간 전</div>
-            </div>
-          </div>
-          <div class="news-mini">
-            <div class="thumb" style="width:52px;height:52px;">I</div>
-            <div>
-              <div class="n-title">ARIA 새 앨범 콘셉트 포토 전격 공개</div>
-              <div class="n-meta">IDOL PICK · 5시간 전</div>
-            </div>
-          </div>
+        <div class="card" id="home-news-card">
+          <div class="today-empty">뉴스 데이터가 없습니다.</div>
         </div>
       </div>
 
@@ -437,7 +384,7 @@
         <div class="pill" data-p="vibe">바이브</div>
         <div class="pill" data-p="bugs">벅스</div>
         <div class="pill" data-p="flo">플로</div>
-        <div class="pill" data-p="ytm">유튜브뮤직</div>
+        <div class="pill" data-p="youtube_music">유튜브뮤직</div>
         <div class="pill" data-p="spotify">스포티파이</div>
       </div>
 
@@ -544,15 +491,15 @@
 
 <script>
 /* ---------------- data ---------------- */
-const PLATFORM_LABEL={melon:"멜론",genie:"지니",vibe:"바이브",bugs:"벅스",flo:"플로",ytm:"유튜브뮤직",spotify:"스포티파이"};
-const PLATFORM_ORDER=["melon","genie","vibe","bugs","flo","ytm","spotify"];
+const PLATFORM_LABEL={melon:"멜론",genie:"지니",vibe:"바이브",bugs:"벅스",flo:"플로",youtube_music:"유튜브뮤직",spotify:"스포티파이"};
+const PLATFORM_ORDER=["melon","genie","vibe","bugs","flo","youtube_music","spotify"];
 let nativeData={chart:{songs:[]},news:{articles:[]},schedule:{events:[]}};
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
 function weekdayLabel(n){return ["일","월","화","수","목","금","토"][n];}
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
 function delta(x){if(!x)return{n:"—",d:"—",cls:"flat"};if(x.previousRank==null)return{n:String(x.rank),d:"NEW",cls:"flat"};const d=x.previousRank-x.rank;return d>0?{n:String(x.rank),d:`▲${d}`,cls:"up"}:d<0?{n:String(x.rank),d:`▼${-d}`,cls:"down"}:{n:String(x.rank),d:"—",cls:"flat"};}
 function applyChartData(d){nativeData.chart=d||{songs:[]};renderChart(document.querySelector("#platform-pills .pill.active")?.dataset.p||"all");}
-function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};const r=platform==="all"?Object.values(ranks).sort((a,b)=>a.rank-b.rank)[0]:ranks[platform];const dm=delta(r);return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><span class="song-rank ${i<3?'top3':''}">${dm.n}</span><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(s.artistName)}</div><div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]).map(k=>`<span class="plat-chip">${PLATFORM_LABEL[k]} <b>${ranks[k].rank}</b></span>`).join("")}</div></div><div class="single-delta"><span class="n">${dm.n}</span><span class="d" style="color:var(--${dm.cls})">${dm.d}</span></div></div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
+function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(s.artistName)}</div><div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]).map(k=>{const dm=delta(ranks[k]);return `<span class="plat-chip">${PLATFORM_LABEL[k]} <b>${ranks[k].rank}</b><span class="chip-delta" style="color:var(--${dm.cls})">${dm.d}</span></span>`;}).join("")}</div></div></div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
 function applyNewsData(d){nativeData.news=d||{articles:[]};document.getElementById("news-list").innerHTML=(nativeData.news.articles||[]).map(a=>`<div class="article-row" data-url="${esc(a.url)}"><div class="thumb" style="width:56px;height:56px;">${a.thumbnail?`<img src="${esc(a.thumbnail)}" alt="" onerror="this.remove()">`:`${esc((a.source||"N").slice(0,1))}`}</div><div class="grow"><div class="art-title">${esc(a.title)}</div><div class="art-meta"><span class="art-source">${esc(a.source)}</span><span class="art-dot"></span><span class="art-date">${esc(a.date)}</span></div></div><svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`).join("")||`<div class="today-empty">표시할 뉴스가 없습니다.</div>`;}
 function applyScheduleData(d){
   nativeData.schedule=d||{events:[]};
@@ -587,12 +534,13 @@ function applyScheduleData(d){
     </div>`;
   }).join("");
 }
-function updateHome(){const ev=(nativeData.schedule.events||[]).filter(e=>e.date===todayISO()).sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));const tc=document.querySelector("#screen-home .today-card");tc.innerHTML=ev.map(e=>`<div class="today-item"><div class="content-col"><span class="badge ${esc(e.type)}">${esc(e.type||"일정")}</span><div class="item-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")||`<div class="today-empty">오늘 예정된 일정이 없습니다.</div>`;const songs=[...(nativeData.chart.songs||[])].sort((a,b)=>Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999))-Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999))).slice(0,3);const cc=document.querySelector("#screen-home .chart-mini-row")?.parentElement;if(cc)cc.innerHTML=songs.map(s=>{const ranks=s.ranks||{},melon=ranks.melon?.rank??"—",ytm=ranks.ytm?.rank??"—",fallback=esc((s.songName||"?").slice(0,1));return `<div class="chart-mini-row"><div class="thumb">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.outerHTML='<span>${fallback}</span>'">`:`<span>${fallback}</span>`}</div><div class="mini-info"><div class="mini-title">${esc(s.songName)}</div><div class="mini-artist">${esc(s.artistName)}</div></div><div class="mini-ranks"><div class="mini-rank"><span>멜론</span><b>${melon}</b></div><div class="mini-rank"><span>유튜브 뮤직</span><b>${ytm}</b></div></div></div>`}).join("")||`<div class="today-empty">차트 데이터가 없습니다.</div>`;const n=nativeData.news.articles||[],nc=document.querySelector("#screen-home .news-mini")?.parentElement;if(nc)nc.innerHTML=n.slice(0,5).map(a=>`<div class="news-mini" data-url="${esc(a.url)}"><div class="thumb" style="width:52px;height:52px;">${esc((a.source||"N").slice(0,1))}</div><div><div class="n-title">${esc(a.title)}</div><div class="n-meta">${esc(a.source)}${a.date?` · ${esc(a.date)}`:""}</div></div></div>`).join("")||`<div class="today-empty">뉴스 데이터가 없습니다.</div>`;}
+function updateHome(){const ev=(nativeData.schedule.events||[]).filter(e=>e.date===todayISO()).sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));const tc=document.querySelector("#screen-home .today-card");tc.innerHTML=ev.map(e=>`<div class="today-item"><div class="content-col"><span class="badge ${esc(e.type)}">${esc(e.type||"일정")}</span><div class="item-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")||`<div class="today-empty">오늘 예정된 일정이 없습니다.</div>`;const songs=[...(nativeData.chart.songs||[])].sort((a,b)=>Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999))-Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999))).slice(0,3);const cc=document.getElementById("home-chart-card");if(cc)cc.innerHTML=songs.map(s=>{const ranks=s.ranks||{},melon=ranks.melon?.rank??"—",ytm=ranks.youtube_music?.rank??"—",fallback=esc((s.songName||"?").slice(0,1));return `<div class="chart-mini-row"><div class="thumb">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.outerHTML='<span>${fallback}</span>'">`:`<span>${fallback}</span>`}</div><div class="mini-info"><div class="mini-title">${esc(s.songName)}</div><div class="mini-artist">${esc(s.artistName)}</div></div><div class="mini-ranks"><div class="mini-rank"><span style="color:#03dd30">멜론</span><b>${melon}</b></div><div class="mini-rank"><span style="color:#ff0033">유튜브 뮤직</span><b>${ytm}</b></div></div></div>`}).join("")||`<div class="today-empty">차트 데이터가 없습니다.</div>`;const n=nativeData.news.articles||[],nc=document.getElementById("home-news-card");if(nc)nc.innerHTML=n.slice(0,5).map(a=>`<div class="news-mini" data-url="${esc(a.url)}"><div class="thumb" style="width:52px;height:52px;">${a.thumbnail?`<img src="${esc(a.thumbnail)}" alt="" onerror="this.remove()">`:`${esc((a.source||"N").slice(0,1))}`}</div><div><div class="n-title">${esc(a.title)}</div><div class="n-meta">${esc(a.source)}${a.date?` · ${esc(a.date)}`:""}</div></div></div>`).join("")||`<div class="today-empty">뉴스 데이터가 없습니다.</div>`;}
 window.SceneGetsWeb={
   onData:function(payload){try{nativeData=JSON.parse(payload);applyChartData(nativeData.chart);applyNewsData(nativeData.news);applyScheduleData(nativeData.schedule);updateHome();}catch(e){console.error(e);}},
   applyTheme:function(t){applyTheme(t,false);}
 };
 renderChart("all");
+updateHome();
 
 /* ---------------- tab switching ---------------- */
 const tabs = document.querySelectorAll('.tab');
