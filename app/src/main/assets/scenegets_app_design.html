@@ -255,6 +255,12 @@
 
   /* ---------- SCHEDULE ---------- */
   .sched-title{padding:2px 18px 2px; font-size:26px; font-weight:700; color:var(--text-1); letter-spacing:-0.4px;}
+  .title-row{display:flex; align-items:center; gap:6px;}
+  .title-info-btn{width:20px; height:20px; border-radius:10px; border:1.5px solid var(--text-3); background:transparent; color:var(--text-3); font-size:12px; font-weight:700; line-height:1; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;}
+  .chart-info-row{display:flex; align-items:center; justify-content:space-between; padding:12px 4px;}
+  .chart-info-row .platform{font-size:14px; font-weight:600; color:var(--text-1);}
+  .chart-info-row .desc{font-size:13px; color:var(--text-2);}
+  .chart-info-row+.chart-info-row{border-top:1px solid var(--divider);}
   .sched-sub{padding:4px 18px 2px; font-size:13px; color:var(--text-3); font-weight:500;}
 
   .date-group{margin-top:22px; padding:0 16px;}
@@ -427,7 +433,7 @@
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </div>
     <div class="content" id="scroll-chart">
-      <div class="sched-title">차트</div>
+      <div class="sched-title title-row">차트<button class="title-info-btn" type="button" id="chart-info-btn" aria-label="차트 안내">?</button></div>
       <div class="pill-row" id="platform-pills">
         <div class="pill active" data-p="all">전체</div>
         <div class="pill" data-p="melon">멜론</div>
@@ -626,6 +632,9 @@ tabs.forEach(tab=>{
 
 // Functional navigation and real data actions.
 function showFavorites(){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]");let rows=f.map(id=>`<div class="favorite-row">${esc((id||"").replace(/^song:/,""))}</div>`).join("")||'<div class="today-empty">저장된 즐겨찾기가 없습니다.</div>';let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">즐겨찾기</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);}
+const CHART_INFO=[["멜론","TOP 100"],["유튜브 뮤직","주간 인기곡"],["스포티파이","한국 데일리 차트"],["지니","TOP 200"],["플로","전체 연령 차트"],["벅스","실시간 차트"],["바이브","오늘 TOP 100"]];
+function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);}
+document.getElementById("chart-info-btn")?.addEventListener("click",showChartInfo);
 document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();if(action==="favorites")showFavorites();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const song=e.target.closest(".song-row");if(song)toggleFavorite(song.dataset.songId);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));});
 function toggleFavorite(id){let f=JSON.parse(localStorage.getItem("scenegets_favorites")||"[]"),i=f.indexOf("song:"+id);if(i>=0)f.splice(i,1);else f.push("song:"+id);localStorage.setItem("scenegets_favorites",JSON.stringify(f));}
 document.getElementById("chart-refresh")?.addEventListener("click",()=>{pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
