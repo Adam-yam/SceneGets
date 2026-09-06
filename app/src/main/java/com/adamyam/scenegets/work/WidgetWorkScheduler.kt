@@ -13,36 +13,58 @@ import java.util.concurrent.TimeUnit
 
 /**
  * 자동 갱신 주기:
- *  - 차트: 1시간 (사이트 갱신 주기와 동일)
- *  - 뉴스: 1시간
- *  - 스케줄: 6시간
+ *  - 차트: 1시간마다, 매시 정각(0분)에 맞춰 실행
+ *  - 뉴스: 2시간마다, 짝수 시 3분에 맞춰 실행
+ *  - 스케줄: 2시간마다, 짝수 시 3분에 맞춰 실행 (뉴스와 동일 시각)
  * 앱이 열려있지 않아도 WorkManager가 백그라운드에서 계속 실행함.
+ *
+ * WorkManager는 initialDelay로 첫 실행 시각만 맞춰줄 뿐, 이후 주기는
+ * "그 시각으로부터 N시간 뒤"로 반복되므로 실제 정렬은 Doze/배터리 최적화
+ * 영향이 없다는 전제에서 유효하다. 배터리 제한없음이 켜져 있을수록 이 정렬이
+ * 안정적으로 유지된다.
  */
 object WidgetWorkScheduler {
+
+    private const val CHART_INTERVAL_HOURS = 1
+    private const val CHART_TARGET_MINUTE = 0
+    private const val NEWS_SCHEDULE_INTERVAL_HOURS = 2
+    private const val NEWS_SCHEDULE_TARGET_MINUTE = 3
 
     fun scheduleAll(context: Context) {
         val workManager = WorkManager.getInstance(context)
 
         workManager.enqueueUniquePeriodicWork(
             ChartSyncWorker.UNIQUE_PERIODIC,
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<ChartSyncWorker>(1, TimeUnit.HOURS)
+            ExistingPeriodicWorkPolicy.UPDATE,
+            PeriodicWorkRequestBuilder<ChartSyncWorker>(CHART_INTERVAL_HOURS.toLong(), TimeUnit.HOURS)
+                .setInitialDelay(
+                    RefreshAlignment.millisUntilNext(CHART_INTERVAL_HOURS, CHART_TARGET_MINUTE),
+                    TimeUnit.MILLISECONDS
+                )
                 .setConstraints(networkConstraints())
                 .build()
         )
 
         workManager.enqueueUniquePeriodicWork(
             NewsSyncWorker.UNIQUE_PERIODIC,
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<NewsSyncWorker>(1, TimeUnit.HOURS)
+            ExistingPeriodicWorkPolicy.UPDATE,
+            PeriodicWorkRequestBuilder<NewsSyncWorker>(NEWS_SCHEDULE_INTERVAL_HOURS.toLong(), TimeUnit.HOURS)
+                .setInitialDelay(
+                    RefreshAlignment.millisUntilNext(NEWS_SCHEDULE_INTERVAL_HOURS, NEWS_SCHEDULE_TARGET_MINUTE),
+                    TimeUnit.MILLISECONDS
+                )
                 .setConstraints(networkConstraints())
                 .build()
         )
 
         workManager.enqueueUniquePeriodicWork(
             ScheduleSyncWorker.UNIQUE_PERIODIC,
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<ScheduleSyncWorker>(6, TimeUnit.HOURS)
+            ExistingPeriodicWorkPolicy.UPDATE,
+            PeriodicWorkRequestBuilder<ScheduleSyncWorker>(NEWS_SCHEDULE_INTERVAL_HOURS.toLong(), TimeUnit.HOURS)
+                .setInitialDelay(
+                    RefreshAlignment.millisUntilNext(NEWS_SCHEDULE_INTERVAL_HOURS, NEWS_SCHEDULE_TARGET_MINUTE),
+                    TimeUnit.MILLISECONDS
+                )
                 .setConstraints(networkConstraints())
                 .build()
         )

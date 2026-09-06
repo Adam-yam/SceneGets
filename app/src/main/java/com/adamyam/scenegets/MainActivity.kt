@@ -236,11 +236,29 @@ class MainActivity : Activity() {
         sendData(chart, news, schedule)
     }
 
+    /** 캐시에 저장된 이전 데이터를 네트워크 요청 없이 그대로 보여준다. */
+    private suspend fun loadCacheOnly() {
+        val chartCache = chartRepository.cachedOrLoading()
+        val newsCache = newsRepository.cachedOrLoading()
+        val scheduleCache = scheduleRepository.cachedOrLoading()
+        val chart = (chartCache as? WidgetState.Loaded)?.data ?: ChartResponse()
+        val news = (newsCache as? WidgetState.Loaded)?.data ?: NewsResponse()
+        val schedule = (scheduleCache as? WidgetState.Loaded)?.data ?: emptyList()
+        sendData(chart, news, schedule)
+    }
+
     private inner class SceneGetsBridge {
         @JavascriptInterface
         fun refreshAll() {
             scope.launch {
                 loadAll(sendCacheFirst = false)
+            }
+        }
+
+        @JavascriptInterface
+        fun loadCachedData() {
+            scope.launch {
+                loadCacheOnly()
             }
         }
 
