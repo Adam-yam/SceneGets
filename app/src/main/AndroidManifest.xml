@@ -30,7 +30,7 @@
         <activity
             android:name=".widget.config.WidgetConfigActivity"
             android:exported="true"
-            android:theme="@style/AppTheme">
+            android:theme="@style/WidgetConfigDialogTheme">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
