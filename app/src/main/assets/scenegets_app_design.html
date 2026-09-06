@@ -178,6 +178,13 @@
   .tab.active{color:var(--accent); background:var(--accent-dim);}
   .tab.active svg{stroke:var(--accent);}
   .tab.active span{color:var(--accent);}
+  .tab-icon-wrap{position:relative; display:inline-flex;}
+  .tab-badge{
+    position:absolute; top:-2px; right:-3px;
+    width:8px; height:8px; border-radius:50%;
+    background:var(--status-warn); display:none;
+  }
+  .tab-badge.show{display:block;}
 
   /* ---------- HOME ---------- */
   .home-refresh-bar{
@@ -560,7 +567,10 @@
       <span>스케줄</span>
     </div>
     <div class="tab" data-tab="settings">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-8"/><path d="M6 7H4"/><circle cx="9" cy="7" r="3"/><path d="M20 17h-2"/><path d="M12 17H4"/><circle cx="15" cy="17" r="3"/></svg>
+      <span class="tab-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-8"/><path d="M6 7H4"/><circle cx="9" cy="7" r="3"/><path d="M20 17h-2"/><path d="M12 17H4"/><circle cx="15" cy="17" r="3"/></svg>
+        <span class="tab-badge" id="settings-tab-badge"></span>
+      </span>
       <span>설정</span>
     </div>
   </div>
@@ -710,6 +720,8 @@ function refreshBatteryStatus(){
     : state===false
       ? "현재 배터리 최적화가 적용 중이에요. 위젯 새로고침이 지연될 수 있어요."
       : "Android 앱에서만 확인할 수 있는 설정이에요.";
+  const badge=document.getElementById("settings-tab-badge");
+  if(badge) badge.classList.toggle("show", state===false);
 }
 document.getElementById("batt-open")?.addEventListener("click",()=>{
   if(window.SceneGetsBridge&&window.SceneGetsBridge.openBatterySettings) window.SceneGetsBridge.openBatterySettings();
