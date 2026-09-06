@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.adamyam.scenegets.models.ChartResponse
 import com.adamyam.scenegets.models.NewsResponse
 import com.adamyam.scenegets.models.ScheduleEvent
+import com.adamyam.scenegets.models.ScheduleResponse
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -87,6 +88,37 @@ class WidgetCache(private val context: Context) {
         val raw = prefs[SCHEDULE_JSON] ?: return null
         val data = runCatching { json.decodeFromString(scheduleEventListSerializer, raw) }.getOrNull() ?: return null
         return CachedData(data, prefs[SCHEDULE_FETCHED_AT] ?: 0L, prefs[SCHEDULE_LAST_ERROR])
+    }
+
+    // ---------- ETag (엔드포인트별 조건부 GET용) ----------
+    suspend fun getEtag(key: String): String? {
+        val prefs = context.widgetDataStore.data.first()
+        return prefs[stringPreferencesKey("etag_$key")]
+    }
+
+    suspend fun saveEtag(key: String, etag: String?) {
+        context.widgetDataStore.edit { prefs ->
+            val prefKey = stringPreferencesKey("etag_$key")
+            if (etag != null) {
+                prefs[prefKey] = etag
+            } else {
+                prefs.remove(prefKey)
+            }
+        }
+    }
+
+    // ---------- 스케줄 반기 파일 원본 캐시 (304 응답 시 재파싱 없이 재구성하기 위함) ----------
+    suspend fun saveSchedulePeriodRaw(fileName: String, data: ScheduleResponse) {
+        context.widgetDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("schedule_raw_$fileName")] =
+                json.encodeToString(ScheduleResponse.serializer(), data)
+        }
+    }
+
+    suspend fun loadSchedulePeriodRaw(fileName: String): ScheduleResponse? {
+        val prefs = context.widgetDataStore.data.first()
+        val raw = prefs[stringPreferencesKey("schedule_raw_$fileName")] ?: return null
+        return runCatching { json.decodeFromString(ScheduleResponse.serializer(), raw) }.getOrNull()
     }
 
     companion object {

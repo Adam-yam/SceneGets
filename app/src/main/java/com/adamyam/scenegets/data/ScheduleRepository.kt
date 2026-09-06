@@ -9,15 +9,28 @@ class ScheduleRepository(context: Context) {
     private val cache = WidgetCache(context.applicationContext)
 
     suspend fun refresh(): WidgetState<List<ScheduleEvent>> {
-        return when (val result = ScheduleApi.fetchUpcoming()) {
+        val previous = cache.loadSchedule()?.data
+        val result = ScheduleApi.fetchUpcoming(
+            periodContext = { fileName ->
+                ScheduleApi.PeriodContext(
+                    etag = cache.getEtag(fileName),
+                    cached = cache.loadSchedulePeriodRaw(fileName)
+                )
+            }
+        )
+        return when (result) {
             is ApiResult.Success -> {
-                val previous = cache.loadSchedule()?.data
-                cache.saveSchedule(result.data)
+                val events = result.data.events
+                cache.saveSchedule(events)
+                result.data.periods.forEach { info ->
+                    cache.saveSchedulePeriodRaw(info.fileName, info.data)
+                    cache.saveEtag(info.fileName, info.etag)
+                }
                 WidgetState.Loaded(
-                    result.data,
+                    events,
                     result.fetchedAt,
                     isStale = false,
-                    contentUnchanged = previous == result.data
+                    contentUnchanged = previous == events
                 )
             }
             is ApiResult.Error -> {

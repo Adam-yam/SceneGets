@@ -9,10 +9,12 @@ class NewsRepository(context: Context) {
     private val cache = WidgetCache(context.applicationContext)
 
     suspend fun refresh(): WidgetState<NewsResponse> {
-        return when (val result = NewsApi.fetchNews()) {
+        val previous = cache.loadNews()?.data
+        val etag = cache.getEtag(ETAG_KEY)
+        return when (val result = NewsApi.fetchNews(etag, previous)) {
             is ApiResult.Success -> {
-                val previous = cache.loadNews()?.data
                 cache.saveNews(result.data)
+                cache.saveEtag(ETAG_KEY, result.etag)
                 WidgetState.Loaded(
                     result.data,
                     result.fetchedAt,
@@ -39,5 +41,9 @@ class NewsRepository(context: Context) {
         } else {
             WidgetState.Loading
         }
+    }
+
+    companion object {
+        private const val ETAG_KEY = "news"
     }
 }

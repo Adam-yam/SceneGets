@@ -10,10 +10,12 @@ class ChartRepository(context: Context) {
 
     /** 네트워크에서 새로 받아와서 캐시에 저장. 실패하면 캐시로 폴백. */
     suspend fun refresh(): WidgetState<ChartResponse> {
-        return when (val result = ChartApi.fetchChart()) {
+        val previous = cache.loadChart()?.data
+        val etag = cache.getEtag(ETAG_KEY)
+        return when (val result = ChartApi.fetchChart(etag, previous)) {
             is ApiResult.Success -> {
-                val previous = cache.loadChart()?.data
                 cache.saveChart(result.data)
+                cache.saveEtag(ETAG_KEY, result.etag)
                 WidgetState.Loaded(
                     result.data,
                     result.fetchedAt,
@@ -41,5 +43,9 @@ class ChartRepository(context: Context) {
         } else {
             WidgetState.Loading
         }
+    }
+
+    companion object {
+        private const val ETAG_KEY = "chart"
     }
 }

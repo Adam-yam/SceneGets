@@ -18,17 +18,21 @@ object SceneFlixHttpClient {
         .readTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    suspend fun getRaw(url: String): FetchOutcome = withContext(Dispatchers.IO) {
+    suspend fun getRaw(url: String, etag: String? = null): FetchOutcome = withContext(Dispatchers.IO) {
         try {
-            val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().use { response ->
+            val requestBuilder = Request.Builder().url(url).get()
+            if (!etag.isNullOrBlank()) {
+                requestBuilder.header("If-None-Match", etag)
+            }
+            client.newCall(requestBuilder.build()).execute().use { response ->
                 when {
+                    response.code == 304 -> FetchOutcome.NotModified
                     response.isSuccessful -> {
                         val body = response.body?.string()
                         if (body.isNullOrBlank()) {
                             FetchOutcome.Failure("응답 본문이 비어있음", isNotFound = false)
                         } else {
-                            FetchOutcome.Success(body)
+                            FetchOutcome.Success(body, response.header("ETag"))
                         }
                     }
                     response.code == 404 -> FetchOutcome.Failure("404 Not Found", isNotFound = true)

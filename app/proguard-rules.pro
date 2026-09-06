@@ -19,3 +19,9 @@
 -keepclasseswithmembers class com.adamyam.scenegets.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# yt-dlp Android wrapper / embedded runtime. Keep its public API and callback
+# classes reachable through the compatibility shim when release shrinking is enabled.
+-keep class dev.ffmpegkit_maintained.ytdlp.** { *; }
+-keep class dev.ffmpegkit_maintained.ytdlp.compat.** { *; }
+-dontwarn dev.ffmpegkit_maintained.ytdlp.**

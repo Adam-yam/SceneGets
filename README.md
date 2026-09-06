@@ -94,3 +94,16 @@ variables → Actions에 아래 4개 Secret을 등록해야 합니다. (전달�
 - 위젯 설정 화면(예: 차트 위젯에서 보여줄 곡 개수 조절)
 - 앨범 이미지(`albumImageUrl`) 위젯에 표시 (현재는 텍스트 정보만 우선 구현)
 - 스케줄 타입별 필터(방송만 보기 등)를 위젯 설정으로 추가
+
+## Share-to-Download
+
+SceneGets can receive Android `ACTION_SEND`/`ACTION_VIEW` links and download supported media URLs into `Download/SceneGets/`.
+
+- Share a video URL from another app and choose SceneGets.
+- The app validates the shared URL before passing it to yt-dlp.
+- Downloads run in a foreground service with progress notifications.
+- Completed files are written to the public Downloads/SceneGets folder.
+- The downloader uses `dev.ffmpegkit-maintained:yt-dlp-android:2.0.2` plus its compatibility API.
+- The current configuration targets `arm64-v8a`, which matches modern Galaxy devices.
+
+The embedded yt-dlp version is the version shipped by the selected Android library release; update the library dependency when a newer maintained release is required.
