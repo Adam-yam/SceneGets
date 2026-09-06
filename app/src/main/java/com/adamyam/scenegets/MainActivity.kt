@@ -85,10 +85,10 @@ class MainActivity : Activity() {
             this,
             onPullChanged = { distance ->
                 val d = distance.toInt()
-                evaluateJavascript("window.SceneGetsWeb && window.SceneGetsWeb.onNativePull && window.SceneGetsWeb.onNativePull($d);", null)
+                webView.evaluateJavascript("window.SceneGetsWeb && window.SceneGetsWeb.onNativePull && window.SceneGetsWeb.onNativePull($d);", null)
             },
             onRefresh = {
-                evaluateJavascript("window.SceneGetsWeb && window.SceneGetsWeb.pullRefresh && window.SceneGetsWeb.pullRefresh();", null)
+                webView.evaluateJavascript("window.SceneGetsWeb && window.SceneGetsWeb.pullRefresh && window.SceneGetsWeb.pullRefresh();", null)
             }
         ).apply {
             settings.javaScriptEnabled = true
