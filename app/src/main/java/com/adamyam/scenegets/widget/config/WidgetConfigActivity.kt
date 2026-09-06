@@ -89,6 +89,19 @@ class WidgetConfigActivity : Activity() {
         opacityValueText = findViewById(R.id.opacityValueText)
         themeRadioGroup = findViewById(R.id.themeRadioGroup)
 
+        // previewContainer의 체크무늬 배경(BitmapDrawable)은 스스로 둥근 모서리 아웃라인을
+        // 계산해주지 않으므로, previewCardBg와 같은 반경(20dp)으로 직접 잘라낸다.
+        // 그래야 알파가 낮아졌을 때 체크무늬가 previewCardBg의 둥근 모서리 밖으로
+        // 각지게 삐져나오지 않는다.
+        val previewContainer = findViewById<View>(R.id.previewContainer)
+        val previewCornerRadiusPx = 20f * resources.displayMetrics.density
+        previewContainer.outlineProvider = object : android.view.ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: android.graphics.Outline) {
+                outline.setRoundRect(0, 0, view.width, view.height, previewCornerRadiusPx)
+            }
+        }
+        previewContainer.clipToOutline = true
+
         findViewById<TextView>(R.id.configTitleText).text =
             getString(R.string.widget_config_title, resolved.second)
 

@@ -58,15 +58,16 @@
             android:textColor="@color/widget_text_secondary" />
 
         <!-- 실시간 미리보기: 아래 슬라이더/라디오를 바꾸면 즉시 반영된다.
-             previewContainer 자체 배경(bg_preview_backdrop)이 카드 색과 뚜렷이 다른
-             회색이라, previewCardBg의 투명도를 낮추면 이 배경이 비쳐 보여서
-             투명도 변화가 실제로 눈에 보인다. -->
+             previewContainer 배경이 (회색 한 톤이 아니라) 체크무늬라서, previewCardBg의
+             알파가 낮아질수록 격자가 비쳐 보여 "진짜 투명해지는" 게 눈에 보인다.
+             모서리를 둥글게 잘라내는 건 Kotlin에서 outlineProvider로 처리한다
+             (BitmapDrawable은 라운드 모서리 아웃라인을 스스로 계산해주지 않기 때문). -->
         <FrameLayout
             android:id="@+id/previewContainer"
             android:layout_width="match_parent"
             android:layout_height="80dp"
             android:layout_marginBottom="22dp"
-            android:background="@drawable/bg_preview_backdrop"
+            android:background="@drawable/bg_preview_checker"
             android:clipToOutline="true">
 
             <View
@@ -168,7 +169,7 @@
                 android:gravity="center_vertical"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
-                android:background="?android:attr/selectableItemBackground"
+                android:background="?attr/selectableItemBackground"
                 android:buttonTint="@color/widget_accent"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="15sp"
@@ -189,7 +190,7 @@
                 android:gravity="center_vertical"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
-                android:background="?android:attr/selectableItemBackground"
+                android:background="?attr/selectableItemBackground"
                 android:buttonTint="@color/widget_accent"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="15sp"
@@ -209,7 +210,7 @@
                 android:gravity="center_vertical"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
-                android:background="?android:attr/selectableItemBackground"
+                android:background="?attr/selectableItemBackground"
                 android:buttonTint="@color/widget_accent"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="15sp"
