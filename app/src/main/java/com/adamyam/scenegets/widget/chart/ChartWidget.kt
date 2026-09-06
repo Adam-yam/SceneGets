@@ -8,6 +8,7 @@ import androidx.glance.appwidget.provideContent
 import com.adamyam.scenegets.data.ChartRepository
 import com.adamyam.scenegets.data.ImageCache
 import com.adamyam.scenegets.data.WidgetState
+import com.adamyam.scenegets.widget.common.WidgetThemedContent
 
 class ChartWidget : GlanceAppWidget() {
     // 이전에는 SizeMode.Responsive로 딱 두 크기(250dp/380dp)만 등록해뒀는데,
@@ -30,7 +31,11 @@ class ChartWidget : GlanceAppWidget() {
         }
 
         provideContent {
-            ChartWidgetContent(state, albumImages)
+            // 위젯 구성 화면에서 저장한 테마/투명도 설정을 여기서 한 번 적용해두면
+            // ChartWidgetContent와 그 안의 WidgetColors 참조들이 알아서 그 값을 따라간다.
+            WidgetThemedContent {
+                ChartWidgetContent(state, albumImages)
+            }
         }
     }
 }

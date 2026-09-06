@@ -7,6 +7,7 @@ import androidx.glance.appwidget.provideContent
 import com.adamyam.scenegets.data.ImageCache
 import com.adamyam.scenegets.data.NewsRepository
 import com.adamyam.scenegets.data.WidgetState
+import com.adamyam.scenegets.widget.common.WidgetThemedContent
 
 class NewsWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -20,7 +21,9 @@ class NewsWidget : GlanceAppWidget() {
         }
 
         provideContent {
-            NewsWidgetContent(state, thumbnails)
+            WidgetThemedContent {
+                NewsWidgetContent(state, thumbnails)
+            }
         }
     }
 }

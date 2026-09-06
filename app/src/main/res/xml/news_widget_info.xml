@@ -7,4 +7,5 @@
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/widget_loading_layout" />
+    android:initialLayout="@layout/widget_loading_layout"
+    android:configure="com.adamyam.scenegets.widget.config.WidgetConfigActivity" />
