@@ -30,6 +30,10 @@ android {
         targetSdk = 35
         versionCode = releaseVersionCode
         versionName = releaseVersionName
+
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
@@ -72,9 +76,6 @@ android {
         compose = true
     }
 
-    ndk {
-        abiFilters += listOf("arm64-v8a")
-    }
 
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
