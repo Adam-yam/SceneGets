@@ -39,12 +39,13 @@ import java.util.Locale
 fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
     // TXT 시안의 단일 화이트 캘린더 카드 구조를 그대로 위젯 내부에 적용한다.
     // 데이터/갱신 로직은 기존 ScheduleRepository와 RefreshScheduleAction을 그대로 사용한다.
-    Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(WidgetColors.surface)
-            .cornerRadius(26.dp)
-    ) {
+    Box(modifier = GlanceModifier.fillMaxSize()) {
+        Box(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .background(WidgetColors.surface)
+                .cornerRadius(26.dp)
+        ) {}
         Column(modifier = GlanceModifier.fillMaxSize()) {
             ScheduleHeader()
 
@@ -72,7 +73,6 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
                 }
             }
         }
-
     }
 }
 

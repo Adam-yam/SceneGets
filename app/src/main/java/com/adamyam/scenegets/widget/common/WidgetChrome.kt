@@ -41,18 +41,24 @@ private val BORDER_WIDTH = 1.dp
 
 @Composable
 fun WidgetCard(content: @Composable ColumnScope.() -> Unit) {
-    Box(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(WidgetColors.stroke)
-            .cornerRadius(OUTER_RADIUS)
-    ) {
-        Column(
+    Box(modifier = GlanceModifier.fillMaxSize()) {
+        Box(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .background(WidgetColors.stroke)
+                .cornerRadius(OUTER_RADIUS)
+        ) {}
+        Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .padding(BORDER_WIDTH)
                 .background(WidgetColors.surface)
                 .cornerRadius(INNER_RADIUS)
+        ) {}
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(BORDER_WIDTH)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             content = content
         )
