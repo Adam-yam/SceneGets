@@ -12,6 +12,8 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.view.ViewGroup
@@ -19,9 +21,12 @@ import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import com.adamyam.scenegets.data.ChartRepository
+import com.adamyam.scenegets.data.ImageCache
 import com.adamyam.scenegets.data.NewsRepository
 import com.adamyam.scenegets.data.ScheduleRepository
 import com.adamyam.scenegets.data.WidgetState
+import java.io.ByteArrayInputStream
+import kotlin.math.ceil
 import com.adamyam.scenegets.models.ChartResponse
 import com.adamyam.scenegets.models.NewsResponse
 import com.adamyam.scenegets.models.ScheduleEvent
@@ -55,6 +60,10 @@ class MainActivity : Activity() {
     /** "light" | "dark" | "system" */
     private var themeMode: String = THEME_SYSTEM
 
+    private val thumbnailTargetPx: Int by lazy {
+        ceil(THUMBNAIL_MAX_DP * resources.displayMetrics.density).toInt()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -77,10 +86,33 @@ class MainActivity : Activity() {
             settings.setSupportZoom(false)
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
+            // CSS의 user-select:none만으로는 일부 기기에서 길게 눌렀을 때
+            // 네이티브 텍스트 선택/드래그 액션모드가 뜨는 경우가 있어 이중으로 막는다.
+            isLongClickable = false
+            setOnLongClickListener { true }
+            isHapticFeedbackEnabled = false
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     applyInsetVars()
+                }
+
+                override fun shouldInterceptRequest(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): WebResourceResponse? {
+                    val url = request?.url ?: return null
+                    if (request.method != "GET") return null
+                    val scheme = url.scheme
+                    if (scheme != "http" && scheme != "https") return null
+                    val path = url.path?.lowercase() ?: return null
+                    if (IMAGE_EXTENSIONS.none { path.endsWith(it) }) return null
+                    val bytes = ImageCache.loadEncoded(
+                        applicationContext,
+                        url.toString(),
+                        thumbnailTargetPx
+                    ) ?: return null
+                    return WebResourceResponse("image/jpeg", "UTF-8", ByteArrayInputStream(bytes))
                 }
             }
             webChromeClient = WebChromeClient()
@@ -333,5 +365,7 @@ class MainActivity : Activity() {
         const val THEME_LIGHT = "light"
         const val THEME_DARK = "dark"
         const val THEME_SYSTEM = "system"
+        const val THUMBNAIL_MAX_DP = 56
+        val IMAGE_EXTENSIONS = listOf(".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
     }
 }

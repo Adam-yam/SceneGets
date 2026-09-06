@@ -88,6 +88,12 @@
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; height:100%; background:var(--bg); font-family:var(--font);}
   body{display:block; min-height:100%; overflow:hidden; background:var(--bg); --system-top:0px; --system-bottom:0px;}
+  /* 텍스트 길게 눌러 선택/드래그되는 것을 막는다 (일반 네이티브 앱과 동일한 동작). */
+  *{
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
+  img{-webkit-user-drag:none; user-drag:none; pointer-events:none;}
 
   .screen{
     position:absolute; inset:0;

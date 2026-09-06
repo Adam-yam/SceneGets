@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
@@ -41,31 +42,45 @@ object ImageCache {
         return result
     }
 
-    suspend fun load(context: Context, url: String): Bitmap? = withContext(Dispatchers.IO) {
+    suspend fun load(context: Context, url: String, targetSizePx: Int = TARGET_SIZE_PX): Bitmap? =
+        withContext(Dispatchers.IO) {
+            val file = cacheFile(context, url)
+            if (!file.exists()) {
+                val bytes = download(url)
+                if (bytes == null) return@withContext null
+                runCatching { file.writeBytes(bytes) }
+            }
+            decodeSampled(file, targetSizePx)
+        }
+
+    fun loadEncoded(context: Context, url: String, targetSizePx: Int): ByteArray? {
         val file = cacheFile(context, url)
         if (!file.exists()) {
-            val bytes = download(url)
-            if (bytes == null) return@withContext null
+            val bytes = download(url) ?: return null
             runCatching { file.writeBytes(bytes) }
         }
-        decodeSampled(file)
+        val bitmap = decodeSampled(file, targetSizePx) ?: return null
+        return try {
+            val output = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
+            output.toByteArray()
+        } finally {
+            bitmap.recycle()
+        }
     }
 
-    private fun decodeSampled(file: File): Bitmap? = runCatching {
-        // 1) 실제 픽셀을 메모리에 올리지 않고 원본 크기만 먼저 확인
+    private fun decodeSampled(file: File, targetSizePx: Int): Bitmap? = runCatching {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
 
-        // 2) 목표 크기보다 커지지 않는 선에서 2의 배수로 축소 비율 계산
         var sampleSize = 1
-        while (bounds.outWidth / (sampleSize * 2) >= TARGET_SIZE_PX &&
-            bounds.outHeight / (sampleSize * 2) >= TARGET_SIZE_PX
+        while (bounds.outWidth / (sampleSize * 2) >= targetSizePx &&
+            bounds.outHeight / (sampleSize * 2) >= targetSizePx
         ) {
             sampleSize *= 2
         }
 
-        // 3) 축소된 크기로 디코딩 + 알파가 필요 없는 썸네일이라 RGB_565로 메모리 절반 절약
         val options = BitmapFactory.Options().apply {
             inSampleSize = sampleSize
             inPreferredConfig = Bitmap.Config.RGB_565
