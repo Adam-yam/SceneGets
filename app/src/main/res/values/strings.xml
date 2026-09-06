@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">SceneGets</string>
-    <string name="widget_chart_label">SceneGets 차트</string>
-    <string name="widget_news_label">SceneGets 뉴스</string>
-    <string name="widget_schedule_label">SceneGets 스케줄</string>
-</resources>
