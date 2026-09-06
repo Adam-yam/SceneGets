@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 다크 모드용 미리보기 대비색. widget_surface(#1C1C1E)보다 눈에 띄게 밝은 회색. -->
+<resources>
+    <color name="config_preview_backdrop">#FF48484A</color>
+</resources>

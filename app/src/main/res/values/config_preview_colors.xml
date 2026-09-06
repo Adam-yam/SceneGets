@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    미리보기 카드 뒤에 까는 대비색(라이트).
+    widget_surface(#FFFFFF)와 거의 같은 색을 쓰면 투명도를 낮춰도 "흰색 위에 흰색"이라
+    변화가 안 보이는 문제가 있었다. 카드 색과 뚜렷이 구분되는 톤을 써서 배경 투명도
+    슬라이더를 움직였을 때 실제로 비쳐 보이는 정도가 눈에 띄게 한다.
+-->
+<resources>
+    <color name="config_preview_backdrop">#FFC7C7CC</color>
+</resources>
