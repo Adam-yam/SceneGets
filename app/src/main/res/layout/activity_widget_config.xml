@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    위젯 추가/재구성 시 뜨는 구성 화면.
+
+    WidgetConfigDialogTheme는 windowIsTranslucent로 액티비티 배경만 투명하게 만들 뿐,
+    "작은 창처럼 보이게" 만드는 건 전부 이 레이아웃이 직접 담당한다 (일부 제조사
+    런처가 windowIsFloating류 테마 속성을 무시해서 이 방식이 더 안정적이다).
+    바깥 FrameLayout이 반투명 딤(scrim) 배경을 화면 전체에 깔고, 그 안에 실제
+    설정 카드를 좌우 여백을 두고 중앙에 배치한다.
+
+    모든 글자색·구분선·강조색은 widget_* 리소스(values / values-night)를 그대로 참조해서
+    인앱 디자인(scenegets_app_design.html) · 실제 위젯 카드 · 이 설정 팝업이 하나의
+    라이트/다크 토큰 세트를 공유하게 한다. 이전 버전은 다크 베이스 테마의 기본
+    글자색(흰색)이 밝은 배경 위에 그대로 노출돼 라디오/취소 버튼 글자가 안 보였는데,
+    아래에서는 모든 텍스트에 명시적으로 색을 지정해 그 문제를 근본적으로 없앤다.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#8A000000"
+    android:clickable="true"
+    android:focusable="true">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="28dp"
+        android:layout_marginEnd="28dp"
+        android:background="@drawable/bg_config_card"
+        android:clipToOutline="true"
+        android:elevation="8dp"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="22dp">
+
+        <TextView
+            android:id="@+id/configTitleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_primary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="18dp"
+            android:text="@string/widget_config_subtitle"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp"
+            android:textColor="@color/widget_text_secondary" />
+
+        <!-- 실시간 미리보기: 아래 슬라이더/라디오를 바꾸면 즉시 반영된다.
+             previewContainer 배경이 (회색 한 톤이 아니라) 체크무늬라서, previewCardBg의
+             알파가 낮아질수록 격자가 비쳐 보여 "진짜 투명해지는" 게 눈에 보인다.
+             모서리를 둥글게 잘라내는 건 Kotlin에서 outlineProvider로 처리한다
+             (BitmapDrawable은 라운드 모서리 아웃라인을 스스로 계산해주지 않기 때문). -->
+        <FrameLayout
+            android:id="@+id/previewContainer"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginBottom="22dp"
+            android:background="@drawable/bg_preview_checker"
+            android:clipToOutline="true">
+
+            <View
+                android:id="@+id/previewCardBg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/previewHeaderText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_config_preview_header"
+                    android:textStyle="bold"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/previewBodyText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/widget_config_preview_body"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/widget_config_opacity_label"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.02"
+            android:textColor="@color/widget_text_secondary" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_config_group"
+            android:clipToOutline="true"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <SeekBar
+                android:id="@+id/opacitySeekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="100"
+                android:progressTint="@color/widget_accent"
+                android:progressBackgroundTint="@color/widget_stroke"
+                android:thumbTint="@color/widget_accent" />
+
+            <TextView
+                android:id="@+id/opacityValueText"
+                android:layout_width="46dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:gravity="end"
+                android:textSize="14sp"
+                android:textColor="@color/widget_text_primary"
+                android:text="100%" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/widget_config_theme_label"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.02"
+            android:textColor="@color/widget_text_secondary" />
+
+        <RadioGroup
+            android:id="@+id/themeRadioGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_config_group"
+            android:clipToOutline="true">
+
+            <RadioButton
+                android:id="@+id/radioThemeSystem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:buttonTint="@color/widget_accent"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="15sp"
+                android:text="@string/widget_config_theme_system"
+                android:checked="true" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.6dp"
+                android:layout_marginStart="14dp"
+                android:background="@color/widget_divider" />
+
+            <RadioButton
+                android:id="@+id/radioThemeLight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:buttonTint="@color/widget_accent"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="15sp"
+                android:text="@string/widget_config_theme_light" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0.6dp"
+                android:layout_marginStart="14dp"
+                android:background="@color/widget_divider" />
+
+            <RadioButton
+                android:id="@+id/radioThemeDark"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:buttonTint="@color/widget_accent"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="15sp"
+                android:text="@string/widget_config_theme_dark" />
+        </RadioGroup>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="24dp"
+            android:gravity="center_vertical|end">
+
+            <Button
+                android:id="@+id/cancelButton"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textAllCaps="false"
+                android:textSize="15sp"
+                android:textColor="@color/widget_text_secondary"
+                android:text="@string/widget_config_cancel" />
+
+            <Button
+                android:id="@+id/confirmButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:textAllCaps="false"
+                android:textSize="15sp"
+                android:text="@string/widget_config_confirm"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_config_button_primary" />
+        </LinearLayout>
+    </LinearLayout>
+    </ScrollView>
+</FrameLayout>
