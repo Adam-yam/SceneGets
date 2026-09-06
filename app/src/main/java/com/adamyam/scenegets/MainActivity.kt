@@ -233,12 +233,24 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun sendData(chart: ChartResponse, news: NewsResponse, schedule: List<ScheduleEvent>) {
+    private fun sendData(
+        chart: ChartResponse,
+        news: NewsResponse,
+        schedule: List<ScheduleEvent>,
+        chartFetchedAt: Long,
+        newsFetchedAt: Long,
+        scheduleFetchedAt: Long,
+        hasError: Boolean
+    ) {
         // Build one JSON object and quote it as a JavaScript string argument.
         val actual = "{" +
             "\"chart\":" + json.encodeToString(chart) + "," +
             "\"news\":" + json.encodeToString(news) + "," +
-            "\"schedule\":{" + "\"updated\":\"\"," + "\"events\":" + json.encodeToString(schedule) + "}" +
+            "\"schedule\":{" + "\"updated\":\"\"," + "\"events\":" + json.encodeToString(schedule) + "}," +
+            "\"chartFetchedAt\":" + chartFetchedAt + "," +
+            "\"newsFetchedAt\":" + newsFetchedAt + "," +
+            "\"scheduleFetchedAt\":" + scheduleFetchedAt + "," +
+            "\"hasError\":" + hasError +
             "}"
         val quoted = JSONObject.quote(actual)
         webView.post {
@@ -248,24 +260,26 @@ class MainActivity : Activity() {
         }
     }
 
-    private suspend fun loadAll(sendCacheFirst: Boolean) {
-        val chartCache = chartRepository.cachedOrLoading()
-        val newsCache = newsRepository.cachedOrLoading()
-        val scheduleCache = scheduleRepository.cachedOrLoading()
-        if (sendCacheFirst) {
-            val chart = (chartCache as? WidgetState.Loaded)?.data ?: ChartResponse()
-            val news = (newsCache as? WidgetState.Loaded)?.data ?: NewsResponse()
-            val schedule = (scheduleCache as? WidgetState.Loaded)?.data ?: emptyList()
-            sendData(chart, news, schedule)
-        }
-
+    private suspend fun loadAll() {
         val chartFresh = chartRepository.refresh()
         val newsFresh = newsRepository.refresh()
         val scheduleFresh = scheduleRepository.refresh()
-        val chart = (chartFresh as? WidgetState.Loaded)?.data ?: (chartCache as? WidgetState.Loaded)?.data ?: ChartResponse()
-        val news = (newsFresh as? WidgetState.Loaded)?.data ?: (newsCache as? WidgetState.Loaded)?.data ?: NewsResponse()
-        val schedule = (scheduleFresh as? WidgetState.Loaded)?.data ?: (scheduleCache as? WidgetState.Loaded)?.data ?: emptyList()
-        sendData(chart, news, schedule)
+
+        val chart = (chartFresh as? WidgetState.Loaded)?.data ?: ChartResponse()
+        val news = (newsFresh as? WidgetState.Loaded)?.data ?: NewsResponse()
+        val schedule = (scheduleFresh as? WidgetState.Loaded)?.data ?: emptyList()
+
+        val hasError = listOf(chartFresh, newsFresh, scheduleFresh).any {
+            it is WidgetState.Failed || (it is WidgetState.Loaded && it.isStale)
+        }
+
+        sendData(
+            chart, news, schedule,
+            chartFetchedAt = (chartFresh as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            newsFetchedAt = (newsFresh as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            scheduleFetchedAt = (scheduleFresh as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            hasError = hasError
+        )
     }
 
     /** 캐시에 저장된 이전 데이터를 네트워크 요청 없이 그대로 보여준다. */
@@ -273,17 +287,29 @@ class MainActivity : Activity() {
         val chartCache = chartRepository.cachedOrLoading()
         val newsCache = newsRepository.cachedOrLoading()
         val scheduleCache = scheduleRepository.cachedOrLoading()
+
         val chart = (chartCache as? WidgetState.Loaded)?.data ?: ChartResponse()
         val news = (newsCache as? WidgetState.Loaded)?.data ?: NewsResponse()
         val schedule = (scheduleCache as? WidgetState.Loaded)?.data ?: emptyList()
-        sendData(chart, news, schedule)
+
+        val hasError = listOf(chartCache, newsCache, scheduleCache).any {
+            it is WidgetState.Loaded && it.isStale
+        }
+
+        sendData(
+            chart, news, schedule,
+            chartFetchedAt = (chartCache as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            newsFetchedAt = (newsCache as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            scheduleFetchedAt = (scheduleCache as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            hasError = hasError
+        )
     }
 
     private inner class SceneGetsBridge {
         @JavascriptInterface
         fun refreshAll() {
             scope.launch {
-                loadAll(sendCacheFirst = false)
+                loadAll()
             }
         }
 

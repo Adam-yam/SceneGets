@@ -712,9 +712,18 @@ function showToast(msg){
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>el.classList.remove("show"),1800);
 }
-function updateRefreshTime(){const el=document.getElementById("home-refresh-time");if(!el)return;const d=new Date(),pad=n=>String(n).padStart(2,"0");el.textContent=`마지막 갱신 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
+function updateRefreshTime(ts){const el=document.getElementById("home-refresh-time");if(!el)return;if(!ts){el.textContent="아직 갱신 기록이 없습니다";return;}const d=new Date(ts),pad=n=>String(n).padStart(2,"0");el.textContent=`마지막 갱신 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
 window.SceneGetsWeb={
-  onData:function(payload){try{nativeData=JSON.parse(payload);applyChartData(nativeData.chart);applyNewsData(nativeData.news);applyScheduleData(nativeData.schedule);updateHome();updateRefreshTime();if(pendingRefreshToast){pendingRefreshToast=false;showToast("갱신 완료");}}catch(e){console.error(e);}},
+  onData:function(payload){try{
+    nativeData=JSON.parse(payload);
+    applyChartData(nativeData.chart);
+    applyNewsData(nativeData.news);
+    applyScheduleData(nativeData.schedule);
+    updateHome();
+    const stamps=[nativeData.chartFetchedAt,nativeData.newsFetchedAt,nativeData.scheduleFetchedAt].filter(v=>v>0);
+    updateRefreshTime(stamps.length?Math.min(...stamps):0);
+    if(pendingRefreshToast){pendingRefreshToast=false;showToast(nativeData.hasError?"일부 데이터 갱신 실패":"갱신 완료");}
+  }catch(e){console.error(e);}},
   applyTheme:function(t){applyTheme(t,false);}
 };
 renderChart("all");
@@ -741,8 +750,9 @@ const CHART_INFO=[["멜론","TOP 100"],["유튜브 뮤직","주간 인기곡"],[
 function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);attachModalSwipe(b);}
 document.getElementById("chart-info-btn")?.addEventListener("click",showChartInfo);
 document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));});
-document.getElementById("chart-refresh")?.addEventListener("click",()=>{pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
-document.getElementById("home-refresh-btn")?.addEventListener("click",()=>{const el=document.getElementById("home-refresh-time");if(el)el.textContent="갱신 중…";pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();});
+function triggerRefresh(){const el=document.getElementById("home-refresh-time");if(el)el.textContent="갱신 중…";pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();}
+document.getElementById("chart-refresh")?.addEventListener("click",triggerRefresh);
+document.getElementById("home-refresh-btn")?.addEventListener("click",triggerRefresh);
 document.getElementById("platform-pills").addEventListener("click",e=>{const p=e.target.closest(".pill");if(!p)return;document.querySelectorAll("#platform-pills .pill").forEach(x=>x.classList.remove("active"));p.classList.add("active");renderChart(p.dataset.p);});
 window.addEventListener("load",()=>window.SceneGetsBridge&&window.SceneGetsBridge.loadCachedData&&window.SceneGetsBridge.loadCachedData());
 
