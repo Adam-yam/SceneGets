@@ -51,7 +51,7 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
                 is WidgetState.Loading -> WidgetCenterMessage("스케줄을 불러오는 중...")
                 is WidgetState.Failed -> WidgetCenterMessage("스케줄을 불러오지 못했어요\n${state.message}")
                 is WidgetState.Loaded -> {
-                    val events = withBirthdays(state.data)
+                    val events = futureOnly(withBirthdays(state.data))
                     if (events.isEmpty()) {
                         WidgetCenterMessage("예정된 일정이 없어요")
                     } else {
@@ -182,19 +182,26 @@ private fun ScheduleDateCard(group: DateEventGroup) {
 @Composable
 private fun ScheduleItem(event: ScheduleEvent, addBottomPadding: Boolean = true) {
     val color = typeColor(event.type)
+    val hasTime = event.time.isNotBlank()
+    // 시간이 있으면 시간줄 + 제목줄 2줄, 없으면 제목 1줄만 그려지므로
+    // 알약의 실제 높이 기준이 되는 컬러 바 높이도 그에 맞춰 줄여준다.
+    val barHeight = if (hasTime) 42.dp else 30.dp
 
     Row(
+        // 알약 사이 여백은 background/cornerRadius보다 먼저(바깥쪽에) 적용해야
+        // 여백이 알약 색 바깥의 실제 간격이 된다. 반대로 두면 여백이 알약 안쪽으로
+        // 흡수돼 다음 알약과 그대로 맞붙어(겹쳐) 보이게 된다.
         modifier = GlanceModifier
             .fillMaxWidth()
+            .then(if (addBottomPadding) GlanceModifier.padding(bottom = 6.dp) else GlanceModifier)
             .background(WidgetColors.surfaceVariant)
             .cornerRadius(12.dp)
             .padding(end = 10.dp)
-            .then(if (addBottomPadding) GlanceModifier.padding(bottom = 6.dp) else GlanceModifier.padding(bottom = 0.dp))
     ) {
         Box(
             modifier = GlanceModifier
                 .width(4.dp)
-                .height(42.dp)
+                .height(barHeight)
                 .background(color)
         ) {}
 
@@ -203,9 +210,9 @@ private fun ScheduleItem(event: ScheduleEvent, addBottomPadding: Boolean = true)
         Column(
             modifier = GlanceModifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = if (hasTime) 8.dp else 6.dp)
         ) {
-            if (event.time.isNotBlank()) {
+            if (hasTime) {
                 Text(
                     text = event.time,
                     maxLines = 1,
@@ -274,6 +281,16 @@ private val birthdays = listOf(
     Birthday(8, 19, "메이"),
     Birthday(11, 27, "제나")
 )
+
+// 오늘 이전(과거) 일정은 위젯에서 숨기고, 오늘을 포함한 이후 일정만 남긴다.
+// 날짜 파싱에 실패하는 항목은 표시 여부를 판단할 수 없으므로 안전하게 그대로 둔다.
+private fun futureOnly(events: List<ScheduleEvent>): List<ScheduleEvent> {
+    val today = LocalDate.now()
+    return events.filter { event ->
+        val date = runCatching { LocalDate.parse(event.date) }.getOrNull()
+        date == null || !date.isBefore(today)
+    }
+}
 
 private fun withBirthdays(events: List<ScheduleEvent>): List<ScheduleEvent> {
     val years = (events.mapNotNull { it.date.takeIf { d -> d.length >= 4 }?.take(4)?.toIntOrNull() } + LocalDate.now().year).toSet()
