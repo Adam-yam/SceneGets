@@ -174,13 +174,20 @@ private fun ScheduleDateCard(group: DateEventGroup) {
         }
 
         group.events.forEachIndexed { index, event ->
-            ScheduleItem(event, addBottomPadding = index != group.events.lastIndex)
+            ScheduleItem(event)
+            // Glance/RemoteViews에서는 Row에 준 padding(bottom)이 View의 내부 padding으로
+            // 처리되어 background가 그 영역까지 그대로 덮어버린다(=마진처럼 동작하지 않음).
+            // 그래서 알약 사이 실제 간격은 배경이 없는 별도의 Spacer로 만들어야
+            // 다음 알약과 붙어 보이는(겹치는) 문제가 확실히 사라진다.
+            if (index != group.events.lastIndex) {
+                Spacer(modifier = GlanceModifier.height(6.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun ScheduleItem(event: ScheduleEvent, addBottomPadding: Boolean = true) {
+private fun ScheduleItem(event: ScheduleEvent) {
     val color = typeColor(event.type)
     val hasTime = event.time.isNotBlank()
     // 시간이 있으면 시간줄 + 제목줄 2줄, 없으면 제목 1줄만 그려지므로
@@ -188,12 +195,8 @@ private fun ScheduleItem(event: ScheduleEvent, addBottomPadding: Boolean = true)
     val barHeight = if (hasTime) 42.dp else 30.dp
 
     Row(
-        // 알약 사이 여백은 background/cornerRadius보다 먼저(바깥쪽에) 적용해야
-        // 여백이 알약 색 바깥의 실제 간격이 된다. 반대로 두면 여백이 알약 안쪽으로
-        // 흡수돼 다음 알약과 그대로 맞붙어(겹쳐) 보이게 된다.
         modifier = GlanceModifier
             .fillMaxWidth()
-            .then(if (addBottomPadding) GlanceModifier.padding(bottom = 6.dp) else GlanceModifier)
             .background(WidgetColors.surfaceVariant)
             .cornerRadius(12.dp)
             .padding(end = 10.dp)
