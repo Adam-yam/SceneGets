@@ -3,14 +3,13 @@ package com.adamyam.scenegets.data
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.adamyam.scenegets.network.SceneFlixHttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
 
 /**
  * 뉴스 썸네일 / 앨범 커버처럼 URL로 오는 이미지를 다운로드해서
@@ -27,11 +26,6 @@ object ImageCache {
     // RemoteViews 전송 용량 제한에 걸려 위젯 전체가 "콘텐츠를 표시할 수 없음"으로
     // 깨지기 때문에, 실제 표시 크기에 맞춰 다운샘플링해서 디코딩한다.
     private const val TARGET_SIZE_PX = 150
-
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
-        .build()
 
     /** 여러 URL을 한 번에 로드해서 url -> Bitmap 맵으로 돌려준다. 실패한 URL은 맵에서 빠진다. */
     suspend fun loadAll(context: Context, urls: List<String>): Map<String, Bitmap> {
@@ -90,7 +84,7 @@ object ImageCache {
 
     private fun download(url: String): ByteArray? = runCatching {
         val request = Request.Builder().url(url).get().build()
-        client.newCall(request).execute().use { response ->
+        SceneFlixHttpClient.client.newCall(request).execute().use { response ->
             if (response.isSuccessful) response.body?.bytes() else null
         }
     }.getOrNull()

@@ -12,8 +12,14 @@ class ChartRepository(context: Context) {
     suspend fun refresh(): WidgetState<ChartResponse> {
         return when (val result = ChartApi.fetchChart()) {
             is ApiResult.Success -> {
+                val previous = cache.loadChart()?.data
                 cache.saveChart(result.data)
-                WidgetState.Loaded(result.data, result.fetchedAt, isStale = false)
+                WidgetState.Loaded(
+                    result.data,
+                    result.fetchedAt,
+                    isStale = false,
+                    contentUnchanged = previous == result.data
+                )
             }
             is ApiResult.Error -> {
                 cache.saveChartError(result.message)

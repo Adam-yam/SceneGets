@@ -11,8 +11,14 @@ class NewsRepository(context: Context) {
     suspend fun refresh(): WidgetState<NewsResponse> {
         return when (val result = NewsApi.fetchNews()) {
             is ApiResult.Success -> {
+                val previous = cache.loadNews()?.data
                 cache.saveNews(result.data)
-                WidgetState.Loaded(result.data, result.fetchedAt, isStale = false)
+                WidgetState.Loaded(
+                    result.data,
+                    result.fetchedAt,
+                    isStale = false,
+                    contentUnchanged = previous == result.data
+                )
             }
             is ApiResult.Error -> {
                 cache.saveNewsError(result.message)

@@ -11,8 +11,14 @@ class ScheduleRepository(context: Context) {
     suspend fun refresh(): WidgetState<List<ScheduleEvent>> {
         return when (val result = ScheduleApi.fetchUpcoming()) {
             is ApiResult.Success -> {
+                val previous = cache.loadSchedule()?.data
                 cache.saveSchedule(result.data)
-                WidgetState.Loaded(result.data, result.fetchedAt, isStale = false)
+                WidgetState.Loaded(
+                    result.data,
+                    result.fetchedAt,
+                    isStale = false,
+                    contentUnchanged = previous == result.data
+                )
             }
             is ApiResult.Error -> {
                 cache.saveScheduleError(result.message)

@@ -11,7 +11,8 @@ sealed class WidgetState<out T> {
         val data: T,
         val fetchedAt: Long,
         val isStale: Boolean,
-        val errorMessage: String? = null
+        val errorMessage: String? = null,
+        val contentUnchanged: Boolean = false
     ) : WidgetState<T>()
     data class Failed(val message: String) : WidgetState<Nothing>()
 }

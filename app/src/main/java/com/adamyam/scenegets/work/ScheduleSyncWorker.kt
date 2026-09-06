@@ -11,7 +11,9 @@ import com.adamyam.scenegets.widget.schedule.ScheduleWidget
 class ScheduleSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val state = ScheduleRepository(applicationContext).refresh()
-        ScheduleWidget().updateAll(applicationContext)
+        if ((state as? WidgetState.Loaded)?.contentUnchanged != true) {
+            ScheduleWidget().updateAll(applicationContext)
+        }
         return if (state is WidgetState.Failed) Result.retry() else Result.success()
     }
 

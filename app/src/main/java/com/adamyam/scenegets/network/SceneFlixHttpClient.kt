@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
  */
 object SceneFlixHttpClient {
 
-    private val client = OkHttpClient.Builder()
+    val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
         .build()

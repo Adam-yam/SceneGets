@@ -11,7 +11,9 @@ import com.adamyam.scenegets.widget.news.NewsWidget
 class NewsSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val state = NewsRepository(applicationContext).refresh()
-        NewsWidget().updateAll(applicationContext)
+        if ((state as? WidgetState.Loaded)?.contentUnchanged != true) {
+            NewsWidget().updateAll(applicationContext)
+        }
         return if (state is WidgetState.Failed) Result.retry() else Result.success()
     }
 

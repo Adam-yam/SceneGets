@@ -13,9 +13,11 @@ import java.util.concurrent.TimeUnit
 
 /**
  * 자동 갱신 주기:
- *  - 차트: 1시간마다, 매시 정각(0분)에 맞춰 실행
- *  - 뉴스: 2시간마다, 짝수 시 3분에 맞춰 실행
- *  - 스케줄: 2시간마다, 짝수 시 3분에 맞춰 실행 (뉴스와 동일 시각)
+ *  - 차트: 1시간마다, 매시 0분 30초에 맞춰 실행
+ *  - 뉴스: 2시간마다, 짝수 시 0분 30초에 맞춰 실행
+ *  - 스케줄: 2시간마다, 짝수 시 0분 30초에 맞춰 실행
+ * 세 작업의 목표 시각을 동일하게 맞춰서, 겹치는 시각(짝수 시 0분 30초)에는
+ * 기기가 한 번만 깨어나 세 작업을 함께 처리하도록 한다.
  * 앱이 열려있지 않아도 WorkManager가 백그라운드에서 계속 실행함.
  *
  * WorkManager는 initialDelay로 첫 실행 시각만 맞춰줄 뿐, 이후 주기는
@@ -26,9 +28,9 @@ import java.util.concurrent.TimeUnit
 object WidgetWorkScheduler {
 
     private const val CHART_INTERVAL_HOURS = 1
-    private const val CHART_TARGET_MINUTE = 0
     private const val NEWS_SCHEDULE_INTERVAL_HOURS = 2
-    private const val NEWS_SCHEDULE_TARGET_MINUTE = 3
+    private const val ALIGN_TARGET_MINUTE = 0
+    private const val ALIGN_TARGET_SECOND = 30
 
     fun scheduleAll(context: Context) {
         val workManager = WorkManager.getInstance(context)
@@ -38,10 +40,10 @@ object WidgetWorkScheduler {
             ExistingPeriodicWorkPolicy.UPDATE,
             PeriodicWorkRequestBuilder<ChartSyncWorker>(CHART_INTERVAL_HOURS.toLong(), TimeUnit.HOURS)
                 .setInitialDelay(
-                    RefreshAlignment.millisUntilNext(CHART_INTERVAL_HOURS, CHART_TARGET_MINUTE),
+                    RefreshAlignment.millisUntilNext(CHART_INTERVAL_HOURS, ALIGN_TARGET_MINUTE, ALIGN_TARGET_SECOND),
                     TimeUnit.MILLISECONDS
                 )
-                .setConstraints(networkConstraints())
+                .setConstraints(periodicConstraints())
                 .build()
         )
 
@@ -50,10 +52,10 @@ object WidgetWorkScheduler {
             ExistingPeriodicWorkPolicy.UPDATE,
             PeriodicWorkRequestBuilder<NewsSyncWorker>(NEWS_SCHEDULE_INTERVAL_HOURS.toLong(), TimeUnit.HOURS)
                 .setInitialDelay(
-                    RefreshAlignment.millisUntilNext(NEWS_SCHEDULE_INTERVAL_HOURS, NEWS_SCHEDULE_TARGET_MINUTE),
+                    RefreshAlignment.millisUntilNext(NEWS_SCHEDULE_INTERVAL_HOURS, ALIGN_TARGET_MINUTE, ALIGN_TARGET_SECOND),
                     TimeUnit.MILLISECONDS
                 )
-                .setConstraints(networkConstraints())
+                .setConstraints(periodicConstraints())
                 .build()
         )
 
@@ -62,10 +64,10 @@ object WidgetWorkScheduler {
             ExistingPeriodicWorkPolicy.UPDATE,
             PeriodicWorkRequestBuilder<ScheduleSyncWorker>(NEWS_SCHEDULE_INTERVAL_HOURS.toLong(), TimeUnit.HOURS)
                 .setInitialDelay(
-                    RefreshAlignment.millisUntilNext(NEWS_SCHEDULE_INTERVAL_HOURS, NEWS_SCHEDULE_TARGET_MINUTE),
+                    RefreshAlignment.millisUntilNext(NEWS_SCHEDULE_INTERVAL_HOURS, ALIGN_TARGET_MINUTE, ALIGN_TARGET_SECOND),
                     TimeUnit.MILLISECONDS
                 )
-                .setConstraints(networkConstraints())
+                .setConstraints(periodicConstraints())
                 .build()
         )
     }
@@ -89,5 +91,10 @@ object WidgetWorkScheduler {
 
     private fun networkConstraints() = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build()
+
+    private fun periodicConstraints() = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .setRequiresBatteryNotLow(true)
         .build()
 }

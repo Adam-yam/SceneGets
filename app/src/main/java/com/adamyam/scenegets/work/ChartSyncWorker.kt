@@ -11,7 +11,9 @@ import com.adamyam.scenegets.widget.chart.ChartWidget
 class ChartSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val state = ChartRepository(applicationContext).refresh()
-        ChartWidget().updateAll(applicationContext)
+        if ((state as? WidgetState.Loaded)?.contentUnchanged != true) {
+            ChartWidget().updateAll(applicationContext)
+        }
         return if (state is WidgetState.Failed) Result.retry() else Result.success()
     }
 
