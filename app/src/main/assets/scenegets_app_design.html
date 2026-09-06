@@ -409,22 +409,38 @@
   .toast{
     position:fixed; left:50%; bottom:calc(14px + var(--system-bottom) + 78px);
     transform:translateX(-50%) translateY(6px);
-    background:rgba(40,40,42,0.72); backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
-    color:#FFFFFF; font-size:13px; font-weight:600;
+    background:rgba(40,40,43,0.72); color:#FFFFFF; font-size:13px; font-weight:600;
+    backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
     padding:10px 18px; border-radius:100px; z-index:80;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 4px 14px rgba(0,0,0,0.16);
     opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
     white-space:nowrap;
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
-  .ptr-indicator{
-    position:absolute; left:0; right:0; top:calc(var(--system-top) + 8px);
-    height:36px; display:flex; align-items:center; justify-content:center;
-    opacity:0; pointer-events:none;
+  /* ---------- pull to refresh ----------
+     .content 자체가 overflow-y:auto라, 인디케이터를 그 안쪽 자식으로 두면
+     당기기 전(top이 음수) 상태에서 자체 overflow에 가려 안 보인다.
+     그래서 인디케이터는 .content의 형제(부모 .screen의 자식)로 두고,
+     .content가 아래로 밀릴 때 드러나는 자리에 고정 배치한다. */
+  .pull-indicator{
+    position:absolute; left:50%; z-index:5;
+    top:calc(var(--system-top) + 10px);
+    transform:translateX(-50%) scale(0.7);
+    width:30px; height:30px; border-radius:15px;
+    background:var(--glass-bg);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid var(--glass-border);
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+    display:flex; align-items:center; justify-content:center; color:var(--accent);
+    opacity:0; pointer-events:none; transition:opacity .15s ease, transform .15s ease;
   }
-  .ptr-indicator svg{width:20px; height:20px; color:var(--accent);}
-  .ptr-indicator.spinning svg{animation:ptr-spin .75s linear infinite;}
-  @keyframes ptr-spin{to{transform:rotate(360deg);}}
+  .pull-indicator.visible{opacity:1; transform:translateX(-50%) scale(1);}
+  .pull-indicator svg{transform:rotate(0deg);}
+  .pull-indicator.spinning svg{animation:pull-spin .7s linear infinite;}
+  @keyframes pull-spin{to{transform:rotate(360deg);}}
 
 </style>
 </head>
@@ -496,7 +512,6 @@
 
   <!-- ============ CHART ============ -->
   <div class="screen hidden" id="screen-chart">
-    <div class="ptr-indicator" id="ptr-chart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div>
     <div class="icon-btn" id="chart-refresh" role="button" tabindex="0">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </div>
@@ -522,7 +537,6 @@
 
   <!-- ============ NEWS ============ -->
   <div class="screen hidden" id="screen-news">
-    <div class="ptr-indicator" id="ptr-news"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div>
     <div class="content" id="scroll-news">
       <div class="sched-title">뉴스</div>
       <div class="section">
@@ -534,7 +548,6 @@
 
   <!-- ============ SCHEDULE ============ -->
   <div class="screen hidden" id="screen-schedule">
-    <div class="ptr-indicator" id="ptr-schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></div>
     <div class="content" id="scroll-schedule">
       <div class="sched-title">스케줄</div>
       <div class="sched-sub" id="sched-sub"></div>
@@ -738,7 +751,7 @@ window.SceneGetsWeb={
     const stamps=[nativeData.chartFetchedAt,nativeData.newsFetchedAt,nativeData.scheduleFetchedAt].filter(v=>v>0);
     updateRefreshTime(stamps.length?Math.min(...stamps):0);
     if(pendingRefreshToast){pendingRefreshToast=false;showToast(nativeData.hasError?"일부 데이터 갱신 실패":"갱신 완료");}
-    if(ptrCompleteHandler){const h=ptrCompleteHandler;ptrCompleteHandler=null;h();}
+    if(activePullRelease){activePullRelease();activePullRelease=null;}
   }catch(e){console.error(e);}},
   applyTheme:function(t){applyTheme(t,false);}
 };
@@ -770,78 +783,74 @@ function triggerRefresh(){const el=document.getElementById("home-refresh-time");
 document.getElementById("chart-refresh")?.addEventListener("click",triggerRefresh);
 document.getElementById("home-refresh-btn")?.addEventListener("click",triggerRefresh);
 
-let ptrCompleteHandler=null;
-const PTR_THRESHOLD=64;
-const PTR_MAX_PULL=96;
-const PTR_ENGAGE_DIST=8;
-function setupPullToRefresh(contentId,indicatorId){
-  const content=document.getElementById(contentId);
-  const indicator=document.getElementById(indicatorId);
-  const icon=indicator?.querySelector("svg");
-  if(!content||!indicator||!icon)return;
-  let startX=0,startY=0,tracking=false,engaged=false,refreshing=false;
-  content.addEventListener("pointerdown",e=>{
-    if(e.pointerType==="mouse"&&e.buttons!==1)return;
-    if(refreshing||content.scrollTop>0)return;
-    startX=e.clientX;startY=e.clientY;tracking=true;engaged=false;
+/* ---------------- pull to refresh (차트/뉴스/스케줄) ----------------
+   .content(스크롤 영역)를 아래로 당기면 살짝 딸려 내려오면서, 부모 .screen에
+   고정된 인디케이터가 그 틈으로 드러난다. 임계값을 넘기고 손을 떼면 새로고침을
+   트리거하고, 실제 데이터가 도착(onData)하면 activePullRelease로 원상복귀한다. */
+let activePullRelease=null;
+function attachPullRefresh(el){
+  if(!el) return;
+  const screen=el.parentElement;
+  if(!screen) return;
+  const PULL_TRIGGER=58, PULL_MAX=88, PULL_SETTLE=42;
+
+  const indicator=document.createElement("div");
+  indicator.className="pull-indicator";
+  indicator.innerHTML='<svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  screen.insertBefore(indicator, el);
+  const icon=indicator.querySelector("svg");
+
+  let startY=0, dragging=false, pulling=false, refreshing=false;
+
+  el.addEventListener("pointerdown", e=>{
+    if(refreshing || el.scrollTop>0) return;
+    startY=e.clientY;
+    dragging=true;
   });
-  content.addEventListener("pointermove",e=>{
-    if(!tracking||refreshing)return;
-    const dy=e.clientY-startY,dx=e.clientX-startX;
-    if(!engaged){
-      if(content.scrollTop>0||dy<=0){tracking=false;return;}
-      if(dy<PTR_ENGAGE_DIST)return;
-      if(Math.abs(dx)>dy){tracking=false;return;}
-      engaged=true;
-      content.style.transition="none";
+  el.addEventListener("pointermove", e=>{
+    if(!dragging || refreshing) return;
+    const delta=e.clientY-startY;
+    if(delta<=0 || el.scrollTop>0){
+      if(pulling){pulling=false; indicator.classList.remove("visible"); el.style.transition="transform .2s ease"; el.style.transform="";}
+      return;
     }
+    pulling=true;
     e.preventDefault();
-    const dist=Math.min(PTR_MAX_PULL,dy*0.5);
-    content.style.transform=`translateY(${dist}px)`;
-    indicator.style.opacity=String(Math.min(1,dist/PTR_THRESHOLD));
-    icon.style.transform=`rotate(${Math.min(180,(dist/PTR_THRESHOLD)*180)}deg)`;
+    const dist=Math.min(delta*0.5, PULL_MAX);
+    el.style.transition="none";
+    el.style.transform=`translateY(${dist}px)`;
+    indicator.classList.add("visible");
+    icon.style.transform=`rotate(${Math.min(dist/PULL_TRIGGER,1)*220}deg)`;
   });
-  const release=()=>{
-    if(!tracking)return;
-    tracking=false;
-    if(!engaged)return;
-    engaged=false;
-    const match=/translateY\(([-\d.]+)px\)/.exec(content.style.transform);
-    const dist=match?parseFloat(match[1]):0;
-    content.style.transition="transform .25s cubic-bezier(.22,.61,.36,1)";
-    if(dist>=PTR_THRESHOLD)startRefresh();
-    else{
-      content.style.transform="translateY(0px)";
-      indicator.style.opacity="0";
+  const end=()=>{
+    if(!dragging) return;
+    dragging=false;
+    if(!pulling) return;
+    pulling=false;
+    const m=/translateY\(([\d.]+)px\)/.exec(el.style.transform);
+    const dist=m?parseFloat(m[1]):0;
+    el.style.transition="transform .25s cubic-bezier(.2,.8,.2,1)";
+    if(dist>=PULL_TRIGGER){
+      refreshing=true;
+      el.style.transform=`translateY(${PULL_SETTLE}px)`;
+      indicator.classList.add("spinning");
+      icon.style.transform="";
+      activePullRelease=()=>{
+        refreshing=false;
+        indicator.classList.remove("spinning","visible");
+        el.style.transition="transform .25s cubic-bezier(.2,.8,.2,1)";
+        el.style.transform="";
+      };
+      triggerRefresh();
+    }else{
+      el.style.transform="";
+      indicator.classList.remove("visible");
     }
   };
-  content.addEventListener("pointerup",release);
-  content.addEventListener("pointercancel",release);
-  function startRefresh(){
-    refreshing=true;
-    content.style.transform="translateY(52px)";
-    indicator.style.opacity="1";
-    icon.style.transform="";
-    indicator.classList.add("spinning");
-    pendingRefreshToast=true;
-    const timeEl=document.getElementById("home-refresh-time");
-    if(timeEl)timeEl.textContent="갱신 중…";
-    window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();
-    const finish=()=>{
-      if(!refreshing)return;
-      refreshing=false;
-      indicator.classList.remove("spinning");
-      content.style.transition="transform .25s cubic-bezier(.22,.61,.36,1)";
-      content.style.transform="translateY(0px)";
-      indicator.style.opacity="0";
-    };
-    ptrCompleteHandler=finish;
-    setTimeout(()=>{if(ptrCompleteHandler===finish){ptrCompleteHandler=null;finish();}},6000);
-  }
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
 }
-setupPullToRefresh("scroll-chart","ptr-chart");
-setupPullToRefresh("scroll-news","ptr-news");
-setupPullToRefresh("scroll-schedule","ptr-schedule");
+["scroll-chart","scroll-news","scroll-schedule"].forEach(id=>attachPullRefresh(document.getElementById(id)));
 document.getElementById("platform-pills").addEventListener("click",e=>{const p=e.target.closest(".pill");if(!p)return;document.querySelectorAll("#platform-pills .pill").forEach(x=>x.classList.remove("active"));p.classList.add("active");renderChart(p.dataset.p);});
 window.addEventListener("load",()=>window.SceneGetsBridge&&window.SceneGetsBridge.loadCachedData&&window.SceneGetsBridge.loadCachedData());
 
