@@ -1,0 +1,16 @@
+package com.adamyam.scenegets.widget.schedule
+
+import android.appwidget.AppWidgetManager
+import android.content.Context
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import com.adamyam.scenegets.work.WidgetWorkScheduler
+
+class ScheduleWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = ScheduleWidget()
+
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        WidgetWorkScheduler.refreshScheduleNow(context)
+    }
+}
