@@ -416,6 +416,46 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
+  /* ---------- pull-to-refresh ---------- */
+  .ptr-indicator{
+    position:absolute; left:50%; top:calc(var(--system-top) + 10px); z-index:20;
+    width:30px; height:30px; border-radius:15px;
+    background:var(--glass-bg);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid var(--glass-border);
+    box-shadow:0 4px 14px rgba(0,0,0,0.1);
+    display:flex; align-items:center; justify-content:center; color:var(--accent);
+    opacity:0; transform:translate(-50%,-36px); pointer-events:none;
+  }
+  .ptr-indicator.spinning svg{animation:ptr-spin .7s linear infinite;}
+  @keyframes ptr-spin{to{transform:rotate(360deg);}}
+
+  /* ---------- loading skeleton ---------- */
+  .skel-line, .skel-thumb{
+    background:linear-gradient(90deg, var(--surface-2) 25%, var(--stroke) 37%, var(--surface-2) 63%);
+    background-size:400% 100%;
+    animation:skel-shimmer 1.4s ease infinite;
+    border-radius:6px; display:block;
+  }
+  .skel-thumb{border-radius:10px;}
+  @keyframes skel-shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+
+  /* ---------- section failure banner ---------- */
+  .fail-banner{
+    display:none; align-items:center; justify-content:space-between; gap:10px;
+    margin:10px 16px 4px; padding:11px 14px; border-radius:12px;
+    background:rgba(255,149,0,0.12); border:1px solid rgba(255,149,0,0.28);
+    color:var(--status-warn); font-size:12.8px; font-weight:600; line-height:1.4;
+  }
+  .fail-banner.show{display:flex;}
+  .fail-banner-btn{
+    flex-shrink:0; border:none; background:var(--status-warn); color:#FFFFFF;
+    font-size:12px; font-weight:700; padding:7px 13px; border-radius:100px;
+    font-family:var(--font);
+  }
+  .fail-banner-btn:disabled{opacity:0.6;}
+
 </style>
 </head>
 <body>
@@ -439,7 +479,7 @@
         </div>
         <div class="card">
           <div class="today-card">
-            <div class="today-empty">오늘 예정된 일정이 없습니다.</div>
+            <div class="today-item"><div class="content-col"><span class="skel-line" style="width:52px;height:16px;"></span><div class="skel-line" style="width:70%;height:14px;margin-top:7px;"></div></div><span class="skel-line" style="width:44px;height:20px;border-radius:8px;"></span></div>
           </div>
         </div>
       </div>
@@ -450,7 +490,7 @@
           <span class="section-link" data-action="chart">차트 <svg width="7" height="11" viewBox="0 0 7 11" fill="none"><path d="M1 1L5.5 5.5L1 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </div>
         <div class="card" id="home-chart-card">
-          <div class="today-empty">차트 데이터가 없습니다.</div>
+          <div class="chart-mini-row"><div class="skel-thumb" style="width:42px;height:42px;flex-shrink:0;"></div><div class="mini-info"><span class="skel-line" style="width:60%;height:14px;"></span><span class="skel-line" style="width:40%;height:11px;margin-top:6px;"></span></div><span class="skel-line" style="width:78px;height:32px;border-radius:6px;"></span></div>
         </div>
       </div>
 
@@ -460,7 +500,7 @@
           <span class="section-link" data-action="news">뉴스 <svg width="7" height="11" viewBox="0 0 7 11" fill="none"><path d="M1 1L5.5 5.5L1 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </div>
         <div class="card" id="home-news-card">
-          <div class="today-empty">뉴스 데이터가 없습니다.</div>
+          <div class="news-mini"><div class="skel-thumb" style="width:52px;height:52px;flex-shrink:0;"></div><div style="flex:1;min-width:0;"><span class="skel-line" style="width:85%;height:13px;"></span><span class="skel-line" style="width:45%;height:11px;margin-top:7px;"></span></div></div>
         </div>
       </div>
 
@@ -491,6 +531,10 @@
     </div>
     <div class="content" id="scroll-chart">
       <div class="sched-title title-row">차트<button class="title-info-btn" type="button" id="chart-info-btn" aria-label="차트 안내">?</button></div>
+      <div class="fail-banner" id="chart-fail-banner">
+        <span>새로고침 실패, 다시 시도해 주세요</span>
+        <button type="button" class="fail-banner-btn" id="chart-fail-retry">다시 시도</button>
+      </div>
       <div class="pill-row" id="platform-pills">
         <div class="pill active" data-p="all">전체</div>
         <div class="pill" data-p="melon">멜론</div>
@@ -503,7 +547,11 @@
       </div>
 
       <div class="section" style="margin-top:14px;">
-        <div class="card" id="chart-list"></div>
+        <div class="card" id="chart-list">
+          <div class="song-row"><div class="skel-thumb" style="width:44px;height:44px;flex-shrink:0;"></div><div class="song-info"><span class="skel-line" style="width:55%;height:15px;"></span><span class="skel-line" style="width:35%;height:12px;margin-top:6px;"></span></div></div>
+          <div class="song-row"><div class="skel-thumb" style="width:44px;height:44px;flex-shrink:0;"></div><div class="song-info"><span class="skel-line" style="width:48%;height:15px;"></span><span class="skel-line" style="width:30%;height:12px;margin-top:6px;"></span></div></div>
+          <div class="song-row"><div class="skel-thumb" style="width:44px;height:44px;flex-shrink:0;"></div><div class="song-info"><span class="skel-line" style="width:60%;height:15px;"></span><span class="skel-line" style="width:38%;height:12px;margin-top:6px;"></span></div></div>
+        </div>
       </div>
       <div style="height:8px"></div>
     </div>
@@ -513,8 +561,16 @@
   <div class="screen hidden" id="screen-news">
     <div class="content" id="scroll-news">
       <div class="sched-title">뉴스</div>
+      <div class="fail-banner" id="news-fail-banner">
+        <span>새로고침 실패, 다시 시도해 주세요</span>
+        <button type="button" class="fail-banner-btn" id="news-fail-retry">다시 시도</button>
+      </div>
       <div class="section">
-        <div class="card" id="news-list"></div>
+        <div class="card" id="news-list">
+          <div class="article-row"><div class="skel-thumb" style="width:56px;height:56px;flex-shrink:0;"></div><div class="grow"><span class="skel-line" style="width:80%;height:14px;"></span><span class="skel-line" style="width:40%;height:12px;margin-top:7px;"></span></div></div>
+          <div class="article-row"><div class="skel-thumb" style="width:56px;height:56px;flex-shrink:0;"></div><div class="grow"><span class="skel-line" style="width:70%;height:14px;"></span><span class="skel-line" style="width:32%;height:12px;margin-top:7px;"></span></div></div>
+          <div class="article-row"><div class="skel-thumb" style="width:56px;height:56px;flex-shrink:0;"></div><div class="grow"><span class="skel-line" style="width:76%;height:14px;"></span><span class="skel-line" style="width:36%;height:12px;margin-top:7px;"></span></div></div>
+        </div>
       </div>
       <div style="height:8px"></div>
     </div>
@@ -525,8 +581,20 @@
     <div class="content" id="scroll-schedule">
       <div class="sched-title">스케줄</div>
       <div class="sched-sub" id="sched-sub"></div>
+      <div class="fail-banner" id="schedule-fail-banner">
+        <span>새로고침 실패, 다시 시도해 주세요</span>
+        <button type="button" class="fail-banner-btn" id="schedule-fail-retry">다시 시도</button>
+      </div>
 
-      <div id="schedule-groups"></div>
+      <div id="schedule-groups">
+        <div class="date-group">
+          <div class="date-header"><span class="skel-line" style="width:72px;height:14px;"></span></div>
+          <div class="card event-card">
+            <div class="event-line"><span class="skel-line" style="width:34px;height:13px;"></span><div class="event-dot" style="background:var(--stroke);"></div><div class="event-main"><span class="skel-line" style="width:68%;height:14px;"></span><span class="skel-line" style="width:36%;height:11px;margin-top:6px;"></span></div></div>
+            <div class="event-line"><span class="skel-line" style="width:34px;height:13px;"></span><div class="event-dot" style="background:var(--stroke);"></div><div class="event-main"><span class="skel-line" style="width:52%;height:14px;"></span><span class="skel-line" style="width:30%;height:11px;margin-top:6px;"></span></div></div>
+          </div>
+        </div>
+      </div>
       <div style="height:8px"></div>
     </div>
   </div>
@@ -715,6 +783,31 @@ function showToast(msg){
   toastTimer=setTimeout(()=>el.classList.remove("show"),1800);
 }
 function updateRefreshTime(ts){const el=document.getElementById("home-refresh-time");if(!el)return;if(!ts){el.textContent="아직 갱신 기록이 없습니다";return;}const d=new Date(ts),pad=n=>String(n).padStart(2,"0");el.textContent=`마지막 갱신 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
+function toggleFailBanner(bannerId,btnId,show){
+  const el=document.getElementById(bannerId);
+  if(el) el.classList.toggle("show",!!show);
+  const btn=document.getElementById(btnId);
+  if(btn){btn.disabled=false;btn.textContent="다시 시도";}
+}
+function updateFailBanners(){
+  toggleFailBanner("chart-fail-banner","chart-fail-retry",nativeData.chartError);
+  toggleFailBanner("news-fail-banner","news-fail-retry",nativeData.newsError);
+  toggleFailBanner("schedule-fail-banner","schedule-fail-retry",nativeData.scheduleError);
+}
+function bindFailRetry(btnId,bridgeMethod){
+  const btn=document.getElementById(btnId);
+  btn?.addEventListener("click",()=>{
+    if(!window.SceneGetsBridge||!window.SceneGetsBridge[bridgeMethod])return;
+    btn.disabled=true;
+    btn.textContent="재시도 중…";
+    window.SceneGetsBridge[bridgeMethod]();
+  });
+}
+bindFailRetry("chart-fail-retry","refreshChart");
+bindFailRetry("news-fail-retry","refreshNews");
+bindFailRetry("schedule-fail-retry","refreshSchedule");
+let ptrActiveStoppers=[];
+function stopAllPtr(){ptrActiveStoppers.forEach(fn=>fn());ptrActiveStoppers=[];}
 window.SceneGetsWeb={
   onData:function(payload){try{
     nativeData=JSON.parse(payload);
@@ -722,14 +815,23 @@ window.SceneGetsWeb={
     applyNewsData(nativeData.news);
     applyScheduleData(nativeData.schedule);
     updateHome();
+    updateFailBanners();
+    stopAllPtr();
     const stamps=[nativeData.chartFetchedAt,nativeData.newsFetchedAt,nativeData.scheduleFetchedAt].filter(v=>v>0);
     updateRefreshTime(stamps.length?Math.min(...stamps):0);
-    if(pendingRefreshToast){pendingRefreshToast=false;showToast(nativeData.hasError?"일부 데이터 갱신 실패":"갱신 완료");}
+    if(pendingRefreshToast){
+      pendingRefreshToast=false;
+      const anyError=nativeData.chartError||nativeData.newsError||nativeData.scheduleError;
+      showToast(anyError?"일부 데이터 갱신 실패":"갱신 완료");
+    }
   }catch(e){console.error(e);}},
   applyTheme:function(t){applyTheme(t,false);}
 };
-renderChart("all");
-updateHome();
+if(!window.SceneGetsBridge||!window.SceneGetsBridge.loadCachedData){
+  // 브릿지가 없는 환경(데스크톱 미리보기 등)에서는 스켈레톤 대신 빈 상태를 바로 보여준다.
+  renderChart("all");
+  updateHome();
+}
 
 /* ---------------- tab switching ---------------- */
 const tabs = document.querySelectorAll('.tab');
@@ -757,6 +859,63 @@ document.getElementById("chart-refresh")?.addEventListener("click",triggerRefres
 document.getElementById("home-refresh-btn")?.addEventListener("click",triggerRefresh);
 document.getElementById("platform-pills").addEventListener("click",e=>{const p=e.target.closest(".pill");if(!p)return;document.querySelectorAll("#platform-pills .pill").forEach(x=>x.classList.remove("active"));p.classList.add("active");renderChart(p.dataset.p);});
 window.addEventListener("load",()=>window.SceneGetsBridge&&window.SceneGetsBridge.loadCachedData&&window.SceneGetsBridge.loadCachedData());
+
+/* ---------------- pull-to-refresh ---------------- */
+function attachPullToRefresh(screenId,contentId){
+  const screen=document.getElementById(screenId);
+  const content=document.getElementById(contentId);
+  if(!screen||!content)return;
+  const indicator=document.createElement("div");
+  indicator.className="ptr-indicator";
+  indicator.innerHTML='<svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  screen.insertBefore(indicator,content);
+
+  const THRESHOLD=64,MAX_PULL=96;
+  let startY=0,dragging=false,pulled=0,refreshing=false;
+
+  const reset=()=>{
+    indicator.style.transition="opacity .18s ease, transform .18s ease";
+    indicator.style.opacity="0";
+    indicator.style.transform="translate(-50%,-36px) rotate(0deg)";
+    indicator.classList.remove("spinning");
+  };
+  const stop=()=>{refreshing=false;reset();};
+
+  content.addEventListener("pointerdown",e=>{
+    if(content.scrollTop>0||refreshing)return;
+    startY=e.clientY;dragging=true;pulled=0;
+  });
+  content.addEventListener("pointermove",e=>{
+    if(!dragging||refreshing)return;
+    const diff=e.clientY-startY;
+    if(diff<=0||content.scrollTop>0){pulled=0;return;}
+    pulled=Math.min(MAX_PULL,diff*0.5);
+    e.preventDefault();
+    indicator.style.transition="none";
+    indicator.style.opacity=String(Math.min(1,pulled/THRESHOLD));
+    indicator.style.transform=`translate(-50%, ${pulled-36}px) rotate(${pulled*3}deg)`;
+  },{passive:false});
+  const finish=()=>{
+    if(!dragging)return;
+    dragging=false;
+    if(pulled>=THRESHOLD&&!refreshing){
+      refreshing=true;
+      indicator.style.transition="transform .18s ease, opacity .18s ease";
+      indicator.style.opacity="1";
+      indicator.style.transform="translate(-50%, 24px) rotate(0deg)";
+      indicator.classList.add("spinning");
+      ptrActiveStoppers.push(stop);
+      triggerRefresh();
+      setTimeout(()=>{if(refreshing)stop();},8000);
+    }else{
+      reset();
+    }
+    pulled=0;
+  };
+  content.addEventListener("pointerup",finish);
+  content.addEventListener("pointercancel",finish);
+}
+["home","chart","news","schedule"].forEach(name=>attachPullToRefresh(`screen-${name}`,`scroll-${name}`));
 
 /* ---------------- settings: theme & battery ---------------- */
 const THEME_KEY="scenegets_theme";

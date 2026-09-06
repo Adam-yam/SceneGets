@@ -32,6 +32,12 @@ object ImageCache {
     // 파일이 이 시간보다 오래됐으면 캐시를 재검증한다 (조건부 GET, 아래 참고).
     private const val CACHE_TTL_MILLIS = 24 * 60 * 60 * 1000L
 
+    // 뉴스 썸네일처럼 URL이 계속 바뀌는 이미지가 쌓이면서 캐시 폴더가 무한정 커지는 것을
+    // 막기 위한 정리 기준. 7일 이상 쓰이지 않은 파일은 우선 지우고, 그래도 전체 용량이
+    // 기준을 넘으면 오래된 파일부터 추가로 지운다. ImageCacheCleanupWorker가 주기적으로 호출한다.
+    private const val CACHE_MAX_AGE_MILLIS = 7 * 24 * 60 * 60 * 1000L
+    private const val CACHE_MAX_TOTAL_BYTES = 30L * 1024 * 1024
+
     private sealed class DownloadOutcome {
         data class Success(val bytes: ByteArray, val etag: String?) : DownloadOutcome()
         data object NotModified : DownloadOutcome()
@@ -137,6 +143,37 @@ object ImageCache {
             }
         }
     }.getOrDefault(DownloadOutcome.Failed)
+
+    /**
+     * 캐시 폴더를 정리한다: 1) 마지막 접근 이후 7일이 지난 파일을 지우고,
+     * 2) 그 뒤에도 전체 크기가 기준을 넘으면 오래된 파일부터 추가로 지운다.
+     * ETag sidecar 파일은 항상 원본 이미지 파일과 함께 지운다.
+     */
+    suspend fun cleanup(context: Context) = withContext(Dispatchers.IO) {
+        runCatching {
+            val dir = File(context.cacheDir, "scenegets_images")
+            val files = dir.listFiles() ?: return@runCatching
+            val now = System.currentTimeMillis()
+
+            files.filter { !it.name.endsWith(".etag") }.forEach { file ->
+                if (now - file.lastModified() > CACHE_MAX_AGE_MILLIS) {
+                    file.delete()
+                    etagFile(file).delete()
+                }
+            }
+
+            val remaining = (dir.listFiles() ?: emptyArray())
+                .filter { !it.name.endsWith(".etag") }
+                .sortedBy { it.lastModified() }
+            var totalSize = remaining.sumOf { it.length() }
+            for (file in remaining) {
+                if (totalSize <= CACHE_MAX_TOTAL_BYTES) break
+                totalSize -= file.length()
+                file.delete()
+                etagFile(file).delete()
+            }
+        }
+    }
 
     private fun cacheFile(context: Context, url: String): File {
         val dir = File(context.cacheDir, "scenegets_images").apply { mkdirs() }

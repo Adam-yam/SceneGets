@@ -29,6 +29,7 @@ object WidgetWorkScheduler {
 
     private const val CHART_INTERVAL_HOURS = 1
     private const val NEWS_SCHEDULE_INTERVAL_HOURS = 2
+    private const val IMAGE_CACHE_CLEANUP_INTERVAL_HOURS = 24L
     private const val ALIGN_TARGET_MINUTE = 0
     private const val ALIGN_TARGET_SECOND = 30
 
@@ -69,6 +70,16 @@ object WidgetWorkScheduler {
                 )
                 .setConstraints(periodicConstraints())
                 .build()
+        )
+
+        // 이미지 캐시 정리는 네트워크가 필요 없는 순수 로컬 파일 작업이라 별도 제약이 없다.
+        workManager.enqueueUniquePeriodicWork(
+            ImageCacheCleanupWorker.UNIQUE_PERIODIC,
+            ExistingPeriodicWorkPolicy.KEEP,
+            PeriodicWorkRequestBuilder<ImageCacheCleanupWorker>(
+                IMAGE_CACHE_CLEANUP_INTERVAL_HOURS,
+                TimeUnit.HOURS
+            ).build()
         )
     }
 

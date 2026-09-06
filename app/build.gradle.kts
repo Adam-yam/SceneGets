@@ -80,6 +80,9 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
 
+    // 뉴스/검색 링크를 Chrome Custom Tabs로 열기 위함
+    implementation("androidx.browser:browser:1.8.0")
+
     // Glance (Jetpack Compose 기반 위젯)
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")

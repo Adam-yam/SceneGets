@@ -18,6 +18,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.browser.customtabs.CustomTabColorSchemeParams
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import com.adamyam.scenegets.data.ChartRepository
@@ -249,6 +251,34 @@ class MainActivity : Activity() {
         }
     }
 
+    /**
+     * 뉴스/검색 링크를 완전히 별도의 브라우저 앱 대신 Chrome Custom Tabs로 연다.
+     * 앱 테마 색이 적용된 채로 부드럽게 열리고, 뒤로가기로 앱에 자연스럽게 복귀한다.
+     * Custom Tabs를 지원하는 브라우저가 없으면 일반 ACTION_VIEW로 폴백한다.
+     */
+    private fun openInCustomTab(uri: Uri) {
+        val dark = isDarkTheme()
+        val toolbarColor = if (dark) Color.parseColor("#1C1C1E") else Color.parseColor("#FFFFFF")
+        val accentColor = if (dark) Color.parseColor("#7D7AFF") else Color.parseColor("#5E5CE6")
+        val colorParams = CustomTabColorSchemeParams.Builder()
+            .setToolbarColor(toolbarColor)
+            .setNavigationBarColor(toolbarColor)
+            .setSecondaryToolbarColor(accentColor)
+            .build()
+        val customTabsIntent = CustomTabsIntent.Builder()
+            .setDefaultColorSchemeParams(colorParams)
+            .setColorScheme(
+                if (dark) CustomTabsIntent.COLOR_SCHEME_DARK else CustomTabsIntent.COLOR_SCHEME_LIGHT
+            )
+            .setShowTitle(true)
+            .setUrlBarHidingEnabled(true)
+            .build()
+        val opened = runCatching { customTabsIntent.launchUrl(this, uri) }.isSuccess
+        if (!opened) {
+            runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+        }
+    }
+
     private fun sendData(
         chart: ChartResponse,
         news: NewsResponse,
@@ -256,7 +286,9 @@ class MainActivity : Activity() {
         chartFetchedAt: Long,
         newsFetchedAt: Long,
         scheduleFetchedAt: Long,
-        hasError: Boolean
+        chartError: Boolean,
+        newsError: Boolean,
+        scheduleError: Boolean
     ) {
         // Build one JSON object and quote it as a JavaScript string argument.
         val actual = "{" +
@@ -266,7 +298,9 @@ class MainActivity : Activity() {
             "\"chartFetchedAt\":" + chartFetchedAt + "," +
             "\"newsFetchedAt\":" + newsFetchedAt + "," +
             "\"scheduleFetchedAt\":" + scheduleFetchedAt + "," +
-            "\"hasError\":" + hasError +
+            "\"chartError\":" + chartError + "," +
+            "\"newsError\":" + newsError + "," +
+            "\"scheduleError\":" + scheduleError +
             "}"
         val quoted = JSONObject.quote(actual)
         webView.post {
@@ -276,49 +310,53 @@ class MainActivity : Activity() {
         }
     }
 
-    private suspend fun loadAll() {
-        val chartFresh = chartRepository.refresh()
-        val newsFresh = newsRepository.refresh()
-        val scheduleFresh = scheduleRepository.refresh()
+    /** 섹션별로 실패(Failed) 또는 갱신 실패 후 캐시로 대체된 상태(isStale)인지 판단한다. */
+    private fun isErrorState(state: WidgetState<*>): Boolean =
+        state is WidgetState.Failed || (state is WidgetState.Loaded<*> && state.isStale)
 
-        val chart = (chartFresh as? WidgetState.Loaded)?.data ?: ChartResponse()
-        val news = (newsFresh as? WidgetState.Loaded)?.data ?: NewsResponse()
-        val schedule = MemberBirthdays.mergeInto((scheduleFresh as? WidgetState.Loaded)?.data ?: emptyList())
-
-        val hasError = listOf(chartFresh, newsFresh, scheduleFresh).any {
-            it is WidgetState.Failed || (it is WidgetState.Loaded && it.isStale)
-        }
+    /** 세 섹션의 상태를 조합해서 WebView로 한 번에 전달한다. */
+    private fun sendCombined(
+        chartState: WidgetState<ChartResponse>,
+        newsState: WidgetState<NewsResponse>,
+        scheduleState: WidgetState<List<ScheduleEvent>>
+    ) {
+        val chart = (chartState as? WidgetState.Loaded)?.data ?: ChartResponse()
+        val news = (newsState as? WidgetState.Loaded)?.data ?: NewsResponse()
+        val schedule = MemberBirthdays.mergeInto((scheduleState as? WidgetState.Loaded)?.data ?: emptyList())
 
         sendData(
             chart, news, schedule,
-            chartFetchedAt = (chartFresh as? WidgetState.Loaded)?.fetchedAt ?: 0L,
-            newsFetchedAt = (newsFresh as? WidgetState.Loaded)?.fetchedAt ?: 0L,
-            scheduleFetchedAt = (scheduleFresh as? WidgetState.Loaded)?.fetchedAt ?: 0L,
-            hasError = hasError
+            chartFetchedAt = (chartState as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            newsFetchedAt = (newsState as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            scheduleFetchedAt = (scheduleState as? WidgetState.Loaded)?.fetchedAt ?: 0L,
+            chartError = isErrorState(chartState),
+            newsError = isErrorState(newsState),
+            scheduleError = isErrorState(scheduleState)
         )
+    }
+
+    private suspend fun loadAll() {
+        sendCombined(chartRepository.refresh(), newsRepository.refresh(), scheduleRepository.refresh())
     }
 
     /** 캐시에 저장된 이전 데이터를 네트워크 요청 없이 그대로 보여준다. */
     private suspend fun loadCacheOnly() {
-        val chartCache = chartRepository.cachedOrLoading()
-        val newsCache = newsRepository.cachedOrLoading()
-        val scheduleCache = scheduleRepository.cachedOrLoading()
-
-        val chart = (chartCache as? WidgetState.Loaded)?.data ?: ChartResponse()
-        val news = (newsCache as? WidgetState.Loaded)?.data ?: NewsResponse()
-        val schedule = MemberBirthdays.mergeInto((scheduleCache as? WidgetState.Loaded)?.data ?: emptyList())
-
-        val hasError = listOf(chartCache, newsCache, scheduleCache).any {
-            it is WidgetState.Loaded && it.isStale
-        }
-
-        sendData(
-            chart, news, schedule,
-            chartFetchedAt = (chartCache as? WidgetState.Loaded)?.fetchedAt ?: 0L,
-            newsFetchedAt = (newsCache as? WidgetState.Loaded)?.fetchedAt ?: 0L,
-            scheduleFetchedAt = (scheduleCache as? WidgetState.Loaded)?.fetchedAt ?: 0L,
-            hasError = hasError
+        sendCombined(
+            chartRepository.cachedOrLoading(),
+            newsRepository.cachedOrLoading(),
+            scheduleRepository.cachedOrLoading()
         )
+    }
+
+    /**
+     * 특정 섹션만 다시 네트워크에서 새로고침하고, 나머지 섹션은 캐시 값을 그대로 사용해
+     * 세 섹션을 다시 조합해서 보낸다. 실패 배너의 "다시 시도" 버튼에서 사용한다.
+     */
+    private suspend fun refreshSection(chart: Boolean = false, news: Boolean = false, schedule: Boolean = false) {
+        val chartState = if (chart) chartRepository.refresh() else chartRepository.cachedOrLoading()
+        val newsState = if (news) newsRepository.refresh() else newsRepository.cachedOrLoading()
+        val scheduleState = if (schedule) scheduleRepository.refresh() else scheduleRepository.cachedOrLoading()
+        sendCombined(chartState, newsState, scheduleState)
     }
 
     private inner class SceneGetsBridge {
@@ -326,6 +364,27 @@ class MainActivity : Activity() {
         fun refreshAll() {
             scope.launch {
                 loadAll()
+            }
+        }
+
+        @JavascriptInterface
+        fun refreshChart() {
+            scope.launch {
+                refreshSection(chart = true)
+            }
+        }
+
+        @JavascriptInterface
+        fun refreshNews() {
+            scope.launch {
+                refreshSection(news = true)
+            }
+        }
+
+        @JavascriptInterface
+        fun refreshSchedule() {
+            scope.launch {
+                refreshSection(schedule = true)
             }
         }
 
@@ -376,7 +435,7 @@ class MainActivity : Activity() {
         fun openUrl(url: String?) {
             val uri = runCatching { Uri.parse(url ?: "") }.getOrNull() ?: return
             if (uri.scheme != "http" && uri.scheme != "https") return
-            startActivity(Intent(Intent.ACTION_VIEW, uri))
+            runOnUiThread { openInCustomTab(uri) }
         }
 
         @JavascriptInterface
