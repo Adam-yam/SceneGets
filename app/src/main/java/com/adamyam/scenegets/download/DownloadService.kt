@@ -11,8 +11,10 @@ import android.os.Build
 import android.os.Environment
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import dev.ffmpegkit_maintained.ytdlp.compat.YoutubeDL
-import dev.ffmpegkit_maintained.ytdlp.compat.YoutubeDLRequest
+import dev.ffmpegkit_maintained.ytdlp.YtDlp
+import dev.ffmpegkit_maintained.ytdlp.YtDlpRequest
+import dev.ffmpegkit_maintained.ytdlp.YtDlpResponse
+import java.util.concurrent.Future
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -21,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class DownloadService : Service() {
     private val cancelRequested = AtomicBoolean(false)
     private var currentUrl: String? = null
-    private var currentProcessId: String? = null
+    private var currentFuture: Future<YtDlpResponse>? = null
     private var lastProgress = -1
     private var lastNotificationAt = 0L
 
@@ -36,7 +38,7 @@ class DownloadService : Service() {
             ACTION_CANCEL -> {
                 cancelRequested.set(true)
                 DownloadStore.cancelled(this)
-                runCatching { YoutubeDL.getInstance().destroyProcessById(currentProcessId ?: "") }
+                runCatching { currentFuture?.cancel(true) }
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelfResult(startId)
                 return START_NOT_STICKY
@@ -62,7 +64,7 @@ class DownloadService : Service() {
             DownloadStore.updateProgress(this, 0, "다운로드 준비 중", "yt-dlp를 초기화하고 있습니다.")
             updateNotification("다운로드 준비 중", 0, true)
 
-            YoutubeDL.init(applicationContext)
+            YtDlp.init(applicationContext)
 
             val outputDir = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
@@ -75,7 +77,7 @@ class DownloadService : Service() {
             // User-supplied text is used only as the URL. All yt-dlp options are fixed here.
             // This prevents a shared string from being interpreted as an option/command.
             val template = File(outputDir, "%(title)s [%(id)s].%(ext)s").absolutePath
-            val request = YoutubeDLRequest(url)
+            val request = YtDlpRequest(url)
                 .setOutputTemplate(template)
                 .addOption("--no-playlist")
                 .addOption("--no-overwrites")
@@ -88,9 +90,7 @@ class DownloadService : Service() {
 
             var lastLine = ""
             val done = CountDownLatch(1)
-            val processId = "scenegets-${System.currentTimeMillis()}"
-            currentProcessId = processId
-            YoutubeDL.executeAsync(request, { progress, _, line ->
+            currentFuture = YtDlp.executeAsync(request) { progress, _, line ->
                 if (cancelRequested.get()) return@executeAsync
                 val p = progress.toInt().coerceIn(0, 100)
                 lastLine = line.orEmpty()
@@ -112,14 +112,14 @@ class DownloadService : Service() {
                 } else if (p >= 100) {
                     done.countDown()
                 }
-            }, processId)
+            }
 
             // executeAsync is callback-driven in the Android wrapper. A 100% callback means the
             // yt-dlp download phase completed; then wait for the final file to become stable.
             // Partial .part files are ignored.
             if (!done.await(6, TimeUnit.HOURS)) {
                 DownloadStore.failed(this, "다운로드 시간이 너무 오래 걸려 자동으로 중단되었습니다.")
-                runCatching { YoutubeDL.getInstance().destroyProcessById(processId) }
+                runCatching { currentFuture?.cancel(true) }
             }
             if (cancelRequested.get()) {
                 DownloadStore.cancelled(this)
@@ -143,7 +143,7 @@ class DownloadService : Service() {
             }
         } finally {
             currentUrl = null
-            currentProcessId = null
+            currentFuture = null
             stopForeground(STOP_FOREGROUND_DETACH)
             stopSelfResult(startId)
         }

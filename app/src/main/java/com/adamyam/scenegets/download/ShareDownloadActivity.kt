@@ -1,6 +1,7 @@
 package com.adamyam.scenegets.download
 
 import android.Manifest
+import com.adamyam.scenegets.R
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager

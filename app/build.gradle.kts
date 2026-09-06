@@ -103,5 +103,4 @@ dependencies {
     // Modern maintained yt-dlp Android wrapper (MIT). It embeds yt-dlp + Python 3.13.
     // The compat shim keeps the stable YoutubeDL/YoutubeDLRequest API used by the service.
     implementation("dev.ffmpegkit-maintained:yt-dlp-android:2.0.2")
-    implementation("dev.ffmpegkit-maintained:yt-dlp-android-compat:2.0.2")
 }
