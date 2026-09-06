@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SceneGets</string>
+    <string name="widget_chart_label">SceneGets 차트</string>
+    <string name="widget_news_label">SceneGets 뉴스</string>
+    <string name="widget_schedule_label">SceneGets 스케줄</string>
+
+    <string name="widget_config_title">위젯 설정 — %1$s</string>
+    <string name="widget_config_subtitle">배경 투명도와 테마를 위젯마다 따로 설정할 수 있어요.</string>
+    <string name="widget_config_preview_header">미리보기</string>
+    <string name="widget_config_preview_body">실제 글자 색은 항상 그대로 유지돼요</string>
+    <string name="widget_config_opacity_label">배경 투명도</string>
+    <string name="widget_config_opacity_value">%1$d%%</string>
+    <string name="widget_config_theme_label">위젯 테마</string>
+    <string name="widget_config_theme_system">기기 설정에 맞춤</string>
+    <string name="widget_config_theme_light">라이트</string>
+    <string name="widget_config_theme_dark">다크</string>
+    <string name="widget_config_cancel">취소</string>
+    <string name="widget_config_confirm">완료</string>
+</resources>
