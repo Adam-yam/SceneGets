@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    투명도 미리보기용 체크무늬(포토샵류 편집 툴에서 쓰는 표준 "투명" 표시 패턴).
+    이전에는 미리보기 뒤에 단색 회색만 깔아서 "회색으로 바뀌는 것"처럼 보였는데,
+    체크무늬 위에 카드를 얹으면 실제로 알파가 낮아질수록 격자가 비쳐 보여서
+    "진짜 투명해지는" 느낌을 정확히 전달한다.
+    checker_tile.png는 drawable-nodpi(라이트)/drawable-night-nodpi(다크) 두 벌.
+-->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/checker_tile"
+    android:tileModeX="repeat"
+    android:tileModeY="repeat" />
