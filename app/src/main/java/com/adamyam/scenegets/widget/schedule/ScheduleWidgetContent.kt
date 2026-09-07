@@ -39,21 +39,12 @@ import java.util.Locale
 fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
     // TXT 시안의 단일 화이트 캘린더 카드 구조를 그대로 위젯 내부에 적용한다.
     // 데이터/갱신 로직은 기존 ScheduleRepository와 RefreshScheduleAction을 그대로 사용한다.
-    // 배경(반투명 카드색)과 텍스트 콘텐츠를 형제 레이어로 분리한다. 배경이 있는 컨테이너
-    // 안에 텍스트를 자식으로 바로 넣으면, 일부 기기에서 Glance가 cornerRadius + 반투명
-    // 배경을 RemoteViews로 변환할 때 그 안의 텍스트까지 같은 비트맵으로 합쳐 알파를
-    // 같이 적용해버려 투명도를 낮출수록 글자까지 옅어지는 문제가 있었다. (WidgetCard와
-    // 동일한 원인/해결 방식 — WidgetChrome.kt 주석 참고)
-    Box(modifier = GlanceModifier.fillMaxSize()) {
-        // 배경 레이어 — 내용 없음
-        Box(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .background(WidgetColors.surface)
-                .cornerRadius(26.dp)
-        ) {}
-
-        // 콘텐츠 레이어 — 항상 완전 불투명
+    Box(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .background(WidgetColors.surface)
+            .cornerRadius(26.dp)
+    ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
             ScheduleHeader()
 
@@ -81,6 +72,7 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
                 }
             }
         }
+
     }
 }
 
