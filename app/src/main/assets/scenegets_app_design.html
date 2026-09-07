@@ -30,7 +30,6 @@
     --glass-border:rgba(255,255,255,0.6);
     --glass-shadow:0 10px 30px rgba(0,0,0,0.12), 0 1px 1px rgba(255,255,255,0.5) inset;
     --skel-shine:rgba(60,60,67,0.07);
-    --date-icon-filter:none;
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Pretendard", "Apple SD Gothic Neo", sans-serif;
   }
   @media (prefers-color-scheme: dark){
@@ -59,7 +58,6 @@
       --glass-border:rgba(255,255,255,0.08);
       --glass-shadow:0 10px 30px rgba(0,0,0,0.55), 0 1px 1px rgba(255,255,255,0.05) inset;
       --skel-shine:rgba(255,255,255,0.25);
-      --date-icon-filter:invert(1);
 
     }
   }
@@ -88,7 +86,6 @@
       --glass-border:rgba(255,255,255,0.08);
       --glass-shadow:0 10px 30px rgba(0,0,0,0.55), 0 1px 1px rgba(255,255,255,0.05) inset;
       --skel-shine:rgba(255,255,255,0.25);
-      --date-icon-filter:invert(1);
 
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -125,9 +122,6 @@
     border:1px solid var(--glass-border);
     box-shadow:0 4px 14px rgba(0,0,0,0.08);
     display:flex; align-items:center; justify-content:center; color:var(--accent);
-  }
-  .icon-btn.icon-btn-top{
-    top:calc(var(--system-top) + 12px); bottom:auto;
   }
 
   .section{padding:0 16px; margin-top:20px;}
@@ -428,13 +422,6 @@
   .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .modal-title{font-size:18px;font-weight:700;color:var(--text-1);}
   .modal-close{border:none;background:var(--surface-2);color:var(--accent);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600;}
-  .form-field{margin-bottom:14px;}
-  .form-label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px;}
-  .form-label-opt{font-weight:500;color:var(--text-3);margin-left:4px;}
-  .form-input{width:100%;background:var(--surface-2);border:none;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:500;color:var(--text-1);font-family:var(--font);}
-  .form-input::-webkit-calendar-picker-indicator{filter:var(--date-icon-filter,none);}
-  .form-submit-btn{width:100%;border:none;border-radius:12px;background:var(--accent);color:#FFFFFF;padding:13px;font-size:15px;font-weight:700;margin-top:4px;}
-  .form-submit-btn:active{opacity:0.85;}
 
   .toast{
     position:fixed; left:50%; bottom:calc(14px + var(--system-bottom) + 78px);
@@ -583,9 +570,6 @@
   </div>
 
   <div class="screen hidden" id="screen-schedule">
-    <div class="icon-btn icon-btn-top" id="schedule-add-btn" role="button" tabindex="0" aria-label="일정 추가">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-    </div>
     <div class="ptr-indicator" id="ptr-schedule"><div class="ptr-spinner" id="ptr-spinner-schedule"><span class="ptr-dot"></span><span class="ptr-dot"></span><span class="ptr-dot"></span></div></div>
     <div class="content" id="scroll-schedule">
       <div class="sched-title">스케줄</div>
@@ -1094,34 +1078,6 @@ function attachModalSwipe(b){const modal=b.querySelector(".modal");let startY=0,
 const CHART_INFO=[["멜론","TOP 100"],["유튜브 뮤직","주간 인기곡"],["스포티파이","한국 데일리 차트"],["지니","TOP 200"],["플로","전체 연령 차트"],["벅스","실시간 차트"],["바이브","오늘 TOP 100"]];
 function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);attachModalSwipe(b);}
 document.getElementById("chart-info-btn")?.addEventListener("click",showChartInfo);
-function showAddScheduleModal(){
-  let b=document.createElement("div");
-  b.className="modal-backdrop";
-  b.innerHTML=`<div class="modal">
-    <div class="modal-head"><span class="modal-title">일정 추가</span><button class="modal-close" type="button">닫기</button></div>
-    <div class="form-field"><label class="form-label" for="add-sched-title">제목</label><input class="form-input" type="text" id="add-sched-title" placeholder="일정 제목" maxlength="60"></div>
-    <div class="form-field"><label class="form-label" for="add-sched-date">날짜</label><input class="form-input" type="date" id="add-sched-date"></div>
-    <div class="form-field"><label class="form-label" for="add-sched-time">시간<span class="form-label-opt">(선택)</span></label><input class="form-input" type="time" id="add-sched-time"></div>
-    <button class="form-submit-btn" type="button" id="add-sched-submit">캘린더에 추가</button>
-  </div>`;
-  b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});
-  document.body.appendChild(b);
-  attachModalSwipe(b);
-  const dateInput=b.querySelector("#add-sched-date");
-  if(dateInput)dateInput.value=todayISO();
-  b.querySelector("#add-sched-submit").addEventListener("click",()=>{
-    const title=b.querySelector("#add-sched-title").value.trim();
-    const date=b.querySelector("#add-sched-date").value;
-    const time=b.querySelector("#add-sched-time").value;
-    if(!title){showToast("제목을 입력해주세요.");return;}
-    if(!date){showToast("날짜를 선택해주세요.");return;}
-    if(window.SceneGetsBridge&&window.SceneGetsBridge.addToCalendar){
-      window.SceneGetsBridge.addToCalendar(date,time,title);
-    }
-    b.remove();
-  });
-}
-document.getElementById("schedule-add-btn")?.addEventListener("click",showAddScheduleModal);
 document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));const bell=e.target.closest(".event-bell-btn");if(bell){onBellClick(bell);}});
 let pendingBellRequest=null;
 function applyBellToggle(bell,enable){
