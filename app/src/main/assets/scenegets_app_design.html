@@ -297,28 +297,28 @@
   }
 
   .event-card{padding:0 14px; overflow:hidden;}
+  .event-swipe-row{position:relative; overflow:hidden;}
+  .event-swipe-row + .event-swipe-row{border-top:1px solid var(--divider);}
+  .event-swipe-actions{position:absolute; top:0; right:0; bottom:0; display:flex; z-index:0;}
+  .swipe-act{
+    width:54px; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; color:#fff; font-size:10px; font-weight:600; padding:0; position:relative;
+  }
+  .swipe-act span:last-child{font-size:10px;}
+  .act-bell{background:var(--status-warn);}
+  .act-cal{background:var(--accent);}
+  .act-search{background:var(--flat);}
+  .act-dot{
+    position:absolute; top:6px; right:12px; width:6px; height:6px; border-radius:50%;
+    background:#fff; display:none;
+  }
+  .act-bell.on .act-dot{display:block;}
   .event-line{display:flex; align-items:flex-start; gap:12px; padding:13px 2px;}
   .event-line .chevron{margin-top:2px;}
-  .event-more-btn{
-    flex-shrink:0; width:24px; height:24px; margin-top:1px; border-radius:12px; border:none;
-    background:var(--surface-2); color:var(--text-3); display:flex; align-items:center; justify-content:center;
-    padding:0; position:relative;
+  .event-swipe-content{
+    position:relative; z-index:1; background:var(--surface);
+    transform:translateX(0); touch-action:pan-y;
   }
-  .event-more-btn:active{background:var(--accent-dim); color:var(--accent);}
-  .event-more-btn .alarm-dot{
-    position:absolute; top:1px; right:1px; width:6px; height:6px; border-radius:50%;
-    background:var(--accent); border:1.5px solid var(--surface); display:none;
-  }
-  .event-more-btn.has-alarm .alarm-dot{display:block;}
-  .event-line + .event-line{border-top:1px solid var(--divider);}
-  .event-sheet-row{
-    display:flex; align-items:center; gap:12px; padding:14px 6px; font-size:15.5px; font-weight:600; color:var(--text-1);
-  }
-  .event-sheet-row:active{background:var(--surface-2); border-radius:10px;}
-  .event-sheet-row svg{color:var(--text-2); flex-shrink:0;}
-  .event-sheet-row.on{color:var(--accent);}
-  .event-sheet-row.on svg{color:var(--accent); fill:var(--accent);}
-  .event-sheet-row + .event-sheet-row{border-top:1px solid var(--divider);}
   .event-time{
     width:46px; flex-shrink:0; font-size:13px; font-weight:700; color:var(--text-1);
     letter-spacing:-0.3px; padding-top:1px;
@@ -812,34 +812,97 @@ function applyScheduleData(d){
         <span class="d2 ${cls}">${weekdayLabel(d.getDay())}</span>
         ${isToday?`<span class="today-tag">오늘</span>`:""}
       </div>
-      <div class="card event-card">${items.map(e=>`<div class="event-line type-${esc(e.type||"notice")}">
-        ${e.time?`<div class="event-time">${esc(e.time)}</div>`:""}
-        <div class="event-dot"></div>
-        <div class="event-main">
-          <div class="event-title">${esc(e.title)}</div>
-          <div class="event-type">${esc(labels[e.type]||e.type||"일정")}</div>
+      <div class="card event-card">${items.map(e=>{
+        const bellBtn=e.time?`<button class="swipe-act act-bell" type="button" data-date="${esc(e.date)}" data-time="${esc(e.time)}" data-title="${esc(e.title)}" data-on="0" aria-label="알림"><span class="act-dot"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>알림</span></button>`:"";
+        const calBtn=`<button class="swipe-act act-cal" type="button" data-date="${esc(e.date)}" data-time="${esc(e.time||"")}" data-title="${esc(e.title)}" aria-label="캘린더에 추가"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/><path d="M12 13v5M9.5 15.5h5"/></svg><span>캘린더</span></button>`;
+        const searchBtn=(e.type==="anniversary"||e.type==="birthday")?"":`<button class="swipe-act act-search" type="button" data-search="${esc(e.title)}" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>검색</span></button>`;
+        return `<div class="event-swipe-row">
+        <div class="event-swipe-actions">${bellBtn}${calBtn}${searchBtn}</div>
+        <div class="event-line event-swipe-content type-${esc(e.type||"notice")}">
+          ${e.time?`<div class="event-time">${esc(e.time)}</div>`:""}
+          <div class="event-dot"></div>
+          <div class="event-main">
+            <div class="event-title">${esc(e.title)}</div>
+            <div class="event-type">${esc(labels[e.type]||e.type||"일정")}</div>
+          </div>
         </div>
-        <button class="event-more-btn" type="button" data-date="${esc(e.date)}" data-time="${esc(e.time||"")}" data-title="${esc(e.title)}" data-type="${esc(e.type||"notice")}" aria-label="더보기">
-          <span class="alarm-dot"></span>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
-        </button>
-      </div>`).join("")}</div>
+      </div>`;
+      }).join("")}</div>
     </div>`;
   }).join("");
-  syncEventAlarmIndicators();
+  syncBellStates();
+  attachEventSwipeHandlers();
 }
-function syncEventAlarmIndicators(){
-  document.querySelectorAll(".event-more-btn").forEach(btn=>{
-    if(!btn.dataset.time){btn.classList.remove("has-alarm");return;}
+function syncBellStates(){
+  document.querySelectorAll(".act-bell").forEach(btn=>{
     let on=false;
     try{
       if(window.SceneGetsBridge&&window.SceneGetsBridge.isEventNotificationEnabled){
         on=window.SceneGetsBridge.isEventNotificationEnabled(btn.dataset.date,btn.dataset.time,btn.dataset.title);
       }
     }catch(e){}
-    btn.classList.toggle("has-alarm",on);
+    btn.dataset.on=on?"1":"0";
+    btn.classList.toggle("on",on);
   });
 }
+function closeOtherSwipeRows(except){
+  document.querySelectorAll(".event-swipe-row").forEach(row=>{
+    if(row===except||!row._open)return;
+    const c=row.querySelector(".event-swipe-content");
+    if(c){c.style.transition="transform .2s ease";c.style.transform="translateX(0)";}
+    row._open=false;
+  });
+}
+function closeAllSwipeRows(){closeOtherSwipeRows(null);}
+function attachEventSwipeHandlers(){
+  document.querySelectorAll(".event-swipe-row").forEach(row=>{
+    const content=row.querySelector(".event-swipe-content");
+    if(!content||content._swipeBound)return;
+    content._swipeBound=true;
+    row._open=false;
+    const actions=row.querySelectorAll(".swipe-act");
+    const openWidth=actions.length*54;
+    let startX=0,startY=0,baseX=0,dragging=false,axis=null,pid=null;
+    const setX=x=>{content.style.transform=`translateX(${x}px)`;};
+    content.addEventListener("pointerdown",e=>{
+      if(e.pointerType==="mouse"&&e.button!==0)return;
+      dragging=true;axis=null;pid=e.pointerId;
+      startX=e.clientX;startY=e.clientY;baseX=row._open?-openWidth:0;
+      content.style.transition="none";
+    });
+    content.addEventListener("pointermove",e=>{
+      if(!dragging)return;
+      const dx=e.clientX-startX,dy=e.clientY-startY;
+      if(axis===null){
+        if(Math.abs(dx)<6&&Math.abs(dy)<6)return;
+        axis=Math.abs(dx)>Math.abs(dy)?"x":"y";
+        if(axis==="x"){ try{content.setPointerCapture(pid);}catch(err){} closeOtherSwipeRows(row); }
+        else{ dragging=false; return; }
+      }
+      if(axis!=="x")return;
+      e.preventDefault();
+      setX(Math.max(-openWidth,Math.min(0,baseX+dx)));
+    });
+    const endDrag=e=>{
+      if(!dragging)return;
+      dragging=false;
+      content.style.transition="transform .2s ease";
+      if(axis==="x"){
+        const dx=(e.clientX??startX)-startX;
+        const nx=baseX+dx;
+        if(nx<-openWidth/2){setX(-openWidth);row._open=true;}
+        else{setX(0);row._open=false;}
+      }
+      axis=null;
+    };
+    content.addEventListener("pointerup",endDrag);
+    content.addEventListener("pointercancel",endDrag);
+  });
+}
+document.addEventListener("pointerdown",e=>{
+  if(e.target.closest(".event-swipe-row"))return;
+  closeAllSwipeRows();
+});
 function updateHome(){const ev=(nativeData.schedule.events||[]).filter(e=>e.date===todayISO()).sort((a,b)=>(a.time||"99:99").localeCompare(b.time||"99:99"));const tc=document.querySelector("#screen-home .today-card");tc.innerHTML=ev.map(e=>`<div class="today-item"><div class="content-col"><span class="badge ${esc(e.type)}">${esc(e.type||"일정")}</span><div class="item-title">${esc(e.title)}</div></div>${e.time?`<span class="time-chip">${esc(e.time)}</span>`:""}</div>`).join("")||`<div class="today-empty">오늘 예정된 일정이 없습니다.</div>`;const songs=[...(nativeData.chart.songs||[])].sort((a,b)=>Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999))-Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999))).slice(0,3);const cc=document.getElementById("home-chart-card");if(cc)cc.innerHTML=songs.map(s=>{const ranks=s.ranks||{},melon=ranks.melon?.rank??"—",ytm=ranks.youtube_music?.rank??"—",fallback=esc((s.songName||"?").slice(0,1));return `<div class="chart-mini-row"><div class="thumb">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.outerHTML='<span>${fallback}</span>'">`:`<span>${fallback}</span>`}</div><div class="mini-info"><div class="mini-title">${esc(s.songName)}</div><div class="mini-artist">${esc(s.artistName)}</div></div><div class="mini-ranks"><div class="mini-rank"><span style="color:#03dd30">멜론</span><b>${melon}</b></div><div class="mini-rank"><span style="color:#ff0033">유튜브 뮤직</span><b>${ytm}</b></div></div></div>`}).join("")||`<div class="today-empty">차트 데이터가 없습니다.</div>`;const n=nativeData.news.articles||[],nc=document.getElementById("home-news-card");if(nc)nc.innerHTML=n.slice(0,5).map(a=>`<div class="news-mini" data-url="${esc(a.url)}"><div class="thumb" style="width:52px;height:52px;">${a.thumbnail?`<img src="${esc(a.thumbnail)}" alt="" onerror="this.remove()">`:`${esc((a.source||"N").slice(0,1))}`}</div><div><div class="n-title">${esc(a.title)}</div><div class="n-meta">${esc(a.source)}${a.date?` · ${esc(a.date)}`:""}</div></div></div>`).join("")||`<div class="today-empty">뉴스 데이터가 없습니다.</div>`;}
 let pendingRefreshToast=false;
 let toastTimer=null;
@@ -1081,7 +1144,7 @@ function attachModalSwipe(b){const modal=b.querySelector(".modal");let startY=0,
 const CHART_INFO=[["멜론","TOP 100"],["유튜브 뮤직","주간 인기곡"],["스포티파이","한국 데일리 차트"],["지니","TOP 200"],["플로","전체 연령 차트"],["벅스","실시간 차트"],["바이브","오늘 TOP 100"]];
 function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);attachModalSwipe(b);}
 document.getElementById("chart-info-btn")?.addEventListener("click",showChartInfo);
-document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const more=e.target.closest(".event-more-btn");if(more){openEventActions(more);}});
+document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const swipeRow=e.target.closest(".event-swipe-row");const closeSwipe=()=>{if(!swipeRow)return;const c=swipeRow.querySelector(".event-swipe-content");if(c){c.style.transition="transform .2s ease";c.style.transform="translateX(0)";}swipeRow._open=false;};const ev=e.target.closest(".act-search");if(ev?.dataset.search&&window.SceneGetsBridge){window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));closeSwipe();return;}const bell=e.target.closest(".act-bell");if(bell){onBellClick(bell);closeSwipe();return;}const cal=e.target.closest(".act-cal");if(cal&&window.SceneGetsBridge&&window.SceneGetsBridge.addToCalendar){window.SceneGetsBridge.addToCalendar(cal.dataset.date,cal.dataset.time,cal.dataset.title);closeSwipe();return;}});
 let pendingBellRequest=null;
 function applyBellToggle(bell,enable){
   const date=bell.dataset.date,time=bell.dataset.time,title=bell.dataset.title;
@@ -1093,7 +1156,6 @@ function applyBellToggle(bell,enable){
   }catch(e){}
   bell.dataset.on=result?"1":"0";
   bell.classList.toggle("on",result);
-  if(bell._moreBtn) bell._moreBtn.classList.toggle("has-alarm",result);
   showToast(result?"알림을 켰어요.":"알림을 껐어요.");
 }
 function onBellClick(bell){
@@ -1104,55 +1166,6 @@ function onBellClick(bell){
   if(granted){applyBellToggle(bell,true);return;}
   pendingBellRequest=bell;
   try{ window.SceneGetsBridge&&window.SceneGetsBridge.requestNotificationPermission&&window.SceneGetsBridge.requestNotificationPermission(); }catch(e){}
-}
-function openEventActions(btn){
-  document.querySelectorAll(".modal-backdrop[data-kind=\"event-actions\"]").forEach(m=>m.remove());
-  const date=btn.dataset.date,time=btn.dataset.time,title=btn.dataset.title,type=btn.dataset.type;
-  let alarmOn=false;
-  if(time){
-    try{
-      if(window.SceneGetsBridge&&window.SceneGetsBridge.isEventNotificationEnabled){
-        alarmOn=window.SceneGetsBridge.isEventNotificationEnabled(date,time,title);
-      }
-    }catch(e){}
-  }
-  const bellIcon='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
-  const calIcon='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/><path d="M12 13v5M9.5 15.5h5"/></svg>';
-  const searchIcon='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
-  const rows=[];
-  if(time){
-    rows.push(`<div class="event-sheet-row${alarmOn?" on":""}" id="esheetBell" data-date="${esc(date)}" data-time="${esc(time)}" data-title="${esc(title)}" data-on="${alarmOn?"1":"0"}">${bellIcon}<span>알림 받기</span></div>`);
-  }
-  rows.push(`<div class="event-sheet-row" id="esheetCal">${calIcon}<span>캘린더에 추가</span></div>`);
-  if(type!=="anniversary"&&type!=="birthday"){
-    rows.push(`<div class="event-sheet-row" id="esheetSearch">${searchIcon}<span>검색하기</span></div>`);
-  }
-  const b=document.createElement("div");
-  b.className="modal-backdrop";
-  b.dataset.kind="event-actions";
-  b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">${esc(title)}</span><button class="modal-close" type="button">닫기</button></div>${rows.join("")}</div>`;
-  const bellEl=b.querySelector("#esheetBell");
-  if(bellEl) bellEl._moreBtn=btn;
-  b.addEventListener("click",e=>{
-    if(e.target===b||e.target.closest(".modal-close")){b.remove();return;}
-    if(e.target.closest("#esheetBell")){onBellClick(bellEl);return;}
-    if(e.target.closest("#esheetCal")){
-      if(window.SceneGetsBridge&&window.SceneGetsBridge.addToCalendar){
-        window.SceneGetsBridge.addToCalendar(date,time||"",title);
-      }
-      b.remove();
-      return;
-    }
-    if(e.target.closest("#esheetSearch")){
-      if(window.SceneGetsBridge&&window.SceneGetsBridge.openUrl){
-        window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(title));
-      }
-      b.remove();
-      return;
-    }
-  });
-  document.body.appendChild(b);
-  attachModalSwipe(b);
 }
 function triggerRefresh(){
   const bridge=window.SceneGetsBridge;
