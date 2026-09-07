@@ -49,6 +49,7 @@ object ImageCache {
                     semaphore.withPermit { load(context, url)?.let { url to it } }
                 }
             }
+            .toList()
             .awaitAll()
             .filterNotNull()
             .toMap()
@@ -163,11 +164,11 @@ object ImageCache {
             when {
                 response.code == 304 -> DownloadOutcome.NotModified
                 !response.isSuccessful -> DownloadOutcome.Failed
-                response.body == null -> DownloadOutcome.Failed
                 else -> {
-                    val length = response.body.contentLength()
+                    val body = response.body ?: return@use DownloadOutcome.Failed
+                    val length = body.contentLength()
                     if (length > MAX_IMAGE_BYTES) return@use DownloadOutcome.Failed
-                    val input = response.body.byteStream()
+                    val input = body.byteStream()
                     val output = ByteArrayOutputStream(minOf(MAX_IMAGE_BYTES, if (length > 0) length.toInt() else 32 * 1024))
                     val buffer = ByteArray(BUFFER_SIZE)
                     var total = 0L
