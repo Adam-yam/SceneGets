@@ -429,11 +429,17 @@
   .content{
     overscroll-behavior-y:contain;
   }
-  .ptr-spinner{width:20px; height:20px; opacity:.45; transform-origin:50% 50%; transition:opacity .15s ease;}
+  .ptr-spinner{
+    width:20px; height:20px; display:flex; align-items:center; justify-content:center; gap:5px;
+    opacity:.32; transition:opacity .15s ease;
+  }
   .ptr-spinner.ready{opacity:1;}
-  .ptr-spinner.spinning{opacity:1; animation:ptr-spin .7s linear infinite;}
-  .ptr-arc{transition:stroke-dashoffset .05s linear;}
-  @keyframes ptr-spin{to{transform:rotate(360deg);}}
+  .ptr-dot{width:5px; height:5px; border-radius:50%; background:var(--accent); opacity:.35;}
+  .ptr-spinner.spinning .ptr-dot{animation:ptr-bounce .9s ease-in-out infinite;}
+  .ptr-spinner.spinning .ptr-dot:nth-child(1){animation-delay:0s;}
+  .ptr-spinner.spinning .ptr-dot:nth-child(2){animation-delay:.12s;}
+  .ptr-spinner.spinning .ptr-dot:nth-child(3){animation-delay:.24s;}
+  @keyframes ptr-bounce{0%,80%,100%{transform:translateY(0); opacity:.35;} 40%{transform:translateY(-5px); opacity:1;}}
 
 </style>
 </head>
@@ -508,7 +514,7 @@
     <div class="icon-btn" id="chart-refresh" role="button" tabindex="0">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </div>
-    <div class="ptr-indicator" id="ptr-chart"><div class="ptr-spinner" id="ptr-spinner-chart"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--stroke)" stroke-width="2"/><circle class="ptr-arc" cx="12" cy="12" r="9" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div></div>
+    <div class="ptr-indicator" id="ptr-chart"><div class="ptr-spinner" id="ptr-spinner-chart"><span class="ptr-dot"></span><span class="ptr-dot"></span><span class="ptr-dot"></span></div></div>
     <div class="content" id="scroll-chart">
       <div class="sched-title title-row">차트<button class="title-info-btn" type="button" id="chart-info-btn" aria-label="차트 안내">?</button></div>
       <div class="pill-row" id="platform-pills">
@@ -531,7 +537,7 @@
 
   <!-- ============ NEWS ============ -->
   <div class="screen hidden" id="screen-news">
-    <div class="ptr-indicator" id="ptr-news"><div class="ptr-spinner" id="ptr-spinner-news"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--stroke)" stroke-width="2"/><circle class="ptr-arc" cx="12" cy="12" r="9" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div></div>
+    <div class="ptr-indicator" id="ptr-news"><div class="ptr-spinner" id="ptr-spinner-news"><span class="ptr-dot"></span><span class="ptr-dot"></span><span class="ptr-dot"></span></div></div>
     <div class="content" id="scroll-news">
       <div class="sched-title">뉴스</div>
       <div class="section">
@@ -543,7 +549,7 @@
 
   <!-- ============ SCHEDULE ============ -->
   <div class="screen hidden" id="screen-schedule">
-    <div class="ptr-indicator" id="ptr-schedule"><div class="ptr-spinner" id="ptr-spinner-schedule"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--stroke)" stroke-width="2"/><circle class="ptr-arc" cx="12" cy="12" r="9" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div></div>
+    <div class="ptr-indicator" id="ptr-schedule"><div class="ptr-spinner" id="ptr-spinner-schedule"><span class="ptr-dot"></span><span class="ptr-dot"></span><span class="ptr-dot"></span></div></div>
     <div class="content" id="scroll-schedule">
       <div class="sched-title">스케줄</div>
       <div class="sched-sub" id="sched-sub"></div>
