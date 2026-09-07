@@ -152,6 +152,7 @@
   .badge.concert{background:rgba(255,45,85,0.12); color:var(--pink);}
   .badge.notice{background:var(--surface-2); color:var(--text-2);}
   .badge.birthday{background:var(--accent-dim); color:var(--accent);}
+  .badge.anniversary{background:var(--accent-dim); color:var(--accent);}
 
   .thumb{
     border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
@@ -333,6 +334,7 @@
   .event-line.type-fansign .event-dot{background:var(--accent);}
   .event-line.type-birthday .event-dot{background:var(--accent);}
   .event-line.type-notice .event-dot{background:var(--text-3);}
+  .event-line.type-anniversary .event-dot{background:var(--accent);}
   .event-main{flex:1; min-width:0;}
   .event-title{font-size:14.5px; font-weight:600; color:var(--text-1); line-height:1.35; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
   .event-type{font-size:11.5px; color:var(--text-3); margin-top:4px; font-weight:500;}
@@ -399,8 +401,10 @@
   .row{display:flex; align-items:center;}
   .grow{flex:1; min-width:0;}
   .hidden{display:none !important;}
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90;display:flex;align-items:flex-end;}
-  .modal{width:100%;max-height:70%;background:var(--surface);border-radius:16px 16px 0 0;padding:8px 20px 28px;box-shadow:0 -8px 30px rgba(0,0,0,.16); overflow-y:auto; touch-action:none;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90;display:flex;align-items:flex-end;animation:modalBackdropFadeIn .2s ease;}
+  .modal{width:100%;max-height:70%;background:var(--surface);border-radius:16px 16px 0 0;padding:8px 20px 28px;box-shadow:0 -8px 30px rgba(0,0,0,.16); overflow-y:auto; touch-action:none; animation:modalSlideUp .32s cubic-bezier(0.22,1,0.36,1);}
+  @keyframes modalBackdropFadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes modalSlideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
   .modal::before{content:"";display:block;width:36px;height:5px;border-radius:3px;background:var(--divider);margin:6px auto 14px;}
   .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .modal-title{font-size:18px;font-weight:700;color:var(--text-1);}
@@ -617,6 +621,22 @@
         </div>
       </div>
 
+      <div class="section">
+        <div class="section-head"><span class="section-title">Other Links</span></div>
+        <div class="card set-card">
+          <div class="set-link-row">
+            <button class="set-link-btn" type="button" id="sceneflix-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+              SCENE-FLIX
+            </button>
+            <button class="set-link-btn" type="button" id="hot-videos-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10 8 16 12 10 16 10 8"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
+              HOT 영상들 확인
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="set-foot">SceneGets · 인앱 설정</div>
     </div>
   </div>
@@ -695,14 +715,28 @@ function delta(x){if(!x)return{n:"—",d:"—",cls:"flat"};if(x.previousRank==nu
 function applyChartData(d){nativeData.chart=d||{songs:[]};renderChart(document.querySelector("#platform-pills .pill.active")?.dataset.p||"all");}
 function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};const chips=platform==="all"?`<div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]).map(k=>{const dm=delta(ranks[k]);return `<span class="plat-chip"><span class="plat-label">${PLATFORM_LABEL[k]}</span> <b>${ranks[k].rank}</b><span class="chip-delta" style="color:var(--${dm.cls})">${dm.d}</span></span>`;}).join("")}</div>`:"";const rightRank=platform!=="all"?(()=>{const dm=delta(ranks[platform]);return `<div class="platform-rank"><span class="prk-num">${ranks[platform]?.rank??"—"}</span><span class="prk-delta" style="color:var(--${dm.cls})">${dm.d}</span></div>`;})():"";return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(stripKoreanAlias(s.artistName))}</div>${chips}</div>${rightRank}</div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
 function applyNewsData(d){nativeData.news=d||{articles:[]};document.getElementById("news-list").innerHTML=(nativeData.news.articles||[]).map(a=>`<div class="article-row" data-url="${esc(a.url)}"><div class="thumb" style="width:56px;height:56px;">${a.thumbnail?`<img src="${esc(a.thumbnail)}" alt="" onerror="this.remove()">`:`${esc((a.source||"N").slice(0,1))}`}</div><div class="grow"><div class="art-title">${esc(a.title)}</div><div class="art-meta"><span class="art-source">${esc(a.source)}</span><span class="art-dot"></span><span class="art-date">${esc(a.date)}</span></div></div><svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`).join("")||`<div class="today-empty">표시할 뉴스가 없습니다.</div>`;}
+function debutMilestoneEvents(){
+  const events=[];
+  const debut=midnight(DEBUT_DATE);
+  const todayIso=todayISO();
+  for(let n=100;n<=2000;n+=100){
+    const d=new Date(debut);
+    d.setDate(d.getDate()+n-1);
+    const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    if(iso<todayIso) continue;
+    events.push({date:iso,time:"",title:`데뷔 ${n}일`,detail:"",type:"anniversary",source:""});
+  }
+  return events;
+}
 function applyScheduleData(d){
   nativeData.schedule=d||{events:[]};
   const by={};
   (nativeData.schedule.events||[]).forEach(e=>(by[e.date]??=[]).push(e));
+  debutMilestoneEvents().forEach(e=>(by[e.date]??=[]).push(e));
   const dates=Object.keys(by).sort();
-  const labels={broadcast:"방송",radio:"라디오",event:"행사",fansign:"팬사인회",concert:"공연",notice:"공지",birthday:"생일"};
+  const labels={broadcast:"방송",radio:"라디오",event:"행사",fansign:"팬사인회",concert:"공연",notice:"공지",birthday:"생일",anniversary:"기념일"};
   const sub=document.getElementById("sched-sub");
-  const total=(nativeData.schedule.events||[]).length;
+  const total=Object.values(by).reduce((sum,arr)=>sum+arr.length,0);
   if(sub) sub.textContent = total ? `예정된 일정 ${total}개` : "";
   const groups=document.getElementById("schedule-groups");
   if(!dates.length){groups.innerHTML=`<div class="card sched-empty">예정된 일정이 없습니다.</div>`;return;}
@@ -1013,6 +1047,12 @@ document.getElementById("contact-btn")?.addEventListener("click",()=>{
 });
 document.getElementById("github-btn")?.addEventListener("click",()=>{
   if(window.SceneGetsBridge&&window.SceneGetsBridge.openUrl) window.SceneGetsBridge.openUrl("https://github.com/Adam-yam");
+});
+document.getElementById("sceneflix-btn")?.addEventListener("click",()=>{
+  if(window.SceneGetsBridge&&window.SceneGetsBridge.openUrl) window.SceneGetsBridge.openUrl("https://adam-yam.github.io/SCENE-FLIX/");
+});
+document.getElementById("hot-videos-btn")?.addEventListener("click",()=>{
+  if(window.SceneGetsBridge&&window.SceneGetsBridge.openUrl) window.SceneGetsBridge.openUrl("https://velocity.rescene-feed.workers.dev/");
 });
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refreshBatteryStatus(); });
 window.SceneGetsWeb=window.SceneGetsWeb||{};
