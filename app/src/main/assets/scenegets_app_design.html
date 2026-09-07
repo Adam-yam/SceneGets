@@ -29,6 +29,7 @@
     --glass-bg:rgba(255,255,255,0.62);
     --glass-border:rgba(255,255,255,0.6);
     --glass-shadow:0 10px 30px rgba(0,0,0,0.12), 0 1px 1px rgba(255,255,255,0.5) inset;
+    --skel-shine:rgba(60,60,67,0.07);
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Pretendard", "Apple SD Gothic Neo", sans-serif;
   }
   @media (prefers-color-scheme: dark){
@@ -56,6 +57,7 @@
       --glass-bg:rgba(44,44,46,0.55);
       --glass-border:rgba(255,255,255,0.08);
       --glass-shadow:0 10px 30px rgba(0,0,0,0.55), 0 1px 1px rgba(255,255,255,0.05) inset;
+      --skel-shine:rgba(255,255,255,0.25);
 
     }
   }
@@ -83,6 +85,7 @@
       --glass-bg:rgba(44,44,46,0.55);
       --glass-border:rgba(255,255,255,0.08);
       --glass-shadow:0 10px 30px rgba(0,0,0,0.55), 0 1px 1px rgba(255,255,255,0.05) inset;
+      --skel-shine:rgba(255,255,255,0.25);
 
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -375,6 +378,12 @@
     font-family:var(--font); display:flex; align-items:center; justify-content:center; gap:6px;
   }
   .set-btn.secondary{background:var(--surface-2); color:var(--accent);}
+  .batt-status-row{justify-content:space-between;}
+  .icon-refresh-btn{
+    width:26px; height:26px; border-radius:8px; border:none; background:transparent; color:var(--text-2);
+    display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;
+  }
+  .icon-refresh-btn:active{background:var(--accent-dim); color:var(--accent);}
   .set-link-row{display:flex; gap:10px; margin-top:12px;}
   .set-link-btn{
     flex:1; padding:12px 10px; border-radius:12px; border:none;
@@ -445,6 +454,22 @@
   .ptr-spinner.spinning .ptr-dot:nth-child(3){animation-delay:.24s;}
   @keyframes ptr-bounce{0%,80%,100%{transform:translateY(0); opacity:.35;} 40%{transform:translateY(-5px); opacity:1;}}
 
+  .skel-row{display:flex; align-items:center; gap:10px; padding:8px 0;}
+  .skel-thumb{width:44px; height:44px; border-radius:10px; background:var(--surface-2); flex-shrink:0; position:relative; overflow:hidden;}
+  .skel-lines{flex:1; display:flex; flex-direction:column; gap:7px;}
+  .skel-line{height:10px; border-radius:5px; background:var(--surface-2); position:relative; overflow:hidden;}
+  .skel-line.w70{width:70%;}
+  .skel-line.w40{width:40%;}
+  .skel-thumb::after, .skel-line::after{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(90deg, transparent, var(--skel-shine), transparent);
+    transform:translateX(-100%); animation:skel-shimmer 1.3s ease-in-out infinite;
+  }
+  @keyframes skel-shimmer{100%{transform:translateX(100%);}}
+  .content-fade-in{animation:content-fade-in .35s ease both;}
+  @keyframes content-fade-in{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+  .app-version{margin-top:12px; padding-top:12px; border-top:1px solid var(--divider); text-align:center; font-size:11.5px; color:var(--text-3);}
+
 </style>
 </head>
 <body>
@@ -501,7 +526,7 @@
         </div>
       </div>
 
-      <div class="home-refresh-time" id="home-refresh-time" style="text-align:center; padding:4px 16px 0;">불러오는 중…</div>
+      <div class="home-refresh-time" id="home-refresh-time" style="text-align:right; padding:4px 16px 0;">불러오는 중…</div>
 
       <div style="height:8px"></div>
     </div>
@@ -564,7 +589,12 @@
       <div class="section">
         <div class="section-head"><span class="section-title-wrap"><span class="section-title">배터리 최적화</span><span class="section-head-badge" id="battery-header-badge"></span></span></div>
         <div class="card set-card">
-          <div class="set-status"><span class="status-dot" id="batt-dot"></span><span id="batt-status">상태 확인 중…</span></div>
+          <div class="set-status batt-status-row">
+            <span class="status-dot" id="batt-dot"></span><span id="batt-status">상태 확인 중…</span>
+            <button class="icon-refresh-btn" type="button" id="batt-recheck" aria-label="다시 확인">
+              <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
           <button class="set-btn" type="button" id="batt-open">
             배터리 제한없음으로 설정
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
@@ -621,6 +651,10 @@
           <div class="set-status" id="notif-permission-status" style="display:none;">
             <span class="status-dot warn"></span><span>알림 권한이 꺼져 있어요. 종을 켜면 권한을 요청해요.</span>
           </div>
+          <button class="set-btn secondary" type="button" id="notif-settings-open" style="display:none;">
+            알림 설정으로 이동
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </button>
         </div>
       </div>
 
@@ -637,6 +671,7 @@
               Github 바로가기
             </button>
           </div>
+          <div class="app-version" id="app-version" style="display:none;"></div>
         </div>
       </div>
 
@@ -731,7 +766,7 @@ function updateDday(){
 }
 function delta(x){if(!x)return{n:"—",d:"—",cls:"flat"};if(x.previousRank==null)return{n:String(x.rank),d:"NEW",cls:"flat"};const d=x.previousRank-x.rank;return d>0?{n:String(x.rank),d:`↑${d}`,cls:"up"}:d<0?{n:String(x.rank),d:`↓${-d}`,cls:"down"}:{n:String(x.rank),d:"—",cls:"flat"};}
 function applyChartData(d){nativeData.chart=d||{songs:[]};renderChart(document.querySelector("#platform-pills .pill.active")?.dataset.p||"all");}
-function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map((s,i)=>{const ranks=s.ranks||{};const chips=platform==="all"?`<div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]).map(k=>{const dm=delta(ranks[k]);return `<span class="plat-chip"><span class="plat-label">${PLATFORM_LABEL[k]}</span> <b>${ranks[k].rank}</b><span class="chip-delta" style="color:var(--${dm.cls})">${dm.d}</span></span>`;}).join("")}</div>`:"";const rightRank=platform!=="all"?(()=>{const dm=delta(ranks[platform]);return `<div class="platform-rank"><span class="prk-num">${ranks[platform]?.rank??"—"}</span><span class="prk-delta" style="color:var(--${dm.cls})">${dm.d}</span></div>`;})():"";return `<div class="song-row" data-song-id="${esc(s.songName+"|"+s.artistName)}"><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(stripKoreanAlias(s.artistName))}</div>${chips}</div>${rightRank}</div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
+function renderChart(platform){const songs=[...(nativeData.chart?.songs||[])].filter(s=>platform==="all"||s.ranks?.[platform]);songs.sort((a,b)=>{const ra=platform==="all"?Math.min(...Object.values(a.ranks||{}).map(x=>x.rank||99999)):a.ranks[platform].rank;const rb=platform==="all"?Math.min(...Object.values(b.ranks||{}).map(x=>x.rank||99999)):b.ranks[platform].rank;return ra-rb;});document.getElementById("chart-list").innerHTML=songs.map(s=>{const ranks=s.ranks||{};const chips=platform==="all"?`<div class="chip-wrap">${PLATFORM_ORDER.filter(k=>ranks[k]).map(k=>{const dm=delta(ranks[k]);return `<span class="plat-chip"><span class="plat-label">${PLATFORM_LABEL[k]}</span> <b>${ranks[k].rank}</b><span class="chip-delta" style="color:var(--${dm.cls})">${dm.d}</span></span>`;}).join("")}</div>`:"";const rightRank=platform!=="all"?(()=>{const dm=delta(ranks[platform]);return `<div class="platform-rank"><span class="prk-num">${ranks[platform]?.rank??"—"}</span><span class="prk-delta" style="color:var(--${dm.cls})">${dm.d}</span></div>`;})():"";return `<div class="song-row"><div class="thumb" style="width:44px;height:44px;">${s.albumImageUrl?`<img src="${esc(s.albumImageUrl)}" alt="" onerror="this.remove()">`:`${esc((s.songName||"?").slice(0,1))}`}</div><div class="song-info"><div class="song-title">${esc(s.songName)}</div><div class="song-artist">${esc(stripKoreanAlias(s.artistName))}</div>${chips}</div>${rightRank}</div>`}).join("")||`<div class="today-empty">표시할 차트 데이터가 없습니다.</div>`;}
 function applyNewsData(d){nativeData.news=d||{articles:[]};document.getElementById("news-list").innerHTML=(nativeData.news.articles||[]).map(a=>`<div class="article-row" data-url="${esc(a.url)}"><div class="thumb" style="width:56px;height:56px;">${a.thumbnail?`<img src="${esc(a.thumbnail)}" alt="" onerror="this.remove()">`:`${esc((a.source||"N").slice(0,1))}`}</div><div class="grow"><div class="art-title">${esc(a.title)}</div><div class="art-meta"><span class="art-source">${esc(a.source)}</span><span class="art-dot"></span><span class="art-date">${esc(a.date)}</span></div></div><svg class="chevron" width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`).join("")||`<div class="today-empty">표시할 뉴스가 없습니다.</div>`;}
 function debutMilestoneEvents(){
   const events=[];
@@ -814,6 +849,35 @@ function showToast(msg){
   toastTimer=setTimeout(()=>el.classList.remove("show"),1800);
 }
 function updateRefreshTime(ts){const el=document.getElementById("home-refresh-time");if(!el)return;if(!ts){el.textContent="아직 갱신 기록이 없습니다";return;}const d=new Date(ts),pad=n=>String(n).padStart(2,"0");el.textContent=`마지막 갱신 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
+function skeletonRows(n,thumbSize){
+  const size=thumbSize||44;
+  return Array.from({length:n}).map(()=>`<div class="skel-row"><div class="skel-thumb" style="width:${size}px;height:${size}px;"></div><div class="skel-lines"><div class="skel-line w70"></div><div class="skel-line w40"></div></div></div>`).join("");
+}
+let usedSkeleton=false;
+function renderSkeletons(){
+  const home=document.querySelector("#screen-home .today-card"); if(home) home.innerHTML=skeletonRows(2);
+  const hc=document.getElementById("home-chart-card"); if(hc) hc.innerHTML=skeletonRows(3);
+  const hn=document.getElementById("home-news-card"); if(hn) hn.innerHTML=skeletonRows(3,52);
+  const cl=document.getElementById("chart-list"); if(cl) cl.innerHTML=skeletonRows(8);
+  const nl=document.getElementById("news-list"); if(nl) nl.innerHTML=skeletonRows(6,56);
+  const sg=document.getElementById("schedule-groups"); if(sg) sg.innerHTML=`<div class="card">${skeletonRows(4)}</div>`;
+  usedSkeleton=true;
+}
+function fadeInReveal(){
+  [
+    document.querySelector("#screen-home .today-card"),
+    document.getElementById("home-chart-card"),
+    document.getElementById("home-news-card"),
+    document.getElementById("chart-list"),
+    document.getElementById("news-list"),
+    document.getElementById("schedule-groups")
+  ].forEach(el=>{
+    if(!el)return;
+    el.classList.remove("content-fade-in");
+    void el.offsetWidth;
+    el.classList.add("content-fade-in");
+  });
+}
 window.SceneGetsWeb={
   onData:function(payload){try{
     if(window.__ptrCompletions)window.__ptrCompletions.forEach(function(fn){fn();});
@@ -822,14 +886,19 @@ window.SceneGetsWeb={
     applyNewsData(nativeData.news);
     applyScheduleData(nativeData.schedule);
     updateHome();
+    if(usedSkeleton){usedSkeleton=false;fadeInReveal();}
     const stamps=[nativeData.chartFetchedAt,nativeData.newsFetchedAt,nativeData.scheduleFetchedAt].filter(v=>v>0);
     updateRefreshTime(stamps.length?Math.min(...stamps):0);
     if(pendingRefreshToast){pendingRefreshToast=false;showToast(nativeData.hasError?"일부 데이터 갱신 실패":"갱신 완료");}
   }catch(e){console.error(e);}},
   applyTheme:function(t){applyTheme(t,false);}
 };
-renderChart("all");
-updateHome();
+if(window.SceneGetsBridge){
+  renderSkeletons();
+}else{
+  renderChart("all");
+  updateHome();
+}
 
 const tabs = document.querySelectorAll('.tab');
 const screens = {home:'screen-home', chart:'screen-chart', news:'screen-news', schedule:'screen-schedule', settings:'screen-settings'};
@@ -916,7 +985,7 @@ function attachPullToRefresh(contentId, indicatorId){
           refreshing=false;
           reset();
           pendingRefreshToast=false;
-          if(result > 0) showToast(`${result}초후 다시 시도해주세요`);
+          if(result > 0) showToast(`${result}초 후 다시 시도해주세요`);
           return;
         }
       }catch(err){
@@ -1036,7 +1105,7 @@ function triggerRefresh(){
   const bridge=window.SceneGetsBridge;
   if(!bridge||!bridge.refreshAll) return;
   const result=bridge.refreshAll();
-  if(result!==0){ if(result>0) showToast(`${result}초후 다시 시도해주세요`); return; }
+  if(result!==0){ if(result>0) showToast(`${result}초 후 다시 시도해주세요`); return; }
   const el=document.getElementById("home-refresh-time");
   if(el)el.textContent="갱신 중…";
   pendingRefreshToast=true;
@@ -1107,6 +1176,9 @@ document.getElementById("contact-btn")?.addEventListener("click",()=>{
 });
 document.getElementById("github-btn")?.addEventListener("click",()=>{
   if(window.SceneGetsBridge&&window.SceneGetsBridge.openUrl) window.SceneGetsBridge.openUrl("https://github.com/Adam-yam");
+});
+document.getElementById("notif-settings-open")?.addEventListener("click",()=>{
+  if(window.SceneGetsBridge&&window.SceneGetsBridge.openAppNotificationSettings) window.SceneGetsBridge.openAppNotificationSettings();
 });
 document.getElementById("sceneflix-btn")?.addEventListener("click",()=>{
   if(window.SceneGetsBridge&&window.SceneGetsBridge.openUrl) window.SceneGetsBridge.openUrl("https://adam-yam.github.io/SCENE-FLIX/");
@@ -1186,13 +1258,25 @@ document.getElementById("notif-hour-plus")?.addEventListener("click",()=>{
 });
 function refreshNotifPermissionStatus(){
   const el=document.getElementById("notif-permission-status");
+  const openBtn=document.getElementById("notif-settings-open");
   if(!el)return;
   let granted=true;
   try{ if(window.SceneGetsBridge&&window.SceneGetsBridge.hasNotificationPermission) granted=window.SceneGetsBridge.hasNotificationPermission(); }catch(e){}
   el.style.display=granted?"none":"flex";
+  if(openBtn) openBtn.style.display=granted?"none":"flex";
 }
 loadNotifSettings();
 refreshNotifPermissionStatus();
+(function(){
+  const el=document.getElementById("app-version");
+  if(!el)return;
+  try{
+    if(window.SceneGetsBridge&&window.SceneGetsBridge.getAppVersion){
+      const v=window.SceneGetsBridge.getAppVersion();
+      if(v){ el.textContent=`버전 ${v}`; el.style.display="block"; }
+    }
+  }catch(e){}
+})();
 window.addEventListener("load",()=>window.SceneGetsWeb&&window.SceneGetsWeb.openTabFromNotification&&window.SceneGetsWeb.openTabFromNotification());
 
 </script>

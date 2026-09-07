@@ -396,6 +396,13 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
+        fun getAppVersion(): String {
+            return runCatching {
+                packageManager.getPackageInfo(packageName, 0).versionName ?: ""
+            }.getOrDefault("")
+        }
+
+        @JavascriptInterface
         fun openUrl(url: String?) {
             val uri = runCatching { Uri.parse(url ?: "") }.getOrNull() ?: return
             if (uri.scheme != "http" && uri.scheme != "https") return
@@ -435,6 +442,27 @@ class MainActivity : Activity() {
                         arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                         REQUEST_NOTIFICATION_PERMISSION
                     )
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun openAppNotificationSettings() {
+            runOnUiThread {
+                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    }
+                } else {
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                }
+                val ok = runCatching { startActivity(intent) }.isSuccess
+                if (!ok) {
+                    runCatching {
+                        startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                        )
+                    }
                 }
             }
         }
