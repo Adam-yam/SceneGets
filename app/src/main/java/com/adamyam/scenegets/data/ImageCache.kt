@@ -21,6 +21,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 object ImageCache {
     private const val TARGET_SIZE_PX = 150
@@ -28,7 +29,11 @@ object ImageCache {
     private const val MAX_IMAGE_BYTES = 5 * 1024 * 1024
     private const val MAX_CONCURRENT_DOWNLOADS = 4
     private const val BUFFER_SIZE = 16 * 1024
+    private const val MAX_CACHE_BYTES = 40L * 1024 * 1024
+    private const val TRIM_TARGET_BYTES = 30L * 1024 * 1024
     private val locks = ConcurrentHashMap<String, Any>()
+    private val evictionLock = Any()
+    private val trackedCacheBytes = AtomicLong(-1L)
 
     private sealed class DownloadOutcome {
         data class Success(val bytes: ByteArray, val etag: String?) : DownloadOutcome()
@@ -102,6 +107,7 @@ object ImageCache {
     private fun persist(file: File, outcome: DownloadOutcome.Success) {
         val parent = file.parentFile ?: return
         if (!parent.exists() && !parent.mkdirs()) return
+        val previousSize = if (file.isFile) file.length() else 0L
         val temp = File(parent, file.name + ".tmp")
         val tempEtag = File(parent, file.name + ".etag.tmp")
         try {
@@ -120,9 +126,43 @@ object ImageCache {
                     .getOrThrow()
             }
             file.setLastModified(System.currentTimeMillis())
+            trackSizeDelta(parent, file.length() - previousSize)
+            evictIfOverCap(parent)
         } catch (_: Exception) {
             temp.delete()
             tempEtag.delete()
+        }
+    }
+
+    private fun trackSizeDelta(dir: File, delta: Long) {
+        if (trackedCacheBytes.get() < 0) {
+            synchronized(evictionLock) {
+                if (trackedCacheBytes.get() < 0) {
+                    trackedCacheBytes.set(dir.listFiles()?.sumOf { it.length() } ?: 0L)
+                    return
+                }
+            }
+        }
+        trackedCacheBytes.updateAndGet { (it + delta).coerceAtLeast(0L) }
+    }
+
+    private fun evictIfOverCap(dir: File) {
+        if (trackedCacheBytes.get() <= MAX_CACHE_BYTES) return
+        synchronized(evictionLock) {
+            if (trackedCacheBytes.get() <= MAX_CACHE_BYTES) return
+            val imageFiles = dir.listFiles { candidate -> !candidate.name.endsWith(".etag") }
+                ?.sortedBy { it.lastModified() }
+                ?: return
+            var freed = 0L
+            for (imageFile in imageFiles) {
+                if (trackedCacheBytes.get() - freed <= TRIM_TARGET_BYTES) break
+                val size = imageFile.length()
+                if (imageFile.delete()) {
+                    etagFile(imageFile).delete()
+                    freed += size
+                }
+            }
+            if (freed > 0L) trackedCacheBytes.updateAndGet { (it - freed).coerceAtLeast(0L) }
         }
     }
 

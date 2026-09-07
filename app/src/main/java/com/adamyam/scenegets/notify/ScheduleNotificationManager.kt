@@ -118,6 +118,7 @@ object ScheduleNotificationManager {
         val key = eventKey(date, time, title)
         val intent = Intent(context, ScheduleAlarmReceiver::class.java).apply {
             putExtra(ScheduleAlarmReceiver.EXTRA_TITLE, title)
+            putExtra(ScheduleAlarmReceiver.EXTRA_DATE, date)
             putExtra(ScheduleAlarmReceiver.EXTRA_OFFSET_HOURS, offsetHours)
         }
         return PendingIntent.getBroadcast(

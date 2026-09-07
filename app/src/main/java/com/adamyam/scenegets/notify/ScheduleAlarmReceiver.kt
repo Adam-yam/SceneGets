@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 class ScheduleAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val title = intent.getStringExtra(EXTRA_TITLE) ?: return
+        val date = intent.getStringExtra(EXTRA_DATE) ?: ""
         val offsetHours = intent.getIntExtra(EXTRA_OFFSET_HOURS, 1)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -23,12 +24,13 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
 
         ScheduleNotificationManager.ensureChannel(context)
         val notification = ScheduleNotificationManager.buildNotification(context, title, offsetHours)
-        val notificationId = title.hashCode() * 31 + offsetHours
+        val notificationId = (date.hashCode() * 31 + title.hashCode()) * 31 + offsetHours
         runCatching { NotificationManagerCompat.from(context).notify(notificationId, notification) }
     }
 
     companion object {
         const val EXTRA_TITLE = "extra_title"
+        const val EXTRA_DATE = "extra_date"
         const val EXTRA_OFFSET_HOURS = "extra_offset_hours"
     }
 }

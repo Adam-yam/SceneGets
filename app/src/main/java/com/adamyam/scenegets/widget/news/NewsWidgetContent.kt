@@ -72,14 +72,26 @@ fun NewsWidgetContent(state: WidgetState<NewsResponse>, thumbnails: Map<String, 
     }
 }
 
+private fun isOpenableUrl(url: String): Boolean =
+    runCatching {
+        val uri = Uri.parse(url)
+        uri.scheme == "http" || uri.scheme == "https"
+    }.getOrDefault(false)
+
 @Composable
 private fun ArticleRow(article: NewsArticle, thumbnail: Bitmap?) {
-    Row(
-        modifier = GlanceModifier
-            .fillMaxWidth()
-            .padding(vertical = 9.dp)
-            .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(article.url))))
-    ) {
+    val rowModifier = GlanceModifier
+        .fillMaxWidth()
+        .padding(vertical = 9.dp)
+        .let { base ->
+            if (isOpenableUrl(article.url)) {
+                base.clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(article.url))))
+            } else {
+                base
+            }
+        }
+
+    Row(modifier = rowModifier) {
         ArticleThumbnail(thumbnail, article.source)
         Spacer(modifier = GlanceModifier.width(10.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {

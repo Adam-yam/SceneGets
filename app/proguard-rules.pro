@@ -18,3 +18,8 @@
 -keep class com.adamyam.scenegets.widget.chart.ChartWidgetReceiver { *; }
 -keep class com.adamyam.scenegets.widget.news.NewsWidgetReceiver { *; }
 -keep class com.adamyam.scenegets.widget.schedule.ScheduleWidgetReceiver { *; }
+
+-keep class * extends androidx.glance.appwidget.action.ActionCallback {
+    <init>();
+    *;
+}
