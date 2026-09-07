@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.os.SystemClock
+import android.provider.CalendarContract
 import android.provider.Settings
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -45,6 +46,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.Calendar
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.json.JSONObject
@@ -396,13 +398,6 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
-        fun getAppVersion(): String {
-            return runCatching {
-                packageManager.getPackageInfo(packageName, 0).versionName ?: ""
-            }.getOrDefault("")
-        }
-
-        @JavascriptInterface
         fun openUrl(url: String?) {
             val uri = runCatching { Uri.parse(url ?: "") }.getOrNull() ?: return
             if (uri.scheme != "http" && uri.scheme != "https") return
@@ -478,6 +473,35 @@ class MainActivity : Activity() {
             if (date == null || time == null || title == null) return false
             ScheduleNotificationManager.ensureChannel(applicationContext)
             return ScheduleNotificationManager.setEventEnabled(applicationContext, date, time, title, enable)
+        }
+
+        @JavascriptInterface
+        fun addToCalendar(date: String?, time: String?, title: String?) {
+            val eventDate = date ?: return
+            val dateParts = eventDate.split("-").mapNotNull { it.toIntOrNull() }
+            if (dateParts.size != 3) return
+            runOnUiThread {
+                val cal = Calendar.getInstance()
+                cal.set(dateParts[0], dateParts[1] - 1, dateParts[2], 0, 0, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                val intent = Intent(Intent.ACTION_INSERT)
+                    .setData(CalendarContract.Events.CONTENT_URI)
+                    .putExtra(CalendarContract.Events.TITLE, title ?: "")
+                val timeParts = time?.takeIf { it.isNotBlank() }?.split(":")?.mapNotNull { it.toIntOrNull() }
+                if (timeParts != null && timeParts.size == 2) {
+                    cal.set(Calendar.HOUR_OF_DAY, timeParts[0])
+                    cal.set(Calendar.MINUTE, timeParts[1])
+                    val start = cal.timeInMillis
+                    intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, start)
+                    intent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME, start + 60 * 60 * 1000L)
+                } else {
+                    val start = cal.timeInMillis
+                    intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, start)
+                    intent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME, start + 24 * 60 * 60 * 1000L)
+                    intent.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+                }
+                runCatching { startActivity(intent) }
+            }
         }
 
         @JavascriptInterface

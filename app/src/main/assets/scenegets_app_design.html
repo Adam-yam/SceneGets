@@ -313,6 +313,12 @@
   .event-bell-btn:active{background:var(--accent-dim); color:var(--accent);}
   .event-bell-btn.on{background:var(--accent-dim); color:var(--accent);}
   .event-bell-btn.on svg{fill:currentColor;}
+  .event-cal-btn{
+    flex-shrink:0; width:24px; height:24px; margin-top:1px; border-radius:12px; border:none;
+    background:var(--surface-2); color:var(--text-3); display:flex; align-items:center; justify-content:center;
+    padding:0;
+  }
+  .event-cal-btn:active{background:var(--accent-dim); color:var(--accent);}
   .event-line + .event-line{border-top:1px solid var(--divider);}
   .event-time{
     width:46px; flex-shrink:0; font-size:13px; font-weight:700; color:var(--text-1);
@@ -337,6 +343,8 @@
   .set-header h1{margin:0; font-size:28px; font-weight:700; color:var(--text-1); letter-spacing:-0.4px;}
   .set-header p{margin:6px 0 0; font-size:13.5px; color:var(--text-2); line-height:1.45;}
   .set-card{padding:14px 16px 16px;}
+  .info-card{padding:10px 16px;}
+  .info-card .set-link-row{margin-top:0;}
   .set-card-title{font-size:15.5px; font-weight:650; color:var(--text-1);}
   .set-card-desc{font-size:12.8px; color:var(--text-2); line-height:1.5; margin-top:5px;}
   .theme-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
@@ -468,7 +476,6 @@
   @keyframes skel-shimmer{100%{transform:translateX(100%);}}
   .content-fade-in{animation:content-fade-in .35s ease both;}
   @keyframes content-fade-in{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
-  .app-version{margin-top:12px; padding-top:12px; border-top:1px solid var(--divider); text-align:center; font-size:11.5px; color:var(--text-3);}
 
 </style>
 </head>
@@ -660,7 +667,7 @@
 
       <div class="section">
         <div class="section-head"><span class="section-title">정보</span></div>
-        <div class="card set-card">
+        <div class="card set-card info-card">
           <div class="set-link-row">
             <button class="set-link-btn" type="button" id="contact-btn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
@@ -671,13 +678,12 @@
               Github 바로가기
             </button>
           </div>
-          <div class="app-version" id="app-version" style="display:none;"></div>
         </div>
       </div>
 
       <div class="section">
         <div class="section-head"><span class="section-title">Other Links</span></div>
-        <div class="card set-card">
+        <div class="card set-card info-card">
           <div class="set-link-row">
             <button class="set-link-btn" type="button" id="sceneflix-btn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.5-1.5"/></svg>
@@ -817,6 +823,9 @@ function applyScheduleData(d){
         ${e.time?`<button class="event-bell-btn" type="button" data-date="${esc(e.date)}" data-time="${esc(e.time)}" data-title="${esc(e.title)}" data-on="0" aria-label="알림">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         </button>`:""}
+        <button class="event-cal-btn" type="button" data-date="${esc(e.date)}" data-time="${esc(e.time||"")}" data-title="${esc(e.title)}" aria-label="캘린더에 추가">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/><path d="M12 13v5M9.5 15.5h5"/></svg>
+        </button>
         ${(e.type==="anniversary"||e.type==="birthday")?"":`<button class="event-search-btn" type="button" data-search="${esc(e.title)}" aria-label="검색">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         </button>`}
@@ -1078,7 +1087,7 @@ function attachModalSwipe(b){const modal=b.querySelector(".modal");let startY=0,
 const CHART_INFO=[["멜론","TOP 100"],["유튜브 뮤직","주간 인기곡"],["스포티파이","한국 데일리 차트"],["지니","TOP 200"],["플로","전체 연령 차트"],["벅스","실시간 차트"],["바이브","오늘 TOP 100"]];
 function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);attachModalSwipe(b);}
 document.getElementById("chart-info-btn")?.addEventListener("click",showChartInfo);
-document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));const bell=e.target.closest(".event-bell-btn");if(bell){onBellClick(bell);}});
+document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));const bell=e.target.closest(".event-bell-btn");if(bell){onBellClick(bell);}const cal=e.target.closest(".event-cal-btn");if(cal&&window.SceneGetsBridge&&window.SceneGetsBridge.addToCalendar){window.SceneGetsBridge.addToCalendar(cal.dataset.date,cal.dataset.time,cal.dataset.title);}});
 let pendingBellRequest=null;
 function applyBellToggle(bell,enable){
   const date=bell.dataset.date,time=bell.dataset.time,title=bell.dataset.title;
@@ -1267,16 +1276,6 @@ function refreshNotifPermissionStatus(){
 }
 loadNotifSettings();
 refreshNotifPermissionStatus();
-(function(){
-  const el=document.getElementById("app-version");
-  if(!el)return;
-  try{
-    if(window.SceneGetsBridge&&window.SceneGetsBridge.getAppVersion){
-      const v=window.SceneGetsBridge.getAppVersion();
-      if(v){ el.textContent=`버전 ${v}`; el.style.display="block"; }
-    }
-  }catch(e){}
-})();
 window.addEventListener("load",()=>window.SceneGetsWeb&&window.SceneGetsWeb.openTabFromNotification&&window.SceneGetsWeb.openTabFromNotification());
 
 </script>
