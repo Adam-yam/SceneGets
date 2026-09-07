@@ -181,10 +181,11 @@ object ScheduleNotificationManager {
             launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val text = if (offsetHours <= 0) "곧 시작해요" else "${offsetHours}시간 후 시작해요"
+        val text = if (offsetHours <= 0) "곧 시작해요" else "${offsetHours}시간 뒤에 시작해요"
+        val displayTitle = if (offsetHours <= 0) title else "${offsetHours}시간 뒤 $title"
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
+            .setContentTitle(displayTitle)
             .setContentText(text)
             .setAutoCancel(true)
             .setContentIntent(pi)

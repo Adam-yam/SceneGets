@@ -20,7 +20,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -444,33 +443,6 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
-        fun sendTestNotification() {
-            ScheduleNotificationManager.ensureChannel(applicationContext)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(
-                    this@MainActivity,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                runOnUiThread {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                        REQUEST_NOTIFICATION_PERMISSION
-                    )
-                }
-                return
-            }
-            val notification = ScheduleNotificationManager.buildNotification(
-                applicationContext,
-                "테스트 알림",
-                1
-            )
-            runCatching {
-                NotificationManagerCompat.from(applicationContext).notify(TEST_NOTIFICATION_ID, notification)
-            }
-        }
-
-        @JavascriptInterface
         fun getNotificationSettings(): String {
             val mode = ScheduleNotificationManager.getMode(applicationContext)
             val hours = ScheduleNotificationManager.getLeadHours(applicationContext)
@@ -513,7 +485,6 @@ class MainActivity : Activity() {
         private const val THEME_SYSTEM = "system"
         private const val THUMBNAIL_MAX_DP = 56
         private const val REQUEST_NOTIFICATION_PERMISSION = 4201
-        private const val TEST_NOTIFICATION_ID = 990001
         private val IMAGE_EXTENSIONS = listOf(".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
     }
 }
