@@ -28,12 +28,6 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import com.adamyam.scenegets.R
 
-/**
- * 3개 위젯(차트/뉴스/스케줄)이 공유하는 시각 언어.
- * - 인앱 카드(.card)와 통일감을 주기 위해 흰 배경 + 헤어라인 테두리로 "떠 있는 카드" 느낌을 낸다.
- * - Glance 1.1.1에는 border 모디파이어가 없어서, 바깥 Box(테두리색 배경) 안에
- *   1dp 패딩을 준 안쪽 Box(카드색 배경)를 겹치는 방식으로 얇은 테두리를 흉내낸다.
- */
 private val OUTER_RADIUS = 20.dp
 private val INNER_RADIUS = 19.dp
 private val BORDER_WIDTH = 1.dp
@@ -58,9 +52,6 @@ fun WidgetCard(content: @Composable ColumnScope.() -> Unit) {
     }
 }
 
-/**
- * 위젯 공통 헤더. 제목과 최신 시각, 새로고침 버튼만 간결하게 배치한다.
- */
 @Composable
 fun WidgetHeader(
     title: String,
@@ -85,7 +76,6 @@ fun WidgetHeader(
     }
 }
 
-/** 아이콘 탭 영역을 24dp로 넓히고 옅은 배경을 깔아 탭하기 쉬운 원형 버튼으로 만든다. */
 @Composable
 private fun WidgetRefreshButton(action: Action) {
     Box(
@@ -114,7 +104,6 @@ fun WidgetDivider() {
     ) {}
 }
 
-/** 로딩/실패/빈 상태를 헤더 바로 아래가 아니라 남은 영역 정중앙에 표시한다. */
 @Composable
 fun WidgetCenterMessage(message: String) {
     Box(

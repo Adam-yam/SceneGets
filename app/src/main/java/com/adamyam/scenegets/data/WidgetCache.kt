@@ -17,15 +17,9 @@ private val Context.widgetDataStore by preferencesDataStore(name = "scenegets_wi
 
 data class CachedData<T>(val data: T, val fetchedAt: Long, val lastError: String? = null)
 
-/**
- * 마지막으로 성공한 데이터 + 시각 + (있다면) 마지막 실패 메시지를 저장.
- * 위젯이 켜지자마자, 그리고 네트워크 실패 시 이 캐시로 폴백한다.
- */
 class WidgetCache(private val context: Context) {
 
     private val json = Json { ignoreUnknownKeys = true }
-
-    // ---------- 차트 ----------
     suspend fun saveChart(data: ChartResponse) {
         val now = System.currentTimeMillis()
         context.widgetDataStore.edit { prefs ->
@@ -45,8 +39,6 @@ class WidgetCache(private val context: Context) {
         val data = runCatching { json.decodeFromString(ChartResponse.serializer(), raw) }.getOrNull() ?: return null
         return CachedData(data, prefs[CHART_FETCHED_AT] ?: 0L, prefs[CHART_LAST_ERROR])
     }
-
-    // ---------- 뉴스 ----------
     suspend fun saveNews(data: NewsResponse) {
         val now = System.currentTimeMillis()
         context.widgetDataStore.edit { prefs ->
@@ -66,8 +58,6 @@ class WidgetCache(private val context: Context) {
         val data = runCatching { json.decodeFromString(NewsResponse.serializer(), raw) }.getOrNull() ?: return null
         return CachedData(data, prefs[NEWS_FETCHED_AT] ?: 0L, prefs[NEWS_LAST_ERROR])
     }
-
-    // ---------- 스케줄 (다가오는 일정 리스트를 그대로 캐시) ----------
     private val scheduleEventListSerializer = ListSerializer(ScheduleEvent.serializer())
 
     suspend fun saveSchedule(events: List<ScheduleEvent>) {
@@ -89,8 +79,6 @@ class WidgetCache(private val context: Context) {
         val data = runCatching { json.decodeFromString(scheduleEventListSerializer, raw) }.getOrNull() ?: return null
         return CachedData(data, prefs[SCHEDULE_FETCHED_AT] ?: 0L, prefs[SCHEDULE_LAST_ERROR])
     }
-
-    // ---------- ETag (엔드포인트별 조건부 GET용) ----------
     suspend fun getEtag(key: String): String? {
         val prefs = context.widgetDataStore.data.first()
         return prefs[stringPreferencesKey("etag_$key")]
@@ -106,8 +94,6 @@ class WidgetCache(private val context: Context) {
             }
         }
     }
-
-    // ---------- 스케줄 반기 파일 원본 캐시 (304 응답 시 재파싱 없이 재구성하기 위함) ----------
     suspend fun saveSchedulePeriodRaw(fileName: String, data: ScheduleResponse) {
         context.widgetDataStore.edit { prefs ->
             prefs[stringPreferencesKey("schedule_raw_$fileName")] =

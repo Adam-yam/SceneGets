@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    위젯 설정 팝업의 카드 배경. 색은 위젯 본문과 동일하게 widget_surface/widget_stroke
-    (values, values-night)를 그대로 참조해서, 인앱 디자인·위젯 카드·설정 팝업이
-    모두 같은 라이트/다크 토큰 한 벌을 공유하도록 한다.
--->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="@color/widget_surface" />

@@ -18,7 +18,7 @@ class ChartSyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
     }
 
     companion object {
-        const val UNIQUE_PERIODIC = "chart_sync_periodic"
+        const val UNIQUE_PERIODIC = "chart_sync_periodic_v2"
         const val UNIQUE_ONE_TIME = "chart_sync_manual"
     }
 }

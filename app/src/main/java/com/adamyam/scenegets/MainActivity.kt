@@ -36,21 +36,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.json.JSONObject
 
-/**
- * SceneGets 메인 화면.
- *
- * HTML은 assets의 인앱 디자인을 그대로 사용하고,
- * 실제 차트/뉴스/스케줄 데이터는 기존 SCENE-FLIX API + 캐시를 통해 공급한다.
- */
 class MainActivity : Activity() {
     private lateinit var webView: WebView
     private lateinit var rootContainer: FrameLayout
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val json = Json { encodeDefaults = true }
+    private val refreshRunning = AtomicBoolean(false)
 
     private lateinit var chartRepository: ChartRepository
     private lateinit var newsRepository: NewsRepository
@@ -58,7 +56,6 @@ class MainActivity : Activity() {
 
     private val prefs by lazy { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
 
-    /** "light" | "dark" | "system" */
     private var themeMode: String = THEME_SYSTEM
 
     private val thumbnailTargetPx: Int by lazy {
@@ -73,26 +70,16 @@ class MainActivity : Activity() {
         scheduleRepository = ScheduleRepository(applicationContext)
 
         themeMode = prefs.getString(KEY_THEME, THEME_SYSTEM) ?: THEME_SYSTEM
-
-        // Android 15(targetSdk 35)부터 edge-to-edge가 기본/강제되므로,
-        // 시스템이 콘텐츠를 자동으로 밀어준다고 가정하지 않는다.
-        // 앱이 직접 WindowInsets를 받아 콘텐츠 영역을 결정한다.
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            // 앱은 file:///android_asset/의 번들 HTML만 로드하며 임의 파일시스템 접근이
-            // 필요 없다. addJavascriptInterface와 함께 켜두면 공격 표면만 늘어나므로 끈다.
             settings.allowFileAccess = false
             settings.allowContentAccess = false
             settings.setSupportZoom(false)
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
-            // CSS의 user-select:none만으로는 일부 기기에서 길게 눌렀을 때
-            // 네이티브 텍스트 선택/드래그 액션모드가 뜨는 경우가 있어 이중으로 막는다.
-            // (setOnLongClickListener를 등록하면 View가 longClickable을 자동으로 true로
-            // 되돌리므로, 별도로 isLongClickable=false를 먼저 줄 필요는 없다.)
             setOnLongClickListener { true }
             isHapticFeedbackEnabled = false
             webViewClient = object : WebViewClient() {
@@ -100,11 +87,6 @@ class MainActivity : Activity() {
                     super.onPageFinished(view, url)
                     applyInsetVars()
                 }
-
-                // 앱 내 모든 외부 링크는 SceneGetsBridge.openUrl()로 외부 브라우저를 띄우는
-                // 방식이라 WebView가 스스로 다른 도메인으로 이동할 일은 원래 없어야 한다.
-                // 혹시라도(예상치 못한 리다이렉트 등) 이동 시도가 들어오면 여기서 차단해서,
-                // JS 인터페이스가 붙은 상태로 외부 콘텐츠가 로드되는 것을 막는 안전장치.
                 override fun shouldOverrideUrlLoading(
                     view: WebView?,
                     request: WebResourceRequest?
@@ -134,10 +116,6 @@ class MainActivity : Activity() {
             webChromeClient = WebChromeClient()
             addJavascriptInterface(SceneGetsBridge(), "SceneGetsBridge")
         }
-
-        // WebView를 시스템 바까지 확장한 뒤, 실제 콘텐츠 뷰의 상/하 margin을
-        // WindowInsets로 잘라낸다. 이 방식은 Android 기본 앱들이 edge-to-edge에서
-        // 사용하는 패턴과 동일하며, WebView 내부 CSS와 무관하게 겹침을 차단한다.
         rootContainer = FrameLayout(this).apply {
             setBackgroundColor(if (isDarkTheme()) Color.BLACK else Color.parseColor("#F2F2F7"))
             addView(
@@ -197,7 +175,6 @@ class MainActivity : Activity() {
             Configuration.UI_MODE_NIGHT_YES
     }
 
-    /** 상태바/내비게이션바 색과 아이콘 명암을 현재 테마에 맞춘다. */
     private fun applySystemBars() {
         val dark = isDarkTheme()
         val chromeColor = if (dark) Color.parseColor("#000000") else Color.parseColor("#F2F2F7")
@@ -212,8 +189,6 @@ class MainActivity : Activity() {
     }
 
     private fun applyInsetVars() {
-        // 시스템 바 여백은 WebView padding으로 처리한다. HTML에서 별도로 더하면
-        // 상태바 여백이 두 번 적용되므로 항상 0으로 유지한다.
         webView.evaluateJavascript(
             "document.documentElement.style.setProperty('\u002d\u002dsystem-top','0px');" +
                 "document.documentElement.style.setProperty('\u002d\u002dsystem-bottom','0px');",
@@ -226,10 +201,6 @@ class MainActivity : Activity() {
         return pm.isIgnoringBatteryOptimizations(packageName)
     }
 
-    /**
-     * 배터리 최적화 예외 요청 화면으로 이동한다.
-     * 실패 시 앱 세부 설정 화면으로, 그것도 불가하면 전체 배터리 최적화 목록으로 폴백한다.
-     */
     private fun openBatteryOptimizationSettings() {
         val candidates = mutableListOf<Intent>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isIgnoringBatteryOptimizations()) {
@@ -258,7 +229,6 @@ class MainActivity : Activity() {
         scheduleFetchedAt: Long,
         hasError: Boolean
     ) {
-        // Build one JSON object and quote it as a JavaScript string argument.
         val actual = "{" +
             "\"chart\":" + json.encodeToString(chart) + "," +
             "\"news\":" + json.encodeToString(news) + "," +
@@ -276,10 +246,13 @@ class MainActivity : Activity() {
         }
     }
 
-    private suspend fun loadAll() {
-        val chartFresh = chartRepository.refresh()
-        val newsFresh = newsRepository.refresh()
-        val scheduleFresh = scheduleRepository.refresh()
+    private suspend fun loadAll() = coroutineScope {
+        val chartJob = async { chartRepository.refresh() }
+        val newsJob = async { newsRepository.refresh() }
+        val scheduleJob = async { scheduleRepository.refresh() }
+        val chartFresh = chartJob.await()
+        val newsFresh = newsJob.await()
+        val scheduleFresh = scheduleJob.await()
 
         val chart = (chartFresh as? WidgetState.Loaded)?.data ?: ChartResponse()
         val news = (newsFresh as? WidgetState.Loaded)?.data ?: NewsResponse()
@@ -298,7 +271,6 @@ class MainActivity : Activity() {
         )
     }
 
-    /** 캐시에 저장된 이전 데이터를 네트워크 요청 없이 그대로 보여준다. */
     private suspend fun loadCacheOnly() {
         val chartCache = chartRepository.cachedOrLoading()
         val newsCache = newsRepository.cachedOrLoading()
@@ -323,10 +295,16 @@ class MainActivity : Activity() {
 
     private inner class SceneGetsBridge {
         @JavascriptInterface
-        fun refreshAll() {
+        fun refreshAll(): Boolean {
+            if (!refreshRunning.compareAndSet(false, true)) return false
             scope.launch {
-                loadAll()
+                try {
+                    loadAll()
+                } finally {
+                    refreshRunning.set(false)
+                }
             }
+            return true
         }
 
         @JavascriptInterface
@@ -348,9 +326,6 @@ class MainActivity : Activity() {
                 THEME_LIGHT, THEME_DARK, THEME_SYSTEM -> mode
                 else -> THEME_SYSTEM
             }
-            // 반드시 먼저 저장/갱신한 뒤 시스템 테마를 다시 계산한다.
-            // 이전에는 다크 선택 상태에서 '시스템'을 누르면 JS가 아직 themeMode=dark인
-            // 순간에 getResolvedTheme()을 호출해서 계속 다크로 남는 문제가 있었다.
             themeMode = next
             prefs.edit().putString(KEY_THEME, next).apply()
             runOnUiThread {

@@ -3,7 +3,6 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- 배터리 최적화 예외(제한 없음) 요청 화면으로 이동하기 위해 필요 -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
@@ -12,7 +11,8 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="false">
 
         <activity
             android:name=".MainActivity"
@@ -25,8 +25,6 @@
             </intent-filter>
         </activity>
 
-        <!-- 위젯을 홈 화면에 추가/재구성할 때 뜨는 투명도·테마 설정 화면.
-             시스템(런처)이 다른 프로세스에서 명시적으로 이 액티비티를 띄우므로 exported=true가 필요하다. -->
         <activity
             android:name=".widget.config.WidgetConfigActivity"
             android:exported="true"
@@ -36,7 +34,6 @@
             </intent-filter>
         </activity>
 
-        <!-- 차트 위젯 -->
         <receiver
             android:name=".widget.chart.ChartWidgetReceiver"
             android:exported="false"
@@ -49,7 +46,6 @@
                 android:resource="@xml/chart_widget_info" />
         </receiver>
 
-        <!-- 뉴스 위젯 -->
         <receiver
             android:name=".widget.news.NewsWidgetReceiver"
             android:exported="false"
@@ -62,7 +58,6 @@
                 android:resource="@xml/news_widget_info" />
         </receiver>
 
-        <!-- 스케줄 위젯 -->
         <receiver
             android:name=".widget.schedule.ScheduleWidgetReceiver"
             android:exported="false"
@@ -74,6 +69,5 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/schedule_widget_info" />
         </receiver>
-
     </application>
 </manifest>

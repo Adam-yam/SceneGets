@@ -7,15 +7,12 @@ import okhttp3.Request
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/**
- * 조용히 null을 반환하던 기존 fetchText() 문제를 반복하지 않기 위해,
- * 성공/실패(404 포함)/네트워크 오류를 명시적으로 구분해서 반환한다.
- */
 object SceneFlixHttpClient {
 
     val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
+        .callTimeout(15, TimeUnit.SECONDS)
         .build()
 
     suspend fun getRaw(url: String, etag: String? = null): FetchOutcome = withContext(Dispatchers.IO) {

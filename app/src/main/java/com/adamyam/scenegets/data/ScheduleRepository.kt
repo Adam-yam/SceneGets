@@ -4,11 +4,12 @@ import android.content.Context
 import com.adamyam.scenegets.models.ScheduleEvent
 import com.adamyam.scenegets.network.ApiResult
 import com.adamyam.scenegets.network.ScheduleApi
+import kotlinx.coroutines.sync.withLock
 
 class ScheduleRepository(context: Context) {
     private val cache = WidgetCache(context.applicationContext)
 
-    suspend fun refresh(): WidgetState<List<ScheduleEvent>> {
+    suspend fun refresh(): WidgetState<List<ScheduleEvent>> = RefreshLocks.schedule.withLock {
         val previous = cache.loadSchedule()?.data
         val result = ScheduleApi.fetchUpcoming(
             periodContext = { fileName ->

@@ -11,7 +11,12 @@ class ChartWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
-        // 위젯이 홈 화면에 새로 추가/갱신될 때 최신 데이터를 한 번 받아오도록 트리거
         WidgetWorkScheduler.refreshChartNow(context)
+        WidgetWorkScheduler.scheduleAll(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        WidgetWorkScheduler.cancelIfUnused(context)
     }
 }

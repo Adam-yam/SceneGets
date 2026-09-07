@@ -38,8 +38,6 @@ import java.util.Locale
 
 @Composable
 fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
-    // 차트/뉴스와 동일한 공통 카드 크롬을 사용한다.
-    // 배경·헤어라인 테두리·radius를 한 곳에서 관리해 세 위젯의 시각적 일관성을 유지한다.
     WidgetCard {
         ScheduleHeader()
 
@@ -47,7 +45,7 @@ fun ScheduleWidgetContent(state: WidgetState<List<ScheduleEvent>>) {
             is WidgetState.Loading -> WidgetCenterMessage("스케줄을 불러오는 중...")
             is WidgetState.Failed -> WidgetCenterMessage("스케줄을 불러오지 못했어요\n${state.message}")
             is WidgetState.Loaded -> {
-                val events = futureOnly(MemberBirthdays.mergeInto(state.data))
+                val events = withinTwoMonths(MemberBirthdays.mergeInto(state.data))
                 if (events.isEmpty()) {
                     WidgetCenterMessage("예정된 일정이 없어요")
                 } else {
@@ -130,8 +128,6 @@ private fun ScheduleDateCard(group: DateEventGroup) {
     }
 
     Column(modifier = GlanceModifier.fillMaxWidth()) {
-        // Fantastical 스타일의 날짜 라벨: 날짜별 일정 묶음의 시작점에 고정된 듯한
-        // 가벼운 헤더를 두어 카드가 많아져도 날짜를 빠르게 찾을 수 있게 한다.
         Row(
             modifier = GlanceModifier.padding(top = 8.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -167,10 +163,6 @@ private fun ScheduleDateCard(group: DateEventGroup) {
 
         group.events.forEachIndexed { index, event ->
             ScheduleItem(event)
-            // Glance/RemoteViews에서는 Row에 준 padding(bottom)이 View의 내부 padding으로
-            // 처리되어 background가 그 영역까지 그대로 덮어버린다(=마진처럼 동작하지 않음).
-            // 그래서 알약 사이 실제 간격은 배경이 없는 별도의 Spacer로 만들어야
-            // 다음 알약과 붙어 보이는(겹치는) 문제가 확실히 사라진다.
             if (index != group.events.lastIndex) {
                 Spacer(modifier = GlanceModifier.height(6.dp))
             }
@@ -182,8 +174,6 @@ private fun ScheduleDateCard(group: DateEventGroup) {
 private fun ScheduleItem(event: ScheduleEvent) {
     val color = typeColor(event.type)
     val hasTime = event.time.isNotBlank()
-    // 시간이 있으면 시간줄 + 제목줄 2줄, 없으면 제목 1줄만 그려지므로
-    // 알약의 실제 높이 기준이 되는 컬러 바 높이도 그에 맞춰 줄여준다.
     val barHeight = if (hasTime) 42.dp else 30.dp
 
     Row(
@@ -257,13 +247,11 @@ private fun typeColor(type: String) = when (type) {
     "notice" -> WidgetColors.textSecondary
     else -> WidgetColors.textSecondary
 }
-
-// 오늘 이전(과거) 일정은 위젯에서 숨기고, 오늘을 포함한 이후 일정만 남긴다.
-// 날짜 파싱에 실패하는 항목은 표시 여부를 판단할 수 없으므로 안전하게 그대로 둔다.
-private fun futureOnly(events: List<ScheduleEvent>): List<ScheduleEvent> {
+private fun withinTwoMonths(events: List<ScheduleEvent>): List<ScheduleEvent> {
     val today = LocalDate.now()
+    val cutoff = today.plusMonths(2)
     return events.filter { event ->
         val date = runCatching { LocalDate.parse(event.date) }.getOrNull()
-        date == null || !date.isBefore(today)
+        date == null || (!date.isBefore(today) && !date.isAfter(cutoff))
     }
 }

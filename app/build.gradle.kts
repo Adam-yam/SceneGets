@@ -3,11 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
-
-// CI(release.yml)가 workflow_dispatch로 입력받은 버전을
-// -PreleaseVersionName=x.y.z 형태로 넘겨준다. 로컬 빌드처럼 값이 없으면 1.0.0으로 폴백.
-// versionCode는 "major.minor.patch"를 major*10000 + minor*100 + patch로 환산해서
-// 별도 입력 없이도 버전이 올라갈 때마다 자동으로 함께 증가하게 한다.
 val releaseVersionName = (project.findProperty("releaseVersionName") as String?)?.takeIf { it.isNotBlank() }
     ?: "1.0.0"
 val releaseVersionCode = releaseVersionName
@@ -78,19 +73,11 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-
-    // Glance (Jetpack Compose 기반 위젯)
-    implementation("androidx.glance:glance-appwidget:1.1.1")
-    implementation("androidx.glance:glance-material3:1.1.1")
-
-    // 백그라운드 자동 갱신
-    implementation("androidx.work:work-runtime-ktx:2.9.1")
-
-    // 로컬 캐시
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
-
-    // 네트워크 + JSON 파싱
+    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.glance:glance-appwidget:1.2.0")
+    implementation("androidx.glance:glance-material3:1.2.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")

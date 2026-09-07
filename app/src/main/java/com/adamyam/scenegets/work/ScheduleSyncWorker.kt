@@ -18,7 +18,7 @@ class ScheduleSyncWorker(context: Context, params: WorkerParameters) : Coroutine
     }
 
     companion object {
-        const val UNIQUE_PERIODIC = "schedule_sync_periodic"
+        const val UNIQUE_PERIODIC = "schedule_sync_periodic_v2"
         const val UNIQUE_ONE_TIME = "schedule_sync_manual"
     }
 }

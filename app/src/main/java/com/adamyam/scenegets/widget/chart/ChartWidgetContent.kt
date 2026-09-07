@@ -40,19 +40,9 @@ import com.adamyam.scenegets.widget.common.WidgetDivider
 import com.adamyam.scenegets.widget.common.WidgetHeader
 import com.adamyam.scenegets.widget.common.freshnessLabel
 import com.adamyam.scenegets.widget.common.stripHiddenTags
-
-// // 이 값 이상으로 넓어지면 옆으로 늘어난 것으로 보고 레이아웃을 바꾼다.
 private val WIDE_LAYOUT_MIN_WIDTH = 320.dp
-
-// 플랫폼 순위 칩 하나의 고정 폭. 폭을 고정해두면 여러 줄에 걸쳐 칩이 표시될 때
-// 세로로 열이 맞춰져서 "표"처럼 한눈에 훑어보기 쉬워진다.
 private val PLATFORM_CHIP_WIDTH = 56.dp
 private val PLATFORM_CHIP_SPACING = 4.dp
-
-// 와이드 레이아웃에서 제목/아티스트 컬럼의 고정 폭.
-// 이전에는 defaultWeight()로 남는 공간을 전부 차지해서 제목이 짧을 때
-// 순위 칩이 카드 오른쪽 끝까지 밀려나 보였다. 폭을 고정하면 칩이 제목
-// 바로 옆(좌측)부터 붙어서 시작한다.
 private val TITLE_COLUMN_WIDE_WIDTH = 84.dp
 
 @Composable
@@ -89,8 +79,6 @@ fun ChartWidgetContent(state: WidgetState<ChartResponse>, albumImages: Map<Strin
 
 @Composable
 private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
-    // 위젯을 옆으로 늘렸을 때(ChartWidget의 SizeMode.Exact 참고)만
-    // 플랫폼 순위를 제목 아래가 아니라 옆으로 따로 빼서 보여준다.
     val widgetWidth = LocalSize.current.width
     val isWideLayout = widgetWidth >= WIDE_LAYOUT_MIN_WIDTH
 
@@ -102,8 +90,6 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
         AlbumCover(albumImage)
         Spacer(modifier = GlanceModifier.width(10.dp))
         Column(
-            // 와이드 레이아웃에서는 고정 폭을 줘서 순위 칩이 제목 바로 옆(좌측)부터
-            // 시작하게 하고, 좁은 레이아웃에서는 기존처럼 가로 전체를 채운다.
             modifier = if (isWideLayout) {
                 GlanceModifier.width(TITLE_COLUMN_WIDE_WIDTH)
             } else {
@@ -127,10 +113,6 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
         }
         if (isWideLayout) {
             Spacer(modifier = GlanceModifier.width(8.dp))
-            // 순위 영역이 제목 컬럼 바로 옆(좌측)에서 시작한다. 칩 자체의 크기는
-            // PLATFORM_CHIP_WIDTH로 고정해서 위젯을 넓혀도 블럭 크기는 그대로
-            // 유지하고, 대신 한 줄에 들어갈 수 있는 칩 개수(chunkSize)를 위젯
-            // 폭에 맞춰 다시 계산해서 배치(정렬)만 바뀌도록 한다.
             PlatformRanks(
                 ranks = song.ranks,
                 chunkSize = sideChipsPerRow(widgetWidth),
@@ -140,11 +122,6 @@ private fun SongRow(song: ChartSong, albumImage: Bitmap?) {
     }
 }
 
-/**
- * 옆 순위 영역에 실제로 들어갈 수 있는 칩 개수를 위젯 폭 기준으로 대략 추정한다.
- * (카드 패딩 + 앨범 커버 + 제목/아티스트 컬럼이 최소로 필요로 하는 폭을 뺀 나머지를
- * 칩 하나의 평균 폭으로 나눈 값. 넉넉하게 잡아서 칩이 잘려나가는 것을 막는다.)
- */
 private fun sideChipsPerRow(widgetWidth: Dp): Int {
     val reserved = 24.dp + 42.dp + 10.dp + TITLE_COLUMN_WIDE_WIDTH + 8.dp
     val available = widgetWidth - reserved
@@ -160,11 +137,6 @@ private fun PlatformRanks(
     fillWidth: Boolean,
     modifier: GlanceModifier = GlanceModifier
 ) {
-    // 실제 순위가 있는 플랫폼만 표시한다 (숨김/탭 없음).
-    // 칩 하나의 크기는 항상 PLATFORM_CHIP_WIDTH로 고정한다. 위젯을 옆으로
-    // 늘리면(와이드 레이아웃) chunkSize(= sideChipsPerRow)가 커져서 한 줄에
-    // 더 많은 칩이 들어가고 줄 수가 줄어드는 방식으로만 "재정렬"되고,
-    // 칩 자체의 크기는 항상 그대로 유지된다.
     val entries = PlatformOrder.sort(ranks)
     val rows = entries.chunked(chunkSize.coerceAtLeast(1))
     Column(modifier = if (fillWidth) modifier.fillMaxWidth() else modifier) {
@@ -214,10 +186,6 @@ private fun PlatformChip(platform: String, rank: ChartRank, modifier: GlanceModi
         diff != null && diff < 0 -> "▼${-diff}" to WidgetColors.down
         else -> "-" to WidgetColors.flat
     }
-
-    // 플랫폼명(위) / 순위+증감(아래) 2줄 구성.
-    // 좁은 레이아웃/와이드 레이아웃 모두 항상 고정 폭(PLATFORM_CHIP_WIDTH)을 써서
-    // 위젯 크기와 무관하게 칩 하나의 크기는 표처럼 일정하게 유지된다.
     Column(
         modifier = modifier
             .background(WidgetColors.surfaceVariant)

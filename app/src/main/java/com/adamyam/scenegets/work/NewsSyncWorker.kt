@@ -18,7 +18,7 @@ class NewsSyncWorker(context: Context, params: WorkerParameters) : CoroutineWork
     }
 
     companion object {
-        const val UNIQUE_PERIODIC = "news_sync_periodic"
+        const val UNIQUE_PERIODIC = "news_sync_periodic_v2"
         const val UNIQUE_ONE_TIME = "news_sync_manual"
     }
 }

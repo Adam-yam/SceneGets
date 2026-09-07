@@ -5,32 +5,30 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.adamyam.scenegets.network.SceneFlixHttpClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 
-/**
- * 뉴스 썸네일 / 앨범 커버처럼 URL로 오는 이미지를 다운로드해서
- * 앱 캐시 디렉터리에 저장해두고 Bitmap으로 돌려주는 간단한 이미지 캐시.
- *
- * Glance 위젯의 Composable 안에서는 네트워크 호출을 할 수 없기 때문에,
- * GlanceAppWidget.provideGlance()의 suspend 구간에서 미리 이 캐시를 통해
- * Bitmap을 받아온 뒤 Composable에 그대로 전달하는 방식으로 사용한다.
- */
 object ImageCache {
-
-    // 위젯 안에 들어가는 작은 썸네일이라 원본 해상도가 필요 없음.
-    // 원본 그대로 디코딩하면(특히 뉴스 썸네일처럼 큰 이미지가 여러 개 있을 때)
-    // RemoteViews 전송 용량 제한에 걸려 위젯 전체가 "콘텐츠를 표시할 수 없음"으로
-    // 깨지기 때문에, 실제 표시 크기에 맞춰 다운샘플링해서 디코딩한다.
     private const val TARGET_SIZE_PX = 150
-
-    // 캐시 파일은 URL 해시로만 저장되기 때문에, 같은 URL의 원본 이미지가 나중에
-    // 바뀌어도(앨범 커버 교체 등) 갱신 없이 계속 옛 이미지를 돌려주는 문제가 있었다.
-    // 파일이 이 시간보다 오래됐으면 캐시를 재검증한다 (조건부 GET, 아래 참고).
     private const val CACHE_TTL_MILLIS = 24 * 60 * 60 * 1000L
+    private const val MAX_IMAGE_BYTES = 5 * 1024 * 1024
+    private const val MAX_CONCURRENT_DOWNLOADS = 4
+    private const val BUFFER_SIZE = 16 * 1024
+    private val locks = ConcurrentHashMap<String, Any>()
 
     private sealed class DownloadOutcome {
         data class Success(val bytes: ByteArray, val etag: String?) : DownloadOutcome()
@@ -41,107 +39,163 @@ object ImageCache {
     private fun isExpired(file: File): Boolean =
         System.currentTimeMillis() - file.lastModified() > CACHE_TTL_MILLIS
 
-    /** 여러 URL을 한 번에 로드해서 url -> Bitmap 맵으로 돌려준다. 실패한 URL은 맵에서 빠진다. */
-    suspend fun loadAll(context: Context, urls: List<String>): Map<String, Bitmap> {
-        val result = mutableMapOf<String, Bitmap>()
-        urls.filter { it.isNotBlank() }.distinct().forEach { url ->
-            load(context, url)?.let { bitmap -> result[url] = bitmap }
-        }
-        return result
+    suspend fun loadAll(context: Context, urls: List<String>): Map<String, Bitmap> = coroutineScope {
+        val semaphore = Semaphore(MAX_CONCURRENT_DOWNLOADS)
+        urls.asSequence()
+            .filter(String::isNotBlank)
+            .distinct()
+            .map { url ->
+                async {
+                    semaphore.withPermit { load(context, url)?.let { url to it } }
+                }
+            }
+            .awaitAll()
+            .filterNotNull()
+            .toMap()
     }
 
     suspend fun load(context: Context, url: String, targetSizePx: Int = TARGET_SIZE_PX): Bitmap? =
         withContext(Dispatchers.IO) {
             val file = cacheFile(context, url)
             ensureCached(file, url)
-            if (!file.exists()) return@withContext null
+            if (!file.isFile || file.length() <= 0L) return@withContext null
             decodeSampled(file, targetSizePx)
         }
 
     fun loadEncoded(context: Context, url: String, targetSizePx: Int): ByteArray? {
+        if (!isHttpUrl(url)) return null
         val file = cacheFile(context, url)
         ensureCached(file, url)
-        if (!file.exists()) return null
+        if (!file.isFile || file.length() <= 0L) return null
         val bitmap = decodeSampled(file, targetSizePx) ?: return null
         return try {
-            val output = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
-            output.toByteArray()
+            ByteArrayOutputStream().use { output ->
+                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)) return null
+                output.toByteArray()
+            }
         } finally {
             bitmap.recycle()
         }
     }
 
-    /**
-     * 캐시 파일이 없으면 새로 받고, TTL이 지났으면 저장해둔 ETag로 조건부 GET을 보낸다.
-     * 304가 오면(이미지가 그대로면) 다운로드 없이 TTL만 갱신하고 기존 파일을 그대로 둔다.
-     */
     private fun ensureCached(file: File, url: String) {
-        if (!file.exists()) {
-            val outcome = download(url, null)
-            if (outcome is DownloadOutcome.Success) {
-                persist(file, outcome)
+        if (!isHttpUrl(url)) return
+        val lock = locks.computeIfAbsent(file.absolutePath) { Any() }
+        synchronized(lock) {
+            if (!file.exists()) {
+                val outcome = download(url, null)
+                if (outcome is DownloadOutcome.Success) persist(file, outcome)
+                return
             }
-            return
-        }
-        if (!isExpired(file)) return
-
-        when (val outcome = download(url, readEtag(file))) {
-            is DownloadOutcome.Success -> persist(file, outcome)
-            DownloadOutcome.NotModified -> runCatching { file.setLastModified(System.currentTimeMillis()) }
-            DownloadOutcome.Failed -> Unit
+            if (!isExpired(file)) return
+            when (val outcome = download(url, readEtag(file))) {
+                is DownloadOutcome.Success -> persist(file, outcome)
+                DownloadOutcome.NotModified -> {
+                    runCatching { file.setLastModified(System.currentTimeMillis()) }
+                }
+                DownloadOutcome.Failed -> Unit
+            }
         }
     }
 
     private fun persist(file: File, outcome: DownloadOutcome.Success) {
-        runCatching { file.writeBytes(outcome.bytes) }
-        writeEtag(file, outcome.etag)
+        val parent = file.parentFile ?: return
+        if (!parent.exists() && !parent.mkdirs()) return
+        val temp = File(parent, file.name + ".tmp")
+        val tempEtag = File(parent, file.name + ".etag.tmp")
+        try {
+            FileOutputStream(temp).use { output -> output.write(outcome.bytes); output.fd.sync() }
+            moveAtomically(temp, file)
+            if (outcome.etag.isNullOrBlank()) {
+                tempEtag.delete()
+                etagFile(file).delete()
+            } else {
+                FileOutputStream(tempEtag).use { output ->
+                    output.write(outcome.etag.toByteArray(Charsets.UTF_8))
+                    output.fd.sync()
+                }
+                runCatching { moveAtomically(tempEtag, etagFile(file)) }
+                    .onFailure { etagFile(file).delete() }
+                    .getOrThrow()
+            }
+            file.setLastModified(System.currentTimeMillis())
+        } catch (_: Exception) {
+            temp.delete()
+            tempEtag.delete()
+        }
+    }
+
+    private fun moveAtomically(source: File, target: File) {
+        try {
+            Files.move(
+                source.toPath(),
+                target.toPath(),
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING
+            )
+        } catch (_: AtomicMoveNotSupportedException) {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
     }
 
     private fun decodeSampled(file: File, targetSizePx: Int): Bitmap? = runCatching {
+        if (targetSizePx <= 0 || file.length() > MAX_IMAGE_BYTES) return@runCatching null
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
-
         var sampleSize = 1
         while (bounds.outWidth / (sampleSize * 2) >= targetSizePx &&
             bounds.outHeight / (sampleSize * 2) >= targetSizePx
-        ) {
-            sampleSize *= 2
-        }
-
+        ) sampleSize *= 2
         val options = BitmapFactory.Options().apply {
             inSampleSize = sampleSize
             inPreferredConfig = Bitmap.Config.RGB_565
+            inDither = true
         }
         BitmapFactory.decodeFile(file.absolutePath, options)
     }.getOrNull()
 
     private fun download(url: String, etag: String?): DownloadOutcome = runCatching {
-        val requestBuilder = Request.Builder().url(url).get()
-        if (!etag.isNullOrBlank()) {
-            requestBuilder.header("If-None-Match", etag)
-        }
-        SceneFlixHttpClient.client.newCall(requestBuilder.build()).execute().use { response ->
+        if (!isHttpUrl(url)) return@runCatching DownloadOutcome.Failed
+        val builder = Request.Builder().url(url).get()
+        if (!etag.isNullOrBlank()) builder.header("If-None-Match", etag)
+        SceneFlixHttpClient.client.newCall(builder.build()).execute().use { response ->
             when {
                 response.code == 304 -> DownloadOutcome.NotModified
-                response.isSuccessful -> {
-                    val bytes = response.body?.bytes()
-                    if (bytes != null) {
-                        DownloadOutcome.Success(bytes, response.header("ETag"))
-                    } else {
-                        DownloadOutcome.Failed
+                !response.isSuccessful -> DownloadOutcome.Failed
+                response.body == null -> DownloadOutcome.Failed
+                else -> {
+                    val length = response.body.contentLength()
+                    if (length > MAX_IMAGE_BYTES) return@use DownloadOutcome.Failed
+                    val input = response.body.byteStream()
+                    val output = ByteArrayOutputStream(minOf(MAX_IMAGE_BYTES, if (length > 0) length.toInt() else 32 * 1024))
+                    val buffer = ByteArray(BUFFER_SIZE)
+                    var total = 0L
+                    input.use {
+                        while (true) {
+                            val read = it.read(buffer)
+                            if (read < 0) break
+                            total += read
+                            if (total > MAX_IMAGE_BYTES) return@use DownloadOutcome.Failed
+                            output.write(buffer, 0, read)
+                        }
                     }
+                    DownloadOutcome.Success(output.toByteArray(), response.header("ETag"))
                 }
-                else -> DownloadOutcome.Failed
             }
         }
     }.getOrDefault(DownloadOutcome.Failed)
 
+    private fun isHttpUrl(url: String): Boolean =
+        runCatching {
+            val uri = android.net.Uri.parse(url)
+            uri.scheme == "http" || uri.scheme == "https"
+        }.getOrDefault(false)
+
     private fun cacheFile(context: Context, url: String): File {
         val dir = File(context.cacheDir, "scenegets_images").apply { mkdirs() }
-        val name = MessageDigest.getInstance("MD5")
-            .digest(url.toByteArray())
+        val name = MessageDigest.getInstance("SHA-256")
+            .digest(url.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
         return File(dir, name)
     }
@@ -150,16 +204,9 @@ object ImageCache {
 
     private fun readEtag(file: File): String? {
         val sidecar = etagFile(file)
-        if (!sidecar.exists()) return null
-        return runCatching { sidecar.readText().trim() }.getOrNull()?.takeIf { it.isNotBlank() }
-    }
-
-    private fun writeEtag(file: File, etag: String?) {
-        val sidecar = etagFile(file)
-        if (etag.isNullOrBlank()) {
-            sidecar.delete()
-        } else {
-            runCatching { sidecar.writeText(etag) }
-        }
+        if (!sidecar.isFile || sidecar.length() > 4096L) return null
+        return runCatching { FileInputStream(sidecar).bufferedReader(Charsets.UTF_8).use { it.readText().trim() } }
+            .getOrNull()
+            ?.takeIf(String::isNotBlank)
     }
 }

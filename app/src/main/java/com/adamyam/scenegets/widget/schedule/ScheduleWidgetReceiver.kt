@@ -12,5 +12,11 @@ class ScheduleWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         WidgetWorkScheduler.refreshScheduleNow(context)
+        WidgetWorkScheduler.scheduleAll(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        WidgetWorkScheduler.cancelIfUnused(context)
     }
 }

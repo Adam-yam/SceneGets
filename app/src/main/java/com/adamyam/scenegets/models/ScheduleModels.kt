@@ -10,10 +10,10 @@ data class ScheduleResponse(
 
 @Serializable
 data class ScheduleEvent(
-    val date: String,          // "yyyy-MM-dd"
-    val time: String = "",     // "HH:mm" 또는 시간 미정 시 빈 문자열
+    val date: String,
+    val time: String = "",
     val title: String,
     val detail: String = "",
-    val type: String = "",     // broadcast / radio / event / fansign / concert / notice ...
+    val type: String = "",
     val source: String = ""
 )

@@ -4,11 +4,12 @@ import android.content.Context
 import com.adamyam.scenegets.models.NewsResponse
 import com.adamyam.scenegets.network.ApiResult
 import com.adamyam.scenegets.network.NewsApi
+import kotlinx.coroutines.sync.withLock
 
 class NewsRepository(context: Context) {
     private val cache = WidgetCache(context.applicationContext)
 
-    suspend fun refresh(): WidgetState<NewsResponse> {
+    suspend fun refresh(): WidgetState<NewsResponse> = RefreshLocks.news.withLock {
         val previous = cache.loadNews()?.data
         val etag = cache.getEtag(ETAG_KEY)
         return when (val result = NewsApi.fetchNews(etag, previous)) {

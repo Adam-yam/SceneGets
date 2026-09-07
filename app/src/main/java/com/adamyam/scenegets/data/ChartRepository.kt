@@ -4,12 +4,12 @@ import android.content.Context
 import com.adamyam.scenegets.models.ChartResponse
 import com.adamyam.scenegets.network.ApiResult
 import com.adamyam.scenegets.network.ChartApi
+import kotlinx.coroutines.sync.withLock
 
 class ChartRepository(context: Context) {
     private val cache = WidgetCache(context.applicationContext)
 
-    /** 네트워크에서 새로 받아와서 캐시에 저장. 실패하면 캐시로 폴백. */
-    suspend fun refresh(): WidgetState<ChartResponse> {
+    suspend fun refresh(): WidgetState<ChartResponse> = RefreshLocks.chart.withLock {
         val previous = cache.loadChart()?.data
         val etag = cache.getEtag(ETAG_KEY)
         return when (val result = ChartApi.fetchChart(etag, previous)) {
@@ -35,7 +35,6 @@ class ChartRepository(context: Context) {
         }
     }
 
-    /** 네트워크 호출 없이 캐시만 읽음 (위젯 최초 렌더링에 사용, 즉시 표시용) */
     suspend fun cachedOrLoading(): WidgetState<ChartResponse> {
         val cached = cache.loadChart()
         return if (cached != null) {

@@ -56,7 +56,7 @@
       --glass-bg:rgba(44,44,46,0.55);
       --glass-border:rgba(255,255,255,0.08);
       --glass-shadow:0 10px 30px rgba(0,0,0,0.55), 0 1px 1px rgba(255,255,255,0.05) inset;
-    
+
     }
   }
   :root[data-theme="dark"]{
@@ -83,12 +83,12 @@
       --glass-bg:rgba(44,44,46,0.55);
       --glass-border:rgba(255,255,255,0.08);
       --glass-shadow:0 10px 30px rgba(0,0,0,0.55), 0 1px 1px rgba(255,255,255,0.05) inset;
-    
+
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; height:100%; background:var(--bg); font-family:var(--font);}
   body{display:block; min-height:100%; overflow:hidden; background:var(--bg); --system-top:0px; --system-bottom:0px;}
-  /* 텍스트 길게 눌러 선택/드래그되는 것을 막는다 (일반 네이티브 앱과 동일한 동작). */
+
   *{
     -webkit-user-select:none; user-select:none;
     -webkit-touch-callout:none;
@@ -109,7 +109,6 @@
   }
   .content::-webkit-scrollbar{display:none;}
 
-  /* ---------- floating icon button (glass) ---------- */
   .icon-btn{
     position:absolute; z-index:25; right:16px;
     bottom:calc(14px + var(--system-bottom) + 76px);
@@ -122,7 +121,6 @@
     display:flex; align-items:center; justify-content:center; color:var(--accent);
   }
 
-  /* ---------- shared bits ---------- */
   .section{padding:0 16px; margin-top:20px;}
   .section:first-child{margin-top:4px;}
   .section-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;}
@@ -165,7 +163,6 @@
 
   .chevron{color:var(--text-3); flex-shrink:0;}
 
-  /* ---------- tab bar: liquid glass floating ---------- */
   .tabbar{
     position:absolute; left:18px; right:18px; bottom:calc(14px + var(--system-bottom));
     z-index:30; display:flex; align-items:center;
@@ -206,7 +203,6 @@
     50%{opacity:.25;}
   }
 
-  /* ---------- HOME ---------- */
   .home-refresh-bar{
     display:flex; align-items:center; justify-content:space-between;
     padding:0 16px; margin-bottom:14px;
@@ -259,7 +255,6 @@
   .dday-label{font-size:12px; color:var(--text-3); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .dday-value{font-size:21px; font-weight:700; color:var(--text-1);}
 
-  /* ---------- CHART ---------- */
   .song-row{display:flex; align-items:center; gap:12px; padding:12px 16px;}
   .song-row + .song-row{border-top:1px solid var(--divider);}
   .song-info{flex:1; min-width:0;}
@@ -280,7 +275,6 @@
   .platform-rank .prk-num{font-size:22px; font-weight:800; color:var(--text-1); letter-spacing:-0.4px; line-height:1;}
   .platform-rank .prk-delta{font-size:11.5px; font-weight:700; line-height:1;}
 
-  /* ---------- NEWS ---------- */
   .article-row{display:flex; gap:13px; padding:13px 16px; align-items:center;}
   .article-row + .article-row{border-top:1px solid var(--divider);}
   .art-title{font-size:14.5px; font-weight:600; color:var(--text-1); line-height:1.38;}
@@ -289,7 +283,6 @@
   .art-dot{width:2.5px; height:2.5px; border-radius:50%; background:var(--text-3); flex-shrink:0;}
   .art-date{display:inline-flex; align-items:center; font-size:11.5px; color:var(--text-3); line-height:1;}
 
-  /* ---------- SCHEDULE ---------- */
   .sched-title{padding:2px 18px 2px; font-size:26px; font-weight:700; color:var(--text-1); letter-spacing:-0.4px;}
   .title-row{display:flex; align-items:center; gap:6px;}
   .title-info-btn{width:20px; height:20px; border-radius:10px; border:1.5px solid var(--text-3); background:transparent; color:var(--text-3); font-size:12px; font-weight:700; line-height:1; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;}
@@ -340,8 +333,6 @@
   .event-type{font-size:11.5px; color:var(--text-3); margin-top:4px; font-weight:500;}
   .sched-empty{margin:28px 16px; padding:44px 20px; text-align:center; color:var(--text-3); font-size:13.5px;}
 
-
-  /* ---------- SETTINGS ---------- */
   .set-header{padding:4px 16px 2px;}
   .set-header h1{margin:0; font-size:28px; font-weight:700; color:var(--text-1); letter-spacing:-0.4px;}
   .set-header p{margin:6px 0 0; font-size:13.5px; color:var(--text-2); line-height:1.45;}
@@ -397,7 +388,6 @@
   .set-note b{color:var(--text-1); font-weight:650;}
   .set-foot{padding:16px; text-align:center; font-size:11.5px; color:var(--text-3);}
 
-  /* utility */
   .row{display:flex; align-items:center;}
   .grow{flex:1; min-width:0;}
   .hidden{display:none !important;}
@@ -422,14 +412,12 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
-  /* ---------- pull to refresh ---------- */
   .ptr-indicator{
     position:absolute; left:0; right:0; top:var(--system-top);
     height:46px; display:flex; align-items:center; justify-content:center;
     z-index:2; pointer-events:none; transform:translateY(-46px);
   }
-  /* WebView-safe pull gesture: normal vertical scrolling remains enabled,
-     while the JS touch handler temporarily consumes the gesture only at the top. */
+
   .content{
     overscroll-behavior-y:contain;
   }
@@ -449,7 +437,6 @@
 </head>
 <body>
 
-  <!-- ============ HOME ============ -->
   <div class="screen" id="screen-home">
     <div class="content" id="scroll-home">
 
@@ -513,7 +500,6 @@
     </div>
   </div>
 
-  <!-- ============ CHART ============ -->
   <div class="screen hidden" id="screen-chart">
     <div class="icon-btn" id="chart-refresh" role="button" tabindex="0">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M13 3V6.5H9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12V8.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.9 6.5C3.5 4.4 5.4 2.9 7.6 2.9C9.3 2.9 10.8 3.7 11.7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.1 8.5C11.5 10.6 9.6 12.1 7.4 12.1C5.7 12.1 4.2 11.3 3.3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -539,7 +525,6 @@
     </div>
   </div>
 
-  <!-- ============ NEWS ============ -->
   <div class="screen hidden" id="screen-news">
     <div class="ptr-indicator" id="ptr-news"><div class="ptr-spinner" id="ptr-spinner-news"><span class="ptr-dot"></span><span class="ptr-dot"></span><span class="ptr-dot"></span></div></div>
     <div class="content" id="scroll-news">
@@ -551,7 +536,6 @@
     </div>
   </div>
 
-  <!-- ============ SCHEDULE ============ -->
   <div class="screen hidden" id="screen-schedule">
     <div class="ptr-indicator" id="ptr-schedule"><div class="ptr-spinner" id="ptr-spinner-schedule"><span class="ptr-dot"></span><span class="ptr-dot"></span><span class="ptr-dot"></span></div></div>
     <div class="content" id="scroll-schedule">
@@ -563,7 +547,6 @@
     </div>
   </div>
 
-  <!-- ============ SETTINGS ============ -->
   <div class="screen hidden" id="screen-settings">
     <div class="content" id="scroll-settings">
       <div class="set-header">
@@ -641,7 +624,6 @@
     </div>
   </div>
 
-  <!-- ============ TAB BAR (liquid glass floating) ============ -->
   <div class="tabbar">
     <div class="tab active" data-tab="home">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-7a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v7"/><path d="M3 10.2a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6a2 2 0 0 1 .7 1.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -670,7 +652,7 @@
 </div>
 
 <script>
-/* ---------------- data ---------------- */
+
 const PLATFORM_LABEL={melon:"멜론",genie:"지니",vibe:"바이브",bugs:"벅스",flo:"플로",youtube_music:"유튜브뮤직",spotify:"스포티파이"};
 const PLATFORM_ORDER=["melon","genie","vibe","bugs","flo","youtube_music","spotify"];
 const DEBUT_DATE=new Date(2024,2,26);
@@ -725,14 +707,17 @@ function debutMilestoneEvents(){
     const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     if(iso<todayIso) continue;
     events.push({date:iso,time:"",title:`데뷔 ${n}일`,detail:"",type:"anniversary",source:""});
+    break;
   }
   return events;
 }
+function scheduleCutoffISO(){const d=new Date();d.setMonth(d.getMonth()+2);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
 function applyScheduleData(d){
   nativeData.schedule=d||{events:[]};
   const by={};
-  (nativeData.schedule.events||[]).forEach(e=>(by[e.date]??=[]).push(e));
-  debutMilestoneEvents().forEach(e=>(by[e.date]??=[]).push(e));
+  const cutoff=scheduleCutoffISO();
+  (nativeData.schedule.events||[]).forEach(e=>{if(e.date<=cutoff)(by[e.date]??=[]).push(e);});
+  debutMilestoneEvents().forEach(e=>{if(e.date<=cutoff)(by[e.date]??=[]).push(e);});
   const dates=Object.keys(by).sort();
   const labels={broadcast:"방송",radio:"라디오",event:"행사",fansign:"팬사인회",concert:"공연",notice:"공지",birthday:"생일",anniversary:"기념일"};
   const sub=document.getElementById("sched-sub");
@@ -794,7 +779,6 @@ window.SceneGetsWeb={
 renderChart("all");
 updateHome();
 
-/* ---------------- tab switching ---------------- */
 const tabs = document.querySelectorAll('.tab');
 const screens = {home:'screen-home', chart:'screen-chart', news:'screen-news', schedule:'screen-schedule', settings:'screen-settings'};
 tabs.forEach(tab=>{
@@ -809,7 +793,6 @@ tabs.forEach(tab=>{
   });
 });
 
-/* ---------------- pull to refresh ---------------- */
 function attachPullToRefresh(contentId, indicatorId){
   const content=document.getElementById(contentId);
   const indicator=document.getElementById(indicatorId);
@@ -876,7 +859,12 @@ function attachPullToRefresh(contentId, indicatorId){
       const el=document.getElementById("home-refresh-time");
       if(el) el.textContent="갱신 중…";
       try{
-        window.SceneGetsBridge.refreshAll();
+        if(window.SceneGetsBridge.refreshAll()===false){
+          refreshing=false;
+          reset();
+          pendingRefreshToast=false;
+          return;
+        }
       }catch(err){
         console.error("SceneGetsBridge.refreshAll failed",err);
         refreshing=false;
@@ -906,9 +894,6 @@ function attachPullToRefresh(contentId, indicatorId){
     refreshing=false;
     reset();
   });
-
-  // Use Touch Events rather than Pointer Events here. Android WebView has
-  // more consistent touch-event delivery for nested overflow scrolling.
   content.addEventListener("touchstart",function(e){
     if(refreshing || !e.touches || e.touches.length!==1) return;
     const t=e.touches[0];
@@ -925,9 +910,6 @@ function attachPullToRefresh(contentId, indicatorId){
     const t=e.touches[0];
     const dx=t.clientX-startX;
     const dy=t.clientY-startY;
-
-    // Let normal vertical/horizontal scrolling continue unless this is a
-    // clearly downward gesture starting from the very top.
     if(!pulling){
       if(dy<=DIRECTION_SLOP){
         if(dy<-DIRECTION_SLOP || Math.abs(dx)>Math.abs(dy)) tracking=false;
@@ -946,7 +928,6 @@ function attachPullToRefresh(contentId, indicatorId){
     }
 
     e.preventDefault();
-    // Resistance keeps the gesture natural while still reaching the threshold.
     curPull=Math.min(MAX_PULL,Math.max(0,dy*0.5));
     setContentY(curPull,false);
     setIndicatorY(Math.min(0,curPull-THRESHOLD),false);
@@ -969,20 +950,24 @@ function attachPullToRefresh(contentId, indicatorId){
 attachPullToRefresh("scroll-chart","ptr-chart");
 attachPullToRefresh("scroll-news","ptr-news");
 attachPullToRefresh("scroll-schedule","ptr-schedule");
-
-// Functional navigation and real data actions.
 function attachModalSwipe(b){const modal=b.querySelector(".modal");let startY=0,curY=0,dragging=false;const HANDLE_H=80;modal.addEventListener("pointerdown",e=>{const rect=modal.getBoundingClientRect();if(e.clientY-rect.top>HANDLE_H)return;dragging=true;startY=e.clientY;curY=0;modal.style.transition="none";modal.setPointerCapture(e.pointerId);e.preventDefault();});modal.addEventListener("pointermove",e=>{if(!dragging)return;e.preventDefault();curY=Math.max(0,e.clientY-startY);modal.style.transform=`translateY(${curY}px)`;});const end=()=>{if(!dragging)return;dragging=false;modal.style.transition="transform .2s ease";if(curY>80){modal.style.transform="translateY(100%)";setTimeout(()=>b.remove(),200);}else{modal.style.transform="translateY(0)";}};modal.addEventListener("pointerup",end);modal.addEventListener("pointercancel",end);}
 const CHART_INFO=[["멜론","TOP 100"],["유튜브 뮤직","주간 인기곡"],["스포티파이","한국 데일리 차트"],["지니","TOP 200"],["플로","전체 연령 차트"],["벅스","실시간 차트"],["바이브","오늘 TOP 100"]];
 function showChartInfo(){const rows=CHART_INFO.map(([p,d])=>`<div class="chart-info-row"><span class="platform">${esc(p)}</span><span class="desc">${esc(d)}</span></div>`).join("");let b=document.createElement("div");b.className="modal-backdrop";b.innerHTML=`<div class="modal"><div class="modal-head"><span class="modal-title">차트 안내</span><button class="modal-close" type="button">닫기</button></div>${rows}</div>`;b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".modal-close"))b.remove();});document.body.appendChild(b);attachModalSwipe(b);}
 document.getElementById("chart-info-btn")?.addEventListener("click",showChartInfo);
 document.addEventListener("click",e=>{const action=e.target.closest("[data-action]")?.dataset.action;if(action){const tab=document.querySelector(`.tab[data-tab="${action}"]`);if(tab)tab.click();return;}const a=e.target.closest(".article-row,.news-mini");if(a?.dataset.url&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl(a.dataset.url);const ev=e.target.closest(".event-search-btn");if(ev?.dataset.search&&window.SceneGetsBridge)window.SceneGetsBridge.openUrl("https://www.google.com/search?q="+encodeURIComponent(ev.dataset.search));});
-function triggerRefresh(){const el=document.getElementById("home-refresh-time");if(el)el.textContent="갱신 중…";pendingRefreshToast=true;window.SceneGetsBridge&&window.SceneGetsBridge.refreshAll();}
+function triggerRefresh(){
+  const bridge=window.SceneGetsBridge;
+  if(!bridge||!bridge.refreshAll) return;
+  if(bridge.refreshAll()===false) return;
+  const el=document.getElementById("home-refresh-time");
+  if(el)el.textContent="갱신 중…";
+  pendingRefreshToast=true;
+}
 document.getElementById("chart-refresh")?.addEventListener("click",triggerRefresh);
 document.getElementById("home-refresh-btn")?.addEventListener("click",triggerRefresh);
 document.getElementById("platform-pills").addEventListener("click",e=>{const p=e.target.closest(".pill");if(!p)return;document.querySelectorAll("#platform-pills .pill").forEach(x=>x.classList.remove("active"));p.classList.add("active");renderChart(p.dataset.p);});
 window.addEventListener("load",()=>window.SceneGetsBridge&&window.SceneGetsBridge.loadCachedData&&window.SceneGetsBridge.loadCachedData());
 
-/* ---------------- settings: theme & battery ---------------- */
 const THEME_KEY="scenegets_theme";
 const THEME_TEXT={light:"항상 밝은 화면으로 표시됩니다.",dark:"항상 어두운 화면으로 표시됩니다.",system:"기기의 시스템 설정을 따릅니다."};
 function currentTheme(){
@@ -1005,8 +990,6 @@ function applyTheme(t,persist){
   const st=document.getElementById("theme-status"); if(st) st.textContent=THEME_TEXT[t];
   if(persist){
     try{ localStorage.setItem(THEME_KEY,t); }catch(e){}
-    // 네이티브 설정을 먼저 갱신한 뒤 다시 적용한다. 특히 dark -> system 전환 시
-    // 네이티브가 새 시스템 테마를 기준으로 해석하도록 한다.
     try{
       if(window.SceneGetsBridge&&window.SceneGetsBridge.setTheme){
         window.SceneGetsBridge.setTheme(t);
@@ -1028,9 +1011,9 @@ function refreshBatteryStatus(){
   try{ if(window.SceneGetsBridge&&window.SceneGetsBridge.isBatteryUnrestricted) state=window.SceneGetsBridge.isBatteryUnrestricted(); }catch(e){}
   dot.className="status-dot"+(state===true?" ok":state===false?" warn":"");
   txt.textContent = state===true
-    ? "제한 없음으로 설정되어 있어요. 위젯이 정상적으로 새로고침됩니다."
+    ? "배터리 제한이 없어 백그라운드 갱신이 원활할 수 있어요."
     : state===false
-      ? "현재 배터리 최적화가 적용 중이에요. 위젯 새로고침이 지연될 수 있어요."
+      ? "배터리 최적화로 위젯 갱신이 지연될 수 있어요."
       : "Android 앱에서만 확인할 수 있는 설정이에요.";
   const badge=document.getElementById("settings-tab-badge");
   if(badge) badge.classList.toggle("show", state===false);
@@ -1059,7 +1042,6 @@ window.SceneGetsWeb=window.SceneGetsWeb||{};
 window.SceneGetsWeb.onResume=function(){ refreshBatteryStatus(); updateDday(); };
 refreshBatteryStatus();
 updateDday();
-
 
 </script>
 </body>
