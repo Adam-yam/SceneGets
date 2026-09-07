@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -43,6 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.json.JSONObject
@@ -53,6 +55,7 @@ class MainActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val json = Json { encodeDefaults = true }
     private val refreshRunning = AtomicBoolean(false)
+    private val lastRefreshAt = AtomicLong(0L)
 
     private lateinit var chartRepository: ChartRepository
     private lateinit var newsRepository: NewsRepository
@@ -333,8 +336,15 @@ class MainActivity : Activity() {
 
     private inner class SceneGetsBridge {
         @JavascriptInterface
-        fun refreshAll(): Boolean {
-            if (!refreshRunning.compareAndSet(false, true)) return false
+        fun refreshAll(): Int {
+            val now = SystemClock.elapsedRealtime()
+            val elapsed = now - lastRefreshAt.get()
+            if (elapsed < REFRESH_COOLDOWN_MS) {
+                val remainingMs = REFRESH_COOLDOWN_MS - elapsed
+                return ((remainingMs + 999) / 1000).toInt().coerceAtLeast(1)
+            }
+            if (!refreshRunning.compareAndSet(false, true)) return -1
+            lastRefreshAt.set(now)
             scope.launch {
                 try {
                     loadAll()
@@ -342,7 +352,7 @@ class MainActivity : Activity() {
                     refreshRunning.set(false)
                 }
             }
-            return true
+            return 0
         }
 
         @JavascriptInterface
@@ -485,6 +495,7 @@ class MainActivity : Activity() {
         private const val THEME_SYSTEM = "system"
         private const val THUMBNAIL_MAX_DP = 56
         private const val REQUEST_NOTIFICATION_PERMISSION = 4201
+        private const val REFRESH_COOLDOWN_MS = 5000L
         private val IMAGE_EXTENSIONS = listOf(".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
     }
 }
