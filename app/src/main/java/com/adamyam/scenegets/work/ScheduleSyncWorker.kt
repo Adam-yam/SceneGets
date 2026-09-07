@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.glance.appwidget.updateAll
+import com.adamyam.scenegets.data.MemberBirthdays
 import com.adamyam.scenegets.data.ScheduleRepository
 import com.adamyam.scenegets.data.WidgetState
+import com.adamyam.scenegets.notify.ScheduleNotificationManager
 import com.adamyam.scenegets.widget.schedule.ScheduleWidget
 
 class ScheduleSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -14,6 +16,8 @@ class ScheduleSyncWorker(context: Context, params: WorkerParameters) : Coroutine
         if ((state as? WidgetState.Loaded)?.contentUnchanged != true) {
             ScheduleWidget().updateAll(applicationContext)
         }
+        val events = MemberBirthdays.mergeInto((state as? WidgetState.Loaded)?.data ?: emptyList())
+        ScheduleNotificationManager.rescheduleAll(applicationContext, events)
         return if (state is WidgetState.Failed) Result.retry() else Result.success()
     }
 

@@ -1,8 +1,10 @@
 package com.adamyam.scenegets
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
@@ -18,6 +20,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import com.adamyam.scenegets.data.ChartRepository
@@ -26,6 +29,7 @@ import com.adamyam.scenegets.data.MemberBirthdays
 import com.adamyam.scenegets.data.NewsRepository
 import com.adamyam.scenegets.data.ScheduleRepository
 import com.adamyam.scenegets.data.WidgetState
+import com.adamyam.scenegets.notify.ScheduleNotificationManager
 import java.io.ByteArrayInputStream
 import kotlin.math.ceil
 import com.adamyam.scenegets.models.ChartResponse
@@ -57,6 +61,7 @@ class MainActivity : Activity() {
     private val prefs by lazy { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
 
     private var themeMode: String = THEME_SYSTEM
+    private var pendingOpenTab: String? = null
 
     private val thumbnailTargetPx: Int by lazy {
         ceil(THUMBNAIL_MAX_DP * resources.displayMetrics.density).toInt()
@@ -70,6 +75,8 @@ class MainActivity : Activity() {
         scheduleRepository = ScheduleRepository(applicationContext)
 
         themeMode = prefs.getString(KEY_THEME, THEME_SYSTEM) ?: THEME_SYSTEM
+        pendingOpenTab = intent?.getStringExtra(EXTRA_OPEN_TAB)
+        ScheduleNotificationManager.ensureChannel(applicationContext)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         webView = WebView(this).apply {
@@ -150,6 +157,35 @@ class MainActivity : Activity() {
         if (::webView.isInitialized) {
             webView.evaluateJavascript(
                 "window.SceneGetsWeb && window.SceneGetsWeb.onResume && window.SceneGetsWeb.onResume();",
+                null
+            )
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingOpenTab = intent.getStringExtra(EXTRA_OPEN_TAB)
+        if (::webView.isInitialized) {
+            webView.evaluateJavascript(
+                "window.SceneGetsWeb && window.SceneGetsWeb.openTabFromNotification && " +
+                    "window.SceneGetsWeb.openTabFromNotification();",
+                null
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_NOTIFICATION_PERMISSION && ::webView.isInitialized) {
+            val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            webView.evaluateJavascript(
+                "window.SceneGetsWeb && window.SceneGetsWeb.onNotificationPermissionResult && " +
+                    "window.SceneGetsWeb.onNotificationPermissionResult($granted);",
                 null
             )
         }
@@ -262,6 +298,8 @@ class MainActivity : Activity() {
             it is WidgetState.Failed || (it is WidgetState.Loaded && it.isStale)
         }
 
+        ScheduleNotificationManager.rescheduleAll(applicationContext, schedule)
+
         sendData(
             chart, news, schedule,
             chartFetchedAt = (chartFresh as? WidgetState.Loaded)?.fetchedAt ?: 0L,
@@ -362,6 +400,68 @@ class MainActivity : Activity() {
             }
             runCatching { startActivity(intent) }
         }
+
+        @JavascriptInterface
+        fun consumePendingOpenTab(): String? {
+            val tab = pendingOpenTab
+            pendingOpenTab = null
+            return tab
+        }
+
+        @JavascriptInterface
+        fun hasNotificationPermission(): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+            return ContextCompat.checkSelfPermission(
+                this@MainActivity,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
+        @JavascriptInterface
+        fun requestNotificationPermission() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                runOnUiThread {
+                    requestPermissions(
+                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                        REQUEST_NOTIFICATION_PERMISSION
+                    )
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun isEventNotificationEnabled(date: String?, time: String?, title: String?): Boolean {
+            if (date == null || time == null || title == null) return false
+            return ScheduleNotificationManager.isEnabled(applicationContext, date, time, title)
+        }
+
+        @JavascriptInterface
+        fun toggleEventNotification(date: String?, time: String?, title: String?, enable: Boolean): Boolean {
+            if (date == null || time == null || title == null) return false
+            ScheduleNotificationManager.ensureChannel(applicationContext)
+            return ScheduleNotificationManager.setEventEnabled(applicationContext, date, time, title, enable)
+        }
+
+        @JavascriptInterface
+        fun getNotificationSettings(): String {
+            val mode = ScheduleNotificationManager.getMode(applicationContext)
+            val hours = ScheduleNotificationManager.getLeadHours(applicationContext)
+            return JSONObject().put("mode", mode).put("leadHours", hours).toString()
+        }
+
+        @JavascriptInterface
+        fun setNotificationSettings(mode: String?, leadHours: Int) {
+            ScheduleNotificationManager.setSettings(
+                applicationContext,
+                mode ?: ScheduleNotificationManager.MODE_ONCE,
+                leadHours
+            )
+            scope.launch {
+                val cached = scheduleRepository.cachedOrLoading()
+                val events = MemberBirthdays.mergeInto((cached as? WidgetState.Loaded)?.data ?: emptyList())
+                ScheduleNotificationManager.rescheduleAll(applicationContext, events)
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -376,13 +476,15 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 
-    private companion object {
-        const val PREFS_NAME = "scenegets_settings"
-        const val KEY_THEME = "theme_mode"
-        const val THEME_LIGHT = "light"
-        const val THEME_DARK = "dark"
-        const val THEME_SYSTEM = "system"
-        const val THUMBNAIL_MAX_DP = 56
-        val IMAGE_EXTENSIONS = listOf(".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
+    companion object {
+        const val EXTRA_OPEN_TAB = "open_tab"
+        private const val PREFS_NAME = "scenegets_settings"
+        private const val KEY_THEME = "theme_mode"
+        private const val THEME_LIGHT = "light"
+        private const val THEME_DARK = "dark"
+        private const val THEME_SYSTEM = "system"
+        private const val THUMBNAIL_MAX_DP = 56
+        private const val REQUEST_NOTIFICATION_PERMISSION = 4201
+        private val IMAGE_EXTENSIONS = listOf(".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
     }
 }
