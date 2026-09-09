@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/31993373/README.md)
 # SceneGets
 
 RESCENE 팬을 위한 안드로이드 앱. 차트 · 뉴스 · 스케줄 정보를 한 곳에서 확인하고, 홈 화면 위젯으로도 받아볼 수 있습니다.
