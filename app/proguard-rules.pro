@@ -23,3 +23,10 @@
     <init>();
     *;
 }
+
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keep class com.adamyam.scenegets.MainActivity$SceneGetsBridge {
+    *;
+}
