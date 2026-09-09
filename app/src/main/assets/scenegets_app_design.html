@@ -1197,6 +1197,12 @@ window.SceneGetsWeb.onNotificationPermissionResult=function(granted){
     if(granted){ applyBellToggle(bell,true); } else { showToast("알림 권한이 필요해요."); }
   }
 };
+window.SceneGetsWeb.closeTopModal=function(){
+  const modals=document.querySelectorAll(".modal-backdrop");
+  if(!modals.length) return false;
+  modals[modals.length-1].remove();
+  return true;
+};
 window.SceneGetsWeb.openTabFromNotification=function(){
   let tab=null;
   try{ if(window.SceneGetsBridge&&window.SceneGetsBridge.consumePendingOpenTab) tab=window.SceneGetsBridge.consumePendingOpenTab(); }catch(e){}

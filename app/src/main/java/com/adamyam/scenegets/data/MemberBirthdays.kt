@@ -16,10 +16,7 @@ object MemberBirthdays {
     )
 
     fun mergeInto(events: List<ScheduleEvent>, today: LocalDate = LocalDate.now()): List<ScheduleEvent> {
-        val years = (
-            events.mapNotNull { it.date.takeIf { d -> d.length >= 4 }?.take(4)?.toIntOrNull() } +
-                today.year
-            ).toSet()
+        val years = setOf(today.year, today.year + 1)
         val existingBirthdayDates = events.filter { it.type == "birthday" }.map { it.date }.toSet()
         val birthdayEvents = years.flatMap { year ->
             birthdays.mapNotNull { birthday ->

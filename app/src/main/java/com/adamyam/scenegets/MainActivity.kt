@@ -178,6 +178,20 @@ class MainActivity : Activity() {
         }
     }
 
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        if (::webView.isInitialized) {
+            webView.evaluateJavascript(
+                "(function(){return window.SceneGetsWeb && window.SceneGetsWeb.closeTopModal && " +
+                    "window.SceneGetsWeb.closeTopModal();})();"
+            ) { result ->
+                if (result != "true") super.onBackPressed()
+            }
+        } else {
+            super.onBackPressed()
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
