@@ -1,5 +1,5 @@
 <div align=center>
-<img width="500" height="500" alt="icon_1" src="https://github.com/user-attachments/assets/e7638b2b-a580-45f0-806c-39fb402c4de4" />
+<img width="250" height="250" alt="icon_1" src="https://github.com/user-attachments/assets/e7638b2b-a580-45f0-806c-39fb402c4de4" />
 </div>
 
 # SceneGets
