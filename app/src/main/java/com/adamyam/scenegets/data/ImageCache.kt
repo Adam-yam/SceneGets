@@ -34,6 +34,7 @@ object ImageCache {
     private val locks = ConcurrentHashMap<String, Any>()
     private val evictionLock = Any()
     private val trackedCacheBytes = AtomicLong(-1L)
+    private val downloadSemaphore = Semaphore(MAX_CONCURRENT_DOWNLOADS)
 
     private sealed class DownloadOutcome {
         data class Success(val bytes: ByteArray, val etag: String?) : DownloadOutcome()
@@ -45,13 +46,12 @@ object ImageCache {
         System.currentTimeMillis() - file.lastModified() > CACHE_TTL_MILLIS
 
     suspend fun loadAll(context: Context, urls: List<String>): Map<String, Bitmap> = coroutineScope {
-        val semaphore = Semaphore(MAX_CONCURRENT_DOWNLOADS)
         urls.asSequence()
             .filter(String::isNotBlank)
             .distinct()
             .map { url ->
                 async {
-                    semaphore.withPermit { load(context, url)?.let { url to it } }
+                    downloadSemaphore.withPermit { load(context, url)?.let { url to it } }
                 }
             }
             .toList()

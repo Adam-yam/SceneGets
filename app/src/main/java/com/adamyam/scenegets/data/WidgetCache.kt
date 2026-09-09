@@ -107,6 +107,21 @@ class WidgetCache(private val context: Context) {
         return runCatching { json.decodeFromString(ScheduleResponse.serializer(), raw) }.getOrNull()
     }
 
+    suspend fun cleanupStaleSchedulePeriods(keepFileNames: Set<String>) {
+        context.widgetDataStore.edit { prefs ->
+            val staleKeys = prefs.asMap().keys.filter { key ->
+                val name = key.name
+                val fileName = when {
+                    name.startsWith("schedule_raw_") -> name.removePrefix("schedule_raw_")
+                    name.startsWith("etag_schedule_") -> name.removePrefix("etag_")
+                    else -> null
+                } ?: return@filter false
+                fileName !in keepFileNames
+            }
+            staleKeys.forEach { prefs.remove(it) }
+        }
+    }
+
     companion object {
         private val CHART_JSON = stringPreferencesKey("chart_json")
         private val CHART_FETCHED_AT = longPreferencesKey("chart_fetched_at")

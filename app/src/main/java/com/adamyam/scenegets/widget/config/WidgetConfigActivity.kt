@@ -221,14 +221,23 @@ class WidgetConfigActivity : Activity() {
                 GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(appWidgetId)
             }.getOrNull()
 
-            if (glanceId != null) {
+            val saved = if (glanceId != null) {
                 runCatching {
                     updateAppWidgetState(this@WidgetConfigActivity, glanceId) { prefs ->
                         prefs[WidgetAppearanceKeys.themeMode] = appearance.themeMode.name
                         prefs[WidgetAppearanceKeys.opacityPercent] = appearance.opacityPercent
                     }
                     targetWidget.update(this@WidgetConfigActivity, glanceId)
-                }
+                }.isSuccess
+            } else {
+                false
+            }
+            if (!saved) {
+                android.widget.Toast.makeText(
+                    this@WidgetConfigActivity,
+                    R.string.widget_config_save_failed,
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
             }
             runCatching { triggerDataRefresh(this@WidgetConfigActivity) }
 

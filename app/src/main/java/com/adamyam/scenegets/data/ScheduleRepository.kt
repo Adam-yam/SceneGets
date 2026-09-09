@@ -27,6 +27,7 @@ class ScheduleRepository(context: Context) {
                     cache.saveSchedulePeriodRaw(info.fileName, info.data)
                     cache.saveEtag(info.fileName, info.etag)
                 }
+                cache.cleanupStaleSchedulePeriods(SchedulePeriod.relevantFileNames())
                 WidgetState.Loaded(
                     events,
                     result.fetchedAt,
