@@ -188,7 +188,7 @@ SceneGets는 서버에서 가져온 데이터를 로컬에 캐시합니다.
 
 ---
 
-## ❤️ SCENE-FLIX
+## ⭐ SCENE-FLIX
 
 SceneGets의 스케줄, 뉴스, 차트 데이터는 **SCENE-FLIX** 프로젝트와 연동됩니다.
 
@@ -206,6 +206,6 @@ RESCENE, 관련 로고, 음악, 사진 및 기타 콘텐츠의 권리는 각 원
 
 <div align="center">
 
-**Made for RESCENE & REMINE 🌸**
+**Made for REMINE**
 
 </div>
