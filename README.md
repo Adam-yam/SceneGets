@@ -1,3 +1,7 @@
+<div align=center>
+<img width="1254" height="1254" alt="icon" src="https://github.com/user-attachments/assets/96d5e99f-abf5-4241-8a2f-a31cc816e22a" />
+</div>
+
 # SceneGets
 
 RESCENE 팬을 위한 안드로이드 앱. 차트 · 뉴스 · 스케줄 정보를 한 곳에서 확인하고, 홈 화면 위젯으로도 받아볼 수 있습니다.
